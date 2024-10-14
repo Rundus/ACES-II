@@ -1,6 +1,6 @@
 --- README ---
 
-    UIOWA_CDF_operator is a set of python scripts that process .tad telemetry files exported from an ALTAIR
+    ACES-II is a set of python scripts that process .tad telemetry files exported from an ALTAIR
     tm device to a useful scientific data product in the command data format (CDF) file structure.
 
 
@@ -13,6 +13,7 @@
         (i) cdflib
         (ii) pycdf
         (iii) tqdm
+        (iv) spaceToolsLib (found on testpypi index)
 
     NOTE: pycdf requires not only a pip install, but also the NASA CDF library for the specific operating system. These
     can be found here:

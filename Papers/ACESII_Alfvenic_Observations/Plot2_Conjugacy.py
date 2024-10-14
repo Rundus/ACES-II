@@ -11,11 +11,9 @@ __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
 import matplotlib.pyplot as plt
-
-from ACESII_code.myImports import *
+import spaceToolsLib as stl
+from myImports import *
 from scipy.signal import spectrogram
-from my_matplotlib_Assets.colorbars.apl_rainbow_black0 import apl_rainbow_black0_cmap
-from my_matplotlib_Assets.colorbars.blue_green_White_yellow_red import blue_green_white_yellow_red_cmap
 plt.rcParams["font.family"] = "Arial"
 start_time = time.time()
 # --- --- --- --- ---
@@ -38,7 +36,7 @@ dpi = 800
 # cbarMin, cbarMax = 5E6, 3E9
 cbarMin, cbarMax = 2E7, 3E9
 cbarTickLabelSize = 14
-my_cmap = apl_rainbow_black0_cmap()
+my_cmap = stl.apl_rainbow_black0_cmap()
 my_cmap.set_bad(color=(1, 1, 1))
 
 Escale = 1000 # what to scale the deltaE field by
@@ -74,7 +72,7 @@ DispersiveCmap = my_cmap
 specCbarMin, specCbarMax = 1E-2, 1E1
 DispersiveFreqlimits = [0, 12]
 Disp_PlotLineWidth = 1
-spectrogramCmap = blue_green_white_yellow_red_cmap()
+spectrogramCmap = stl.blue_green_white_yellow_red_cmap()
 
 if plot_General:
     alignByILat = True # Align the Data via ILat
@@ -262,6 +260,9 @@ if plot_General:
     fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.0, hspace=0.0)  # remove the space between plots
     # plt.tight_layout()
     plt.savefig(r'C:\Users\cfelt\OneDrive\Desktop\Papers\ACESII_Alfven_Observations\Plot2\Plot2_ConjugacyStack.png', dpi=dpi)
+
+
+
 
 
 if plot_Dispersive:

@@ -27,7 +27,6 @@ from spaceToolsLib.setupFuncs.setupSpacepy import setupPYCDF
 from spaceToolsLib.Tools.colors import color
 from spaceToolsLib.Tools.CDF_load import loadDictFromFile,getInputFiles
 from spaceToolsLib.Tools.CDF_output import outputCDFdata
-from spaceToolsLib.colorbars.apl_rainbow_black0 import apl_rainbow_black0_cmap
 
 from tqdm import tqdm
 from glob import glob
