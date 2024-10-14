@@ -1,0 +1,12 @@
+dataFile = 'https://phi.physics.uiowa.edu/science/tau/data0/rocket/ACESII_36364/L3/Flight/deltaB/ACESII_36364_l2_RingCore_dB_Field_Aligned_WL501_Alfven.cdf'
+lat_geom= getDataSet(dataFile +'?X=Lat&Lat_geom')
+lat_geom.putProperty(QDataSet.LABEL,'geom Lat')
+alt= getDataSet(dataFile + '?X=Lat&Alt')
+#alt = alt/1000
+alt.putProperty(QDataSet.LABEL, 'Alt [km]')
+#alt.putProperty(QDataSet.FORMAT, '%0.1f' )
+epoch= getDataSet(dataFile + '?X=Lat&Epoch')
+epoch.putProperty( QDataSet.FORMAT, '$H:$M:$S' )
+result= bundle(lat_geom, alt, epoch )
+result= link( lat_geom, result )
+

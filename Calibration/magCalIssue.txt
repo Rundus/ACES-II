@@ -1,0 +1,29 @@
+ISSUE: The magcal files have many places where sfid >= 40 as well as jumps in the sfid ordering.
+Currently, this makes constructing minorframe sweeps impossible.
+
+--- FILES ---
+ACES Integration High: 5
+ACES Integration Low : 3
+
+
+------------
+--- DATA ---
+------------
+
+# ---HIGH---
+Tad_data_size:12009720
+No_of_lost_gsync: 4449
+No_of_sfid>=40: 795
+
+#After finding np.where == 0,39:
+sfid%40 == 3
+len(sfid)/40 = 300131.075
+
+# ---LOW---
+Tad_data_size:13702440
+No_of_lost_gsync:882103
+No_of_sfid>=40:1304
+
+#After finding np.where == 0,39:
+sfid%40 == 32
+len(sfid)/40 = 320507.8

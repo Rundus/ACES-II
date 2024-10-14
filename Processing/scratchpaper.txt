@@ -1,0 +1,28 @@
+function row = unpacket_magic(pkt)
+%%UNPACKETMAGIC unpack function for magic data packet
+    pkt_bin = dec2bin(pkt, 16);
+
+    %% unpack 20-bit binary words
+    magx_bin = [pkt_bin(1, 9:16), pkt_bin(2, :)];
+    magy_bin = [pkt_bin(3, 9:16), pkt_bin(4, :)];
+    magz_bin = [pkt_bin(5, 9:16), pkt_bin(6, :)];
+    hk_idx_bin = [pkt_bin(7, 9:16)];
+    hk_bin = [pkt_bin(8, :)];
+    timestamp_bin = [pkt_bin(9, 15:16) pkt_bin(10, :)];
+
+    %read and check incrementing hk idx
+    hk_idx = bin2dec(['0b', hk_idx_bin, 'u8']);
+    hk = bin2dec(['0b', hk_bin, 'u16']);
+    %cast timestamp as unsigned 32 bit number
+    timestamp = bin2dec(['0b', timestamp_bin, 'u32']);
+
+    %notes to formatting for bin2dec
+    %starts with:   0b
+    %end with:      s32
+    %overall has length of 32 bits
+    %consists of 20-bit data and padded with 12 1s
+    magx = bin2dec(['0b', repmat(magx_bin(1), 1, 8), magx_bin, 's32']);
+    magy = bin2dec(['0b', repmat(magy_bin(1), 1, 8), magy_bin, 's32']);
+    magz = bin2dec(['0b', repmat(magz_bin(1), 1, 8), magz_bin, 's32']);
+    row = [hk_idx, hk, timestamp, magx, magy, magz];
+end
