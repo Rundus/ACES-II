@@ -19,7 +19,7 @@ __version__ = "1.0.0"
 
 import numpy as np
 
-from ACESII_code.myImports import *
+from myImports import *
 
 start_time = time.time()
 # --- --- --- --- ---

@@ -19,7 +19,7 @@ __version__ = "1.0.0"
 
 import itertools
 # --- --- --- --- ---
-from ACESII_code.myImports import *
+from myImports import *
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -35,7 +35,7 @@ justPrintChiFileNames = False
 # --- Select the Rocket ---
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # select which files to convert
 # [] --> all files
@@ -65,7 +65,7 @@ outputData = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from ACESII_code.class_var_func import calcChiSquare
+import spaceToolsLib as stl
 
 
 def L1magCalESA_to_L1ChiSquareCaldESA(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
@@ -246,7 +246,7 @@ def L1magCalESA_to_L1ChiSquareCaldESA(wRocket, wFile, rocketFolderPath, justPrin
                     uncalData_errors, prinData_errors = uncalData, prinData
 
                     nu = len(prinData) - len(params)
-                    chiSquare = calcChiSquare(prinData, uncalData_fitted, prinData_errors, uncalData_errors, nu)
+                    chiSquare = stl.calcChiSquare(prinData, uncalData_fitted, prinData_errors, uncalData_errors, nu)
 
                     # --- --- --- --- --- --- --- -
                     # --- APPLY FIT TO ESA DATA ---

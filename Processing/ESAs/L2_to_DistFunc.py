@@ -13,8 +13,7 @@ __version__ = "1.0.0"
 import itertools
 # --- --- --- --- ---
 import time
-from ACESII_code.class_var_func import Done, setupPYCDF, outputCDFdata,loadDictFromFile
-
+from spaceToolsLib import Done,setupPYCDF,outputCDFdata,loadDictFromFile
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -56,9 +55,10 @@ import numpy as np
 from warnings import filterwarnings # USED TO IGNORE WARNING ABOUT "UserWarning: Invalid dataL1 type for dataL1.... Skip warnings.warn('Invalid dataL1 type for dataL1.... Skip')" on Epoch High dataL1.
 filterwarnings("ignore")
 from tqdm import tqdm
-from ACESII_code.missionAttributes import ACES_mission_dicts, TRICE_mission_dicts
-from ACESII_code.data_paths import Integration_data_folder, ACES_data_folder, TRICE_data_folder, fliers
-from ACESII_code.class_var_func import color, L2_ACES_Quick,L2_TRICE_Quick, prgMsg, cm_to_m,q0,IonMasses,m_e
+from missionAttributes import ACES_mission_dicts, TRICE_mission_dicts
+from data_paths import Integration_data_folder, ACES_data_folder, TRICE_data_folder, fliers
+from class_var_func import L2_ACES_Quick,L2_TRICE_Quick
+from spaceToolsLib import color,prgMsg,cm_to_m,q0,IonMasses,m_e
 from glob import glob
 from os.path import getsize
 setupPYCDF()

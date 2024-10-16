@@ -30,7 +30,7 @@ __version__ = "1.0.0"
 
 import numpy as np
 
-from ACESII_code.myImports import *
+from myImports import *
 
 start_time = time.time()
 # --- --- --- --- ---
@@ -50,7 +50,7 @@ justPrintFileNames = False
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # select which files to convert
 # [] --> all files
@@ -299,7 +299,7 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
         if wRocket == 5:
 
             # find the average step size in the attitude data
-            epochAttitude = dateTimetoTT2000(InputEpoch=data_dict_attitude['Epoch'][0],inverse=False)
+            epochAttitude = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_attitude['Epoch'][0]])
             deltaT = np.average([epochAttitude[i+1] - epochAttitude[i] for i in range(len(epochAttitude)-1)])
             targetStart = pycdf.lib.datetime_to_tt2000(dt.datetime(2022,11,20,17,20,00,14453))
             NumOfPoints = int((epochAttitude[0]-targetStart)/deltaT)+1
