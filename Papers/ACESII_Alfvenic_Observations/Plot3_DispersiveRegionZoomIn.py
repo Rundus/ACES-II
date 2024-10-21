@@ -22,7 +22,7 @@ start_time = time.time()
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-print(color.UNDERLINE + f'Plot2_Conjugacy' + color.END)
+print(color.UNDERLINE + f'Plot3_DispersiveregionZoomIn' + color.END)
 
 # --- --- --- ---
 # --- TOGGLES ---
@@ -31,10 +31,10 @@ dpi = 200
 
 
 # --- Cbar ---
-cbarMin, cbarMax = 5E7, 1E10
+cbarMin, cbarMax = 1E6, 1E9
 cbar_Tick_LabelSize = 14
 my_cmap = stl.apl_rainbow_black0_cmap()
-my_cmap.set_bad(color=(1, 1, 1))
+my_cmap.set_bad(color=(0,0,0))
 specCbarMin, specCbarMax = 1E-2, 1E1
 spectrogramCmap = stl.blue_green_white_yellow_red_cmap()
 
@@ -53,7 +53,7 @@ Legend_FontSize = 13
 
 # Physics Toggles
 targetILat = [71.91, 72.03]
-targetEpoch = [dt.datetime(2022,11,20,17,24,52,000000), dt.datetime(2022,11,20,17,25,9,000000)]
+targetEpoch = [dt.datetime(2022,11,20,17,24,51,700000), dt.datetime(2022,11,20,17,25,9,000000)]
 
 EField_scale = 1000 # what to scale the deltaE field by
 EEPAAslice_wPitch = 2 # 10deg pitch
@@ -138,32 +138,29 @@ for wRocket in [4, 5]:
     specAlts = magDict['Alt'][0][specIndicies]
     specTimes = magDict['Epoch'][0][specIndicies]
 
-    # --- get the averaged Differential Energy FLux over all energies ---
-    totalDirFlux = np.zeros(shape=(len(eepaaDict['Differential_Energy_Flux'][0]), len(eepaaDict['Pitch_Angle'][0])))
-    for tme in range(len(eepaaDict['Epoch'][0])):
-        for ptch in range(len(eepaaDict['Pitch_Angle'][0])):
-            sumVal = 0
-            for engy in range(PAengyLimits[0],PAengyLimits[1]+1):
-                val = eepaaDict['Differential_Energy_Flux'][0][tme][ptch][engy]
-                if val >0:
-                    sumVal += val
-            totalDirFlux[tme][ptch] = sumVal
+    # --- get the averaged Differential Energy FLux over all Pitch Angles (Energy vs Time) ---
+    totalDirFlux_engy = np.array(eepaaDict['Differential_Energy_Flux'][0])
+    totalDirFlux_engy[totalDirFlux_engy<0] = 0
+    totalDirFlux_engy = totalDirFlux_engy[:,2:19,:]
+    totalDirFlux_engy = np.sum(totalDirFlux_engy, axis=1).T/(21-4)
 
-    totalDirFlux = np.array(eepaaDict['Differential_Energy_Flux'][0])
-    totalDirFlux[totalDirFlux<0] = 0
+    # --- get the averaged Differential Energy FLux over all energies (Pitch vs Time) ---
+    totalDirFlux_ptch = np.array(eepaaDict['Differential_Energy_Flux'][0])
+    totalDirFlux_ptch[totalDirFlux_ptch < 0] = 0
+    totalDirFlux_ptch = np.sum(totalDirFlux_ptch, axis=2).T / len(data_dict_eepaa_high['Energy'][0])
 
 
     # --- EEPAA Epoch vs Time Data ---
-    cmap = ax[0+idxAdjust].pcolormesh(eepaaDict['Epoch'][0], eepaaDict['Energy'][0], np.sum(totalDirFlux,axis=1).T, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log')
+    cmap = ax[0+idxAdjust].pcolormesh(eepaaDict['Epoch'][0], eepaaDict['Energy'][0], totalDirFlux_engy, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log')
     ax[0+idxAdjust].set_ylabel(rf'Energy [eV]', fontsize=Label_FontSize,labelpad=Label_Padding)
     ax[0+idxAdjust].set_yscale('log')
     ax[0+idxAdjust].set_ylim(33, 1150)
     ax[0+idxAdjust].tick_params(axis='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 
     # --- EEPAA Data All Pitchs ---
-    ax[1+idxAdjust].pcolormesh(eepaaDict['Epoch'][0], eepaaDict['Pitch_Angle'][0], np.sum(eepaaDict['Differential_Energy_Flux'][0],axis=2).T, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log')
+    ax[1+idxAdjust].pcolormesh(eepaaDict['Epoch'][0], eepaaDict['Pitch_Angle'][0], totalDirFlux_ptch, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log')
     ax[1+idxAdjust].set_ylabel(f'P. A. [deg]', fontsize=Label_FontSize,labelpad=Label_Padding)
-    ax[1+idxAdjust].set_ylim(0, 181)
+    ax[1+idxAdjust].set_ylim(0, 180)
     ax[1+idxAdjust].margins(0)
     ax[1+idxAdjust].tick_params(axis='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
     yticks = [0, 60, 120, 180]
@@ -172,10 +169,10 @@ for wRocket in [4, 5]:
 
     if wRocket == 4:
         # HF EEPAA colorbar
-        cax = fig.add_axes([0.91, 0.8, 0.02, 0.2])
+        cax = fig.add_axes([0.91, 0.774, 0.02, 0.212])
     elif wRocket == 5:
         # LF EEPAA colorbar
-        cax = fig.add_axes([0.91, 0.25, 0.02, 0.2])
+        cax = fig.add_axes([0.91, 0.276, 0.02, 0.211])
 
     cbar = plt.colorbar(cmap, cax=cax)
     cbar.ax.minorticks_on()
@@ -192,13 +189,13 @@ for wRocket in [4, 5]:
     # Er
     if wRocket == 4:
         axEr = ax[2+idxAdjust].twinx()
-        axEr.set_ylabel('E-Field\nN/A', fontsize=Label_FontSize, color='red', rotation=-90, labelpad=Label_Padding)
+        axEr.set_ylabel('E-Field\nN/A', fontsize=Label_FontSize, color='red', rotation=-90, labelpad=Label_Padding+30)
         axEr.tick_params(axis='y', colors='red',labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
         axEr.set_ylim(-8, 8)
     elif wRocket == 5:
         axEr = ax[2+idxAdjust].twinx()
         axEr.plot(data_dict_Efield_low['Epoch'][0],data_dict_Efield_low['E_r'][0], color='red', linewidth=Plot_LineWidth)
-        axEr.set_ylabel('$\delta E_{r}$\n[mV/m]', fontsize=Label_FontSize, color='red', rotation=-90,labelpad=Label_Padding)
+        axEr.set_ylabel('$\delta E_{r}$\n[mV/m]', fontsize=Label_FontSize, color='red', rotation=-90,labelpad=Label_Padding+30)
         axEr.tick_params(axis='y', colors='red',labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
         axEr.set_ylim(-8, 8)
         axEr.margins(0)
@@ -207,16 +204,16 @@ for wRocket in [4, 5]:
     cmap = ax[3+idxAdjust].pcolormesh(specTimes, f, Sxx, shading='nearest', vmin=specCbarMin, vmax=specCbarMax, cmap=spectrogramCmap, norm='log')
     ax[3+idxAdjust].set_ylabel('$\delta B_{e}$\n[Hz]', fontsize=Label_FontSize, labelpad=Label_Padding)
     ax[3+idxAdjust].set_xlabel('time [UTC]\nAlt [km]\nILat [deg]', fontsize=Tick_FontSize, weight='bold')
-    ax[3+idxAdjust].xaxis.set_label_coords(-0.09, -0.14)
+    ax[3+idxAdjust].xaxis.set_label_coords(-0.09, -0.09)
     ax[3+idxAdjust].set_ylim(Spectrogram_Freqlimits[0], Spectrogram_Freqlimits[1])
 
 
     if wRocket ==4 :
         # spectrogram colorbar HF
-        cax = fig.add_axes([0.91, 0.56, 0.02, 0.1])
+        cax = fig.add_axes([0.91, 0.558, 0.02, 0.103])
     elif wRocket == 5:
         # spectrogram colorbar LF
-        cax = fig.add_axes([0.91, 0.06, 0.02, 0.1])
+        cax = fig.add_axes([0.91, 0.06, 0.02, 0.103])
 
     cbar = plt.colorbar(cmap, cax=cax)
     cbar.ax.minorticks_on()
@@ -228,13 +225,12 @@ for wRocket in [4, 5]:
     ax[3+idxAdjust].set_yticks(yticks)
     ax[3+idxAdjust].set_yticklabels([str(tick) for tick in yticks])
     xtickTimes = [dt.datetime(2022,11,20,17,24,53),
-                dt.datetime(2022,11,20,17,24,55),
-                dt.datetime(2022,11,20,17,24,57),
-                dt.datetime(2022,11,20,17,24,59),
-                dt.datetime(2022,11,20,17,25,1),
+                dt.datetime(2022,11,20,17,24,55,500000),
+                dt.datetime(2022,11,20,17,24,58),
+                dt.datetime(2022,11,20,17,25,00,500000),
                 dt.datetime(2022,11,20,17,25,3),
-                dt.datetime(2022,11,20,17,25,5),
-                  dt.datetime(2022,11,20,17,25,7)]
+                dt.datetime(2022,11,20,17,25,5,500000),
+                dt.datetime(2022,11,20,17,25,8)]
 
     xtick_indicies = np.array([np.abs(magDict['Epoch'][0] - tick).argmin() for tick in xtickTimes])
     ILat_ticks = [str(round(tick, 2)) for tick in magDict['ILat'][0][xtick_indicies]]
@@ -256,7 +252,7 @@ for i in range(9):
         ax[i].tick_params(axis='x', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width,labelbottom=False,bottom=False,top=False)
 
 # adjust plot size
-fig.subplots_adjust(left=0.13, bottom=0.06, right=0.89, top=0.99, wspace=None,hspace=0.05)  # remove the space between plots
+fig.subplots_adjust(left=0.13, bottom=0.06, right=0.89, top=0.985, wspace=None,hspace=0.05)  # remove the space between plots
 fig.align_ylabels(ax[:])
 
 # output the figure

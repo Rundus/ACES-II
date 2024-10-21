@@ -26,16 +26,16 @@ print(color.UNDERLINE + f'Plot2_Conjugacy' + color.END)
 # --- --- --- ---
 dpi = 200
 Escale = 1000 # what to scale the deltaE field by
-Conjugacy_targetILat = [71.34, 72.75]
+Conjugacy_targetILat = [71.31, 72.75]
 Conjugacy_EBlimits = 9.5
 
 
 # --- Cbar ---
 # cbarMin, cbarMax = 5E6, 3E9
-cbarMin, cbarMax = 5E6, 4E9
+cbarMin, cbarMax = 1E6, 1E9
 cbar_TickLabelSize = 14
 my_cmap = stl.apl_rainbow_black0_cmap()
-my_cmap.set_bad(color=(1, 1, 1))
+my_cmap.set_bad(color=(0,0,0))
 
 
 # Plot toggles
@@ -242,18 +242,18 @@ for i in range(8):
 fig.align_ylabels(ax[:])
 
 # --- cbar 1---
-cax = fig.add_axes([0.91, 0.804, 0.03, 0.186])
+cax = fig.add_axes([0.91, 0.796, 0.03, 0.184])
 cbar = plt.colorbar(cmap, cax=cax)
 cbar.ax.minorticks_on()
 cbar.ax.tick_params(labelsize=cbar_TickLabelSize + 5)
 
 # --- cbar 2---
-cax = fig.add_axes([0.91, 0.37, 0.03, 0.186])
+cax = fig.add_axes([0.91, 0.367, 0.03, 0.184])
 cbar = plt.colorbar(cmap, cax=cax)
 cbar.ax.minorticks_on()
 cbar.ax.tick_params(labelsize=cbar_TickLabelSize + 5)
 
-fig.subplots_adjust(left=0.12, bottom=0.06, right=0.9, top=0.99,hspace=0)  # remove the space between plots
+fig.subplots_adjust(left=0.12, bottom=0.06, right=0.9, top=0.98,hspace=0)  # remove the space between plots
 plt.savefig(r'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\PLOTS\Plot2\Plot2_ConjugacyStack.png', dpi=dpi)
 
 
