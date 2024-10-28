@@ -22,7 +22,6 @@ PATH_TO_DATA_FOLDER = r'C:\Data\\'
 # SYSTEM_PATH = f'C:\\Users\\{user}\\PycharmProjects\\UIOWA_CDF_operator\\ACESII_code'
 HOMEDRIVE = 'C:'
 HOMEPATH = 'C:\\'
-CDF_LIB = rf"C:/Users/{user}/PycharmProjects/UIOWA_CDF_operator/CDF/lib" # location to directory that contains the dllcdf.dll needed for pycdf the library
 fliers = ['high', 'low']
 
 

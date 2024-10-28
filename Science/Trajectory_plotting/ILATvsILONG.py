@@ -4,7 +4,7 @@
 
 
 # --- --- --- --- ---
-from ACESII_code.myImports import *
+from myImports import *
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -161,7 +161,6 @@ def ACESIIplotting():
 
             # UTC Text
             for k in range(len(timeTargetsEpoch[i])):
-            for k in range(len(timeTargetsEpoch[i])):
                 ax1.text(timeTargetsData['geoLong_km'][i][k] + ILATvsILONG.adjusts_km[i][0],
                          timeTargetsData['geoLat_km'][i][k] + ILATvsILONG.adjusts_km[i][1],
                          timeTargetsEpoch[i][k], **ILATvsILONG.textUTC_style[i])
@@ -242,6 +241,6 @@ def ACESIIplotting():
                 ax1.plot(x_values, y_values, **ILATvsILONG.connecting_lines_style)
 
     ax1.legend()
-    plt.title(f'{wInstr_projection} \n B-Field Projection Altitude: {ILATvsILONG.targetProjectionAltitude} km \n Origin: {ILATvsILONG.refLat}$^\circ$N {ILATvsILONG.refLong}$^\circ$E')
+    plt.title(f'EEPAA \n B-Field Projection Altitude: {ILATvsILONG.targetProjectionAltitude} km \n Origin: {ILATvsILONG.refLat}$^\circ$N {ILATvsILONG.refLong}$^\circ$E')
     fig.savefig(rf'D:\Data\ACESII\trajectories\trajectory_plots\BProjection_{mod_file_ID}.png')
 

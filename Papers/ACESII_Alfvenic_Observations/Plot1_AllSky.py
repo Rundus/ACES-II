@@ -11,7 +11,7 @@ __date__ = "2022-08-22"
 __version__ = "1.0.0"
 from myImports import *
 # 'C:\Users\cfelt\AppData\Local\Microsoft\Windows\Fonts'
-plt.rcParams["font.family"] = "Arial"
+# plt.rcParams["font.family"] = "Arial"
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -53,7 +53,7 @@ altLat_lineThickness = 6.5
 AltLat_LegendSize = 55
 altLat_LabelPadding = 45
 # ---------------BigAllSky-----------------
-BigAllSkyPlot = True
+BigAllSkyPlot = False
 # lonW = 10
 # lonE = 23.5
 lonW = 5
@@ -71,7 +71,7 @@ BigAllSky_GridSize = 5
 BigAllSky_TitleSize = 70
 BigAllSky_costLineSize = 3
 # --------------------------------
-ILatDiffPlot = False
+ILatDiffPlot = True
 ILatDiff_Height = 15
 ILatDiff_Width = 35
 ILatDiff_PlotLineWidth = 12
@@ -79,7 +79,7 @@ ILatDiff_LabelSize = 75
 ILatDiff_TickLabelSize = 60
 ILatDiff_TickLength = 25
 ILatDiff_TickWidth = 4
-ILatDiff_LabelPadding = 0
+ILatDiff_LabelPadding = -15
 # --------------------------------
 makeColorbarPlot = False
 
@@ -302,7 +302,6 @@ if BigAllSkyPlot:
 if ILatDiffPlot:
     prgMsg('Plotting ILatDiff')
 
-
     ttIndicies = [np.abs(data_dicts_attitude[0]['Epoch'][0] - timeTargetsUTC[0]).argmin(),np.abs(data_dicts_attitude[0]['Epoch'][0] - timeTargetsUTC[-1]).argmin()]
     ILat = data_dicts_attitude[0]['ILat'][0][ttIndicies[0]:ttIndicies[1]]
     ILong = data_dicts_attitude[0]['ILong'][0][ttIndicies[0]:ttIndicies[1]]
@@ -317,15 +316,15 @@ if ILatDiffPlot:
     # --- ILatDiffPlot plot ---
     # --- --- --- --- --- --- -
     ###########################
-    fig, (axILatDiff_space, axILatDiff_time) = plt.subplots(2, sharex=True)
+    fig, (axILatDiff_time,axILatDiff_space) = plt.subplots(2, sharex=True)
     figure_height = ILatDiff_Height
     figure_width = ILatDiff_Width
     fig.set_figwidth(figure_width)
     fig.set_figheight(figure_height)
 
     # --- SPATIAL---
-    axILatDiff_space.plot(Epoch, spatialDiff_ILat, color='tab:red', linewidth=ILatDiff_PlotLineWidth)
-    axILatDiff_space.set_ylabel(r'ILat $\Delta \varphi$'+'\n[km]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding, weight='bold')
+    axILatDiff_space.plot(Epoch, spatialDiff_ILat, color='black', linewidth=ILatDiff_PlotLineWidth)
+    axILatDiff_space.set_ylabel(r'ILat $\Delta \varphi$'+'\n[km]', fontsize=ILatDiff_LabelSize, labelpad=-75, weight='bold')
     axILatDiff_space.tick_params(axis='both', labelsize=ILatDiff_TickLabelSize, length=ILatDiff_TickLength, width=ILatDiff_TickWidth)
     axILatDiff_space.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
     axILatDiff_space.margins(0)
@@ -333,25 +332,27 @@ if ILatDiffPlot:
     axILatDiff_space.set_ylim(-110, 110)
     axILatDiff_space.axhline(y=0, color='red', linestyle='--', linewidth=ILatDiff_PlotLineWidth-5, alpha=0.4)
     axILatDiff_space.minorticks_on()
+    axILatDiff_space.set_xlabel('Time [UTC]',fontsize=ILatDiff_LabelSize,labelpad=15, weight='bold')
 
-    extraAxis = axILatDiff_space.twiny()
-    extraAxis.plot(Epoch, spatialDiff_ILat, alpha=0)
-    extraAxis.set_xticks(timeTargetsUTC)
-    tickIndicies = [np.abs(Epoch - val).argmin() for val in timeTargetsUTC]
-    extraAxis.set_xticklabels([round(ILat[idx], 2) for idx in tickIndicies])
-    extraAxis.set_xlabel('Low Flyer ILat [deg]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding+50)
-    extraAxis.tick_params(axis='both', labelsize=ILatDiff_TickLabelSize, length=ILatDiff_TickLength, width=ILatDiff_TickWidth)
-    extraAxis.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
-    extraAxis.margins(x=0)
-    extraAxis.set_xlim(timeTargetsUTC[0],timeTargetsUTC[-1])
+    # extraAxis = axILatDiff_space.twiny()
+    # extraAxis.plot(Epoch, spatialDiff_ILat, alpha=0)
+    # extraAxis.set_xticks(timeTargetsUTC)
+    # tickIndicies = [np.abs(Epoch - val).argmin() for val in timeTargetsUTC]
+    # extraAxis.set_xticklabels([round(ILat[idx], 2) for idx in tickIndicies])
+    # extraAxis.set_xlabel('Low Flyer ILat [deg]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding+50)
+    # extraAxis.tick_params(axis='both', labelsize=ILatDiff_TickLabelSize, length=ILatDiff_TickLength, width=ILatDiff_TickWidth)
+    # extraAxis.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
+    # extraAxis.margins(x=0)
+    # extraAxis.set_xlim(timeTargetsUTC[0],timeTargetsUTC[-1])
     # set the ticks
 
     # --- TEMPORAL ---
-    axILatDiff_time.plot(Epoch, timeDiff_Ilat, color='tab:blue', linewidth=ILatDiff_PlotLineWidth)
+    axILatDiff_time.plot(Epoch, timeDiff_Ilat, color='black', linewidth=ILatDiff_PlotLineWidth)
     axILatDiff_time.grid(which='both', linewidth=2.5, color='gray', alpha=0.6)
-    axILatDiff_time.set_ylabel('ILat $\Delta t$ \n [s]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding, weight='bold')
+    axILatDiff_time.set_ylabel('ILat $\Delta t$ \n [s]', fontsize=ILatDiff_LabelSize, labelpad=-45, weight='bold')
     axILatDiff_time.set_ylim(-65, 65)
     axILatDiff_time.margins(0)
+
     # TICKS
     axILatDiff_time.set_xticks(timeTargetsUTC)
     tlabels = [label.strftime("%H:%M:%S") for label in timeTargetsUTC]
@@ -360,75 +361,71 @@ if ILatDiffPlot:
     axILatDiff_time.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
     axILatDiff_time.axhline(y=0, color='red', linestyle='--', linewidth=ILatDiff_PlotLineWidth - 5, alpha=0.4)
     axILatDiff_time.minorticks_on()
-    # axILatDiff_time.margins(0)
-    fig.align_ylabels([axILatDiff_space, axILatDiff_time])
+    # fig.align_ylabels([axILatDiff_space, axILatDiff_time])
     plt.tight_layout()
-    plt.savefig(r'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\Plot1\\ILatDiff.png')
+    plt.savefig(r'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\PLOTS\Plot1\ILatDiff.png')
+    Done(start_time)
 
     ###########################
     # --- --- --- --- --- --- -
     # --- ILongDiffPlot plot ---
     # --- --- --- --- --- --- -
     ###########################
-    fig, (axILongDiff_space, axIongDiff_time) = plt.subplots(2, sharex=True)
-    figure_height = ILatDiff_Height
-    figure_width = ILatDiff_Width
-    fig.set_figwidth(figure_width)
-    fig.set_figheight(figure_height)
-
-    # --- --- --- --- ---
-    # --- ILONG PLOTS ---
-    # --- --- --- --- ---
-
-    # --- SPATIAL ---
-    axILongDiff_space.plot(Epoch, spatialDiff_ILong, color='tab:green', linewidth=ILatDiff_PlotLineWidth)
-    axILongDiff_space.set_ylabel(r'ILong $\Delta \lambda$' + '\n[km]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding, weight='bold')
-    axILongDiff_space.tick_params(axis='both', labelsize=ILatDiff_TickLabelSize, length=ILatDiff_TickLength, width=ILatDiff_TickWidth)
-    axILongDiff_space.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
-    axILongDiff_space.margins(0)
-    axILongDiff_space.grid(which='both', linewidth=2.5, color='gray', alpha=0.6)
-    axILongDiff_space.set_ylim(-60, 60)
-    axILongDiff_space.axhline(y=0, color='red', linestyle='--', linewidth=ILatDiff_PlotLineWidth - 5, alpha=0.4)
-    axILongDiff_space.minorticks_on()
-
-    extraAxis = axILongDiff_space.twiny()
-    extraAxis.plot(Epoch, spatialDiff_ILong, alpha=0)
-    extraAxis.set_xticks(timeTargetsUTC)
-    tickIndicies = [np.abs(Epoch - val).argmin() for val in timeTargetsUTC]
-    extraAxis.set_xticklabels([round(ILong[idx], 2) for idx in tickIndicies])
-    extraAxis.set_xlabel('Low Flyer ILong [deg]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding + 50)
-    extraAxis.tick_params(axis='both', labelsize=ILatDiff_TickLabelSize, length=ILatDiff_TickLength, width=ILatDiff_TickWidth)
-    extraAxis.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
-    extraAxis.margins(x=0)
-    extraAxis.set_xlim(timeTargetsUTC[0], timeTargetsUTC[-1])
-
-    # --- TEMPORAL ---
-    axIongDiff_time.plot(Epoch, timeDiff_Ilong, color='black', linewidth=ILatDiff_PlotLineWidth)
-    axIongDiff_time.grid(which='both', linewidth=2.5, color='gray', alpha=0.6)
-    axIongDiff_time.set_ylabel('ILong $\Delta t$ \n [s]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding, weight='bold')
-    axIongDiff_time.set_ylim(40, 250)
-    axIongDiff_time.margins(0)
-    axIongDiff_time.set_xlabel('time (UTC)', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding + 50)
-
-    # TICKS
-    axIongDiff_time.set_xticks(timeTargetsUTC)
-    tlabels = [label.strftime("%H:%M:%S") for label in timeTargetsUTC]
-    axIongDiff_time.set_xticklabels(tlabels)
-    axIongDiff_time.tick_params(axis='both', labelsize=ILatDiff_TickLabelSize, length=ILatDiff_TickLength, width=ILatDiff_TickWidth)
-    axIongDiff_time.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
-    axIongDiff_time.axhline(y=0, color='red', linestyle='--', linewidth=ILatDiff_PlotLineWidth - 5, alpha=0.4)
-    axIongDiff_time.minorticks_on()
-    # axILatDiff_time.margins(0)
-
-
-    fig.align_ylabels([axILongDiff_space,axIongDiff_time])
-    plt.tight_layout()
-    plt.savefig(r'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\Plot1\\ILongDiff.png')
-    Done(start_time)
-
-
-
-
+    # fig, (axILongDiff_space, axIongDiff_time) = plt.subplots(2, sharex=True)
+    # figure_height = ILatDiff_Height
+    # figure_width = ILatDiff_Width
+    # fig.set_figwidth(figure_width)
+    # fig.set_figheight(figure_height)
+    #
+    # # --- --- --- --- ---
+    # # --- ILONG PLOTS ---
+    # # --- --- --- --- ---
+    #
+    # # --- SPATIAL ---
+    # axILongDiff_space.plot(Epoch, spatialDiff_ILong, color='tab:green', linewidth=ILatDiff_PlotLineWidth)
+    # axILongDiff_space.set_ylabel(r'ILong $\Delta \lambda$' + '\n[km]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding, weight='bold')
+    # axILongDiff_space.tick_params(axis='both', labelsize=ILatDiff_TickLabelSize, length=ILatDiff_TickLength, width=ILatDiff_TickWidth)
+    # axILongDiff_space.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
+    # axILongDiff_space.margins(0)
+    # axILongDiff_space.grid(which='both', linewidth=2.5, color='gray', alpha=0.6)
+    # axILongDiff_space.set_ylim(-60, 60)
+    # axILongDiff_space.axhline(y=0, color='red', linestyle='--', linewidth=ILatDiff_PlotLineWidth - 5, alpha=0.4)
+    # axILongDiff_space.minorticks_on()
+    #
+    # extraAxis = axILongDiff_space.twiny()
+    # extraAxis.plot(Epoch, spatialDiff_ILong, alpha=0)
+    # extraAxis.set_xticks(timeTargetsUTC)
+    # tickIndicies = [np.abs(Epoch - val).argmin() for val in timeTargetsUTC]
+    # extraAxis.set_xticklabels([round(ILong[idx], 2) for idx in tickIndicies])
+    # extraAxis.set_xlabel('Low Flyer ILong [deg]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding + 50)
+    # extraAxis.tick_params(axis='both', labelsize=ILatDiff_TickLabelSize, length=ILatDiff_TickLength, width=ILatDiff_TickWidth)
+    # extraAxis.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
+    # extraAxis.margins(x=0)
+    # extraAxis.set_xlim(timeTargetsUTC[0], timeTargetsUTC[-1])
+    #
+    # # --- TEMPORAL ---
+    # axIongDiff_time.plot(Epoch, timeDiff_Ilong, color='black', linewidth=ILatDiff_PlotLineWidth)
+    # axIongDiff_time.grid(which='both', linewidth=2.5, color='gray', alpha=0.6)
+    # axIongDiff_time.set_ylabel('ILong $\Delta t$ \n [s]', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding, weight='bold')
+    # axIongDiff_time.set_ylim(40, 250)
+    # axIongDiff_time.margins(0)
+    # axIongDiff_time.set_xlabel('time (UTC)', fontsize=ILatDiff_LabelSize, labelpad=ILatDiff_LabelPadding + 50)
+    #
+    # # TICKS
+    # axIongDiff_time.set_xticks(timeTargetsUTC)
+    # tlabels = [label.strftime("%H:%M:%S") for label in timeTargetsUTC]
+    # axIongDiff_time.set_xticklabels(tlabels)
+    # axIongDiff_time.tick_params(axis='both', labelsize=ILatDiff_TickLabelSize, length=ILatDiff_TickLength, width=ILatDiff_TickWidth)
+    # axIongDiff_time.tick_params(axis='both', which='minor', length=int(ILatDiff_TickLength * 0.65), width=ILatDiff_TickWidth)
+    # axIongDiff_time.axhline(y=0, color='red', linestyle='--', linewidth=ILatDiff_PlotLineWidth - 5, alpha=0.4)
+    # axIongDiff_time.minorticks_on()
+    # # axILatDiff_time.margins(0)
+    #
+    #
+    # fig.align_ylabels([axILongDiff_space,axIongDiff_time])
+    # plt.tight_layout()
+    # plt.savefig(r'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\PLOTS\Plot1\ILongDiff.png')
+    # Done(start_time)
 
 
 # --- --- --- ----

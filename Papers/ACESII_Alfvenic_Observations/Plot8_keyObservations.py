@@ -9,10 +9,8 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
-
 import matplotlib.pyplot as plt
-
-from ACESII_code.myImports import *
+from myImports import *
 import matplotlib.gridspec as gridspec
 start_time = time.time()
 # --- --- --- --- ---
@@ -22,7 +20,7 @@ start_time = time.time()
 # --- --- --- ---
 import math
 import matplotlib as mpl
-from myspaceToolsLib.time import EpochTo_T0_Rocket
+import spaceToolsLib as stl
 
 print(color.UNDERLINE + f'Plot7_keyObservations' + color.END)
 
@@ -33,8 +31,7 @@ figure_height = (16)
 figure_width = (12)
 
 cmap = 'turbo'
-from my_matplotlib_Assets.colorbars.apl_rainbow_black0 import apl_rainbow_black0_cmap
-cmap = apl_rainbow_black0_cmap()
+cmap = stl.apl_rainbow_black0_cmap()
 
 
 plot_LineWidth = 3
@@ -143,13 +140,13 @@ data_dict_dist_high = loadDictFromFile(inputFilePath=r'C:\Data\ACESII\L3\DistFun
 # --- --- --- --- --- ---
 ##########################
 # --- time ---
-from ACESII_code.Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
+from Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
 STEBtimes = [dispersionAttributes.keyDispersionDeltaT[idx-1] for idx in wSTEBtoPlot]
 LaunchDateTime = pycdf.lib.datetime_to_tt2000(dt.datetime(2022,11,20,17,20,00,000000))
 STEBtimes_rkt = [[(pycdf.lib.datetime_to_tt2000(tme[0]) - LaunchDateTime)/1E9, (pycdf.lib.datetime_to_tt2000(tme[1]) - LaunchDateTime)/1E9] for tme in STEBtimes]
 
-rktTime_deltaB = EpochTo_T0_Rocket(InputEpoch=data_dict_deltaB['Epoch'][0], T0=LaunchDateTime)
-rktTime_counts = EpochTo_T0_Rocket(InputEpoch=data_dict_counts_high['Epoch'][0], T0=LaunchDateTime)
+rktTime_deltaB = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_deltaB['Epoch'][0], T0=LaunchDateTime)
+rktTime_counts = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_counts_high['Epoch'][0], T0=LaunchDateTime)
 
 # --- particles ---
 Pitch = data_dict_counts_high['Pitch_Angle'][0]
@@ -281,7 +278,7 @@ for idx, ptchVal in enumerate(wPitchs_to_plot):
         wDis = wSTEBtoPlot[t]
         wDispersion_key = f's{wDis}'
         lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][0]).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][1]).argmin()
-        Epoch_dis = deepcopy(dateTimetoTT2000(data_dict_eepaa_high['Epoch'][0][lowCut:highCut + 1], inverse=False))
+        Epoch_dis = deepcopy(stl.dateTimetoTT2000(data_dict_eepaa_high['Epoch'][0][lowCut:highCut + 1], inverse=False))
         eepaa_dis_pre = deepcopy(diffNFlux[lowCut:highCut + 1])
         eepaa_dis = deepcopy(np.array(dispersionAttributes.isolationFunctions[wDispersion_key](eepaa_dis_pre, Energy, Epoch_dis)))  # pply the isolation functions found in dispersionAttributes.py
         # prepare the data by removing fillvals and applying the mask
@@ -350,7 +347,7 @@ for t, tme in enumerate(STEBtimes[1:]):
     wDis = wSTEBtoPlot[t+1]
     wDispersion_key = f's{wDis}'
     lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][0]).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][1]).argmin()
-    Epoch_dis = deepcopy(dateTimetoTT2000(data_dict_eepaa_high['Epoch'][0][lowCut:highCut + 1], inverse=False))
+    Epoch_dis = deepcopy(stl.dateTimetoTT2000(data_dict_eepaa_high['Epoch'][0][lowCut:highCut + 1], inverse=False))
     eepaa_dis_pre = deepcopy(diffNFlux[lowCut:highCut + 1])
     eepaa_dis = deepcopy(np.array(dispersionAttributes.isolationFunctions[wDispersion_key](eepaa_dis_pre, Energy, Epoch_dis)))  # pply the isolation functions found in dispersionAttributes.py
 

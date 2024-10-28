@@ -34,9 +34,9 @@ dpi = 200
 cbarMin, cbarMax = 1E6, 1E9
 cbar_Tick_LabelSize = 14
 my_cmap = stl.apl_rainbow_black0_cmap()
-my_cmap.set_bad(color=(0,0,0))
 specCbarMin, specCbarMax = 1E-2, 1E1
 spectrogramCmap = stl.blue_green_white_yellow_red_cmap()
+my_cmap.set_bad(color=(0,0,0))
 
 # Plot toggles
 Figure_width = 7.5 # in inches
@@ -53,7 +53,7 @@ Legend_FontSize = 13
 
 # Physics Toggles
 targetILat = [71.91, 72.03]
-targetEpoch = [dt.datetime(2022,11,20,17,24,51,700000), dt.datetime(2022,11,20,17,25,9,000000)]
+targetEpoch = [dt.datetime(2022, 11, 20, 17, 24, 52, 0000000), dt.datetime(2022, 11, 20, 17, 25, 9, 500000)]
 
 EField_scale = 1000 # what to scale the deltaE field by
 EEPAAslice_wPitch = 2 # 10deg pitch
@@ -110,6 +110,9 @@ fig.set_figheight(Figure_height)
 
 magDicts = [data_dict_mag_high, data_dict_mag_low]
 eepaaDicts = [data_dict_eepaa_high, data_dict_eepaa_low]
+
+print(data_dict_mag_high['ILat'][0][0],data_dict_mag_high['ILat'][0][-1])
+print(data_dict_mag_low['ILat'][0][0],data_dict_mag_low['ILat'][0][-1])
 
 for wRocket in [4, 5]:
 
@@ -202,11 +205,11 @@ for wRocket in [4, 5]:
 
     # --- Be Spectrogram ---
     cmap = ax[3+idxAdjust].pcolormesh(specTimes, f, Sxx, shading='nearest', vmin=specCbarMin, vmax=specCbarMax, cmap=spectrogramCmap, norm='log')
-    ax[3+idxAdjust].set_ylabel('$\delta B_{e}$\n[Hz]', fontsize=Label_FontSize, labelpad=Label_Padding)
+    ax[3+idxAdjust].set_ylabel('$\delta B_{e}$\n[Hz]', fontsize=Label_FontSize, labelpad=Label_Padding, color='blue')
     ax[3+idxAdjust].set_xlabel('time [UTC]\nAlt [km]\nILat [deg]', fontsize=Tick_FontSize, weight='bold')
     ax[3+idxAdjust].xaxis.set_label_coords(-0.09, -0.09)
     ax[3+idxAdjust].set_ylim(Spectrogram_Freqlimits[0], Spectrogram_Freqlimits[1])
-
+    ax[3 + idxAdjust].tick_params(axis='y', colors='blue')
 
     if wRocket ==4 :
         # spectrogram colorbar HF
@@ -256,7 +259,7 @@ fig.subplots_adjust(left=0.13, bottom=0.06, right=0.89, top=0.985, wspace=None,h
 fig.align_ylabels(ax[:])
 
 # output the figure
-plt.savefig(rf'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\PLOTS\Plot3\Plot3_dispersiveRegion.png', dpi=dpi)
+plt.savefig(rf'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\PLOTS\Plot3\Plot3_base.png', dpi=dpi)
 Done(start_time)
 
 

@@ -12,7 +12,7 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
-from ACESII_code.myImports import *
+from myImports import *
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -30,16 +30,15 @@ refAlt = 150 # represents 150 km reference altitude that everything is tied to
 # ---------------------------
 generateILatILong = True # Calculates and Stores the ILat and ILong variables as a .cdf File
 plotILatILong = False
-footPrintDiffernece = True # reads in BOTH attitude files and updates both files with a "ILat/ILong difference" variable
+footPrintDiffernece = False # reads in BOTH attitude files and updates both files with a "ILat/ILong difference" variable
 updateCDFfile = True # takes a CDF file, interpolates ILat/ILong and then stores it
 # ---------------------------
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from myspaceToolsLib.models import CHAOS
-from myspaceToolsLib.conversions import lat_to_meter, long_to_meter, meter_to_long
-from myspaceToolsLib.interpolate import InterpolateDataDict
+import spaceToolsLib as stl
+
 
 def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
@@ -74,15 +73,15 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
         # --- CREATE ILAT ILONG ---
         # --- --- --- --- --- --- -
         prgMsg('Calculating ILatILong')
-        B_CHAOS = CHAOS(lat=Lat,
+        B_CHAOS = stl.CHAOS(lat=Lat,
                         long=Long,
                         alt=Alt,
                         times=EpochAttitude)
 
         b = B_CHAOS/np.linalg.norm(B_CHAOS) # normalize the magnetic Field
 
-        Latkm = lat_to_meter*Lat
-        Longkm = np.array([long_to_meter(Long[i],Lat[i]) for i in range(len(EpochAttitude))])
+        Latkm = stl.lat_to_meter*Lat
+        Longkm = np.array([stl.long_to_meter(Long[i],Lat[i]) for i in range(len(EpochAttitude))])
         ILat = np.zeros(shape=len(EpochAttitude))
         ILong = np.zeros(shape=len(EpochAttitude))
 
@@ -91,8 +90,8 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
             El = Longkm[i] + b[i][0]*t
             Nl = Latkm[i] + b[i][1]*t
 
-            ILat[i] = Nl/lat_to_meter
-            ILong[i] = meter_to_long(long_km=El,lat_km=Nl)
+            ILat[i] = Nl/stl.lat_to_meter
+            ILong[i] = stl.meter_to_long(long_km=El,lat_km=Nl)
         Done(start_time)
         if plotILatILong:
             fig, ax = plt.subplots()
@@ -105,7 +104,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
         # --- --- --- --- --- --- ----
         prgMsg('Updating Attitude Files')
         attitudeKeys = [key for key in data_dict_attitude.keys()]
-        if 'ILat' and 'ILong' in attitudeKeys:
+        if 'ILat' and 'ILong' and 'ILat_km' and "ILong_km" in attitudeKeys:
             data_dict_attitude['ILat'][0] = ILat
             data_dict_attitude['ILong'][0] = ILong
         else:
@@ -127,6 +126,26 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
                                                                        'VALIDMIN': ILong.min(), 'VALIDMAX': ILong.max(),
                                                                        'VAR_TYPE': 'support_data',
                                                                        'SCALETYP': 'linear'}]}}
+            Ilat_km = np.array([stl.lat_to_meter * data_dict_attitude['ILat'][0][i] for i in range(len(data_dict_attitude['Epoch'][0]))])
+
+            data_dict_attitude = {**data_dict_attitude, **{'ILat_km': [Ilat_km, {'LABLAXIS': f'ILat_{int(refAlt)}km',
+                                                                       'DEPEND_0': 'Epoch',
+                                                                       'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                       'FORMAT': 'E12.2',
+                                                                       'UNITS': 'km',
+                                                                       'VALIDMIN': Ilat_km.min(), 'VALIDMAX': Ilat_km.max(),
+                                                                       'VAR_TYPE': 'support_data',
+                                                                       'SCALETYP': 'linear'}]}}
+            Ilong_km = np.array([stl.long_to_meter(data_dict_attitude['ILong'][0][i], data_dict_attitude['ILat'][0][i]) for i in range(len(data_dict_attitude['Epoch'][0]))])
+            data_dict_attitude = {**data_dict_attitude, **{'ILong_km': [Ilong_km, {'LABLAXIS': f'ILong_{int(refAlt)}km',
+                                                                                 'DEPEND_0': 'Epoch',
+                                                                                 'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                                 'FORMAT': 'E12.2',
+                                                                                 'UNITS': 'km',
+                                                                                 'VALIDMIN': Ilong_km.min(),
+                                                                                 'VALIDMAX': Ilong_km.max(),
+                                                                                 'VAR_TYPE': 'support_data',
+                                                                                 'SCALETYP': 'linear'}]}}
 
         outputCDFdata(outputPath=inputFilesAttitude, data_dict=data_dict_attitude, instrNam='attitude')
         Done(start_time)
@@ -149,27 +168,30 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
         footPrint_timeLong_Difference = np.zeros(shape=len(data_dict_attitude_high['Epoch'][0]))
 
         # --- Spatial Difference ---
-        lat_km = [[lat_to_meter*data_dict_attitude_high['ILat'][0][i] for i in range(len(data_dict_attitude_high['Epoch'][0]))],
-                   [lat_to_meter*data_dict_attitude_low['ILat'][0][i] for i in range(len(data_dict_attitude_low['Epoch'][0]))]]
+        ilat_km = [np.array([stl.lat_to_meter*data_dict_attitude_high['ILat'][0][i] for i in range(len(data_dict_attitude_high['Epoch'][0]))]),
+                   np.array([stl.lat_to_meter*data_dict_attitude_low['ILat'][0][i] for i in range(len(data_dict_attitude_low['Epoch'][0]))])
+                   ]
 
-        long_km = [[long_to_meter(data_dict_attitude_high['ILong'][0][i], data_dict_attitude_high['ILat'][0][i]) for i in range(len(data_dict_attitude_high['Epoch'][0]))],
-                  [long_to_meter(data_dict_attitude_low['ILong'][0][i], data_dict_attitude_low['ILat'][0][i]) for i in range(len(data_dict_attitude_low['Epoch'][0]))]]
+        ilong_km = [
+            np.array([stl.long_to_meter(data_dict_attitude_high['ILong'][0][i], data_dict_attitude_high['ILat'][0][i]) for i in range(len(data_dict_attitude_high['Epoch'][0]))]),
+            np.array([stl.long_to_meter(data_dict_attitude_low['ILong'][0][i], data_dict_attitude_low['ILat'][0][i]) for i in range(len(data_dict_attitude_low['Epoch'][0]))])
+        ]
 
         for i in range(len(data_dict_attitude_high['Epoch'][0])):
 
             if i < startIndex:
-                latDif = lat_km[0][i] - lat_km[1][0]
-                longDif = long_km[0][i] - long_km[1][0]
+                latDif = ilat_km[0][i] - ilat_km[1][0]
+                longDif = ilong_km[0][i] - ilong_km[1][0]
                 totalDif = np.sqrt(latDif**2 + longDif**2)
 
             elif startIndex <= i <= startIndex + len(data_dict_attitude_low['Epoch'][0])-1:
-                latDif = lat_km[0][i] - lat_km[1][i-startIndex]
-                longDif = long_km[0][i] - long_km[1][i-startIndex]
+                latDif = ilat_km[0][i] - ilat_km[1][i-startIndex]
+                longDif = ilong_km[0][i] - ilong_km[1][i-startIndex]
                 totalDif = np.sqrt(latDif**2 + longDif**2)
 
             elif i > startIndex + len(data_dict_attitude_low['Epoch'][0]):
-                latDif = lat_km[0][i] - lat_km[1][-1]
-                longDif = long_km[0][i] - long_km[1][-1]
+                latDif = ilat_km[0][i] - ilat_km[1][-1]
+                longDif = ilong_km[0][i] - ilong_km[1][-1]
                 totalDif = np.sqrt(latDif**2 + longDif**2)
 
             footPrint_Latkm_Difference[i] = latDif
@@ -190,6 +212,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
             LF_sawSameILong_index = np.abs(data_dict_attitude_low['ILong'][0] - data_dict_attitude_high['ILong'][0][i]).argmin()
             timeBetweenSeeingSameILong = (HF_ILong_time - pycdf.lib.datetime_to_tt2000(data_dict_attitude_low['Epoch'][0][LF_sawSameILong_index])) / 1E9
             footPrint_timeLong_Difference[i] = timeBetweenSeeingSameILong
+
 
         data_dict_attitude_high = {**data_dict_attitude_high, **{'footPrint_ILat_km_Diff': [footPrint_Latkm_Difference, {'LABLAXIS': f'footPrint_ILat_km_Diff',
                                                     'DEPEND_0': 'Epoch',

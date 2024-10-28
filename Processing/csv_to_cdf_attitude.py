@@ -4,7 +4,7 @@
 
 
 # --- --- --- --- ---
-from ACESII_code.myImports import *
+from myImports import *
 
 start_time = time.time()
 # --- --- --- --- ---

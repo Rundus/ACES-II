@@ -19,6 +19,7 @@ start_time = time.time()
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
+import matplotlib.patches as patches
 print(color.UNDERLINE + f'Plot2_Conjugacy' + color.END)
 
 # --- --- --- ---
@@ -252,6 +253,30 @@ cax = fig.add_axes([0.91, 0.367, 0.03, 0.184])
 cbar = plt.colorbar(cmap, cax=cax)
 cbar.ax.minorticks_on()
 cbar.ax.tick_params(labelsize=cbar_TickLabelSize + 5)
+
+
+
+
+# --- Draw the Alignment Boxes ---
+
+# HIGH FLYER
+ILat_extent_HF = [71.88058376450155, 72.02140329807906]
+
+# red rec on HF spectrogram
+ax[0].vlines(x=ILat_extent_HF,ymin=8,ymax=1000, linewidth=4,linestyle='--',color='red')
+
+# Black rec on DeltaB
+rect = patches.Rectangle((ILat_extent_HF[0], -1*9.25), ILat_extent_HF[1] - ILat_extent_HF[0], 2*9.25, linewidth=4, edgecolor='black', facecolor='none',linestyle='--')
+ax[1].add_patch(rect)
+
+# LOW FLYER
+ILat_extent_LF = [71.50725526574467, 71.75561945332441]
+
+# Black rec on DeltaB
+rect = patches.Rectangle((ILat_extent_LF[0], -1*9.25), ILat_extent_LF[1] - ILat_extent_LF[0], 2*9.25, linewidth=4, edgecolor='black', facecolor='none',linestyle='--')
+ax[5].add_patch(rect)
+rect = patches.Rectangle((ILat_extent_LF[0], -1*9.25), ILat_extent_LF[1] - ILat_extent_LF[0], 2*9.5, linewidth=4, edgecolor='black', facecolor='none',linestyle='--')
+ax[6].add_patch(rect)
 
 fig.subplots_adjust(left=0.12, bottom=0.06, right=0.9, top=0.98,hspace=0)  # remove the space between plots
 plt.savefig(r'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\PLOTS\Plot2\Plot2_ConjugacyStack.png', dpi=dpi)

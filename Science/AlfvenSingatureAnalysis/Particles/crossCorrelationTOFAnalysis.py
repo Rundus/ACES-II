@@ -11,8 +11,7 @@ __version__ = "1.0.0"
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-from ACESII_code.myImports import *
+from myImports import *
 start_time = time.time()
 # --- --- --- --- ---
 justPrintFileNames = False
@@ -27,12 +26,12 @@ outputPath_modifier = 'science\AlfvenSignatureAnalysis' # e.g. 'L2' or 'Langmuir
 # --- --- --- ---
 # plot all of the dispersion functions over a range of pitch angles (user input)
 # wDispersions = [2,3,4] # [] -> plot all dispersion traces, [#,#,#,...] plot specific ones. USE THE DISPERSION NUMBER NOT PYTHON -1 INDEX
-wDispersions = [5] # [] -> plot all dispersion traces, [#,#,#,...] plot specific ones. USE THE DISPERSION NUMBER NOT PYTHON -1 INDEX
+wDispersions = [2,3,4,5] # [] -> plot all dispersion traces, [#,#,#,...] plot specific ones. USE THE DISPERSION NUMBER NOT PYTHON -1 INDEX
 wPitch = 2 # plots specific pitch angles by their index
 # ---------------------------
 justPlotKeyDispersions = False #IF ==TRUE no cross-correlation will occur
-from my_matplotlib_Assets.colorbars.apl_rainbow_black0 import apl_rainbow_black0_cmap
-mycmap = apl_rainbow_black0_cmap()
+import spaceToolsLib as stl
+mycmap = stl.apl_rainbow_black0_cmap()
 cbar_low, cbar_high = 0, 30
 # ---------------------------
 applyMaskVal = True
@@ -61,8 +60,7 @@ LambdaPerpFit = False
 # --- --- --- ---
 from scipy.signal import correlate, correlation_lags
 from itertools import combinations
-from ACESII_code.Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
-from myspaceToolsLib.physicsVariables import Re
+from Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
 
 
 def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileNames,wDis):
@@ -87,7 +85,7 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
     Energy = data_dict['Energy'][0]
     Pitch = data_dict['Pitch_Angle'][0]
     lowCut, highCut = np.abs(data_dict['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis-1][0]).argmin(), np.abs(data_dict['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis-1][1]).argmin()
-    Epoch_dis = dateTimetoTT2000(data_dict['Epoch'][0][lowCut:highCut+1],inverse=False)
+    Epoch_dis = stl.dateTimetoTT2000(data_dict['Epoch'][0][lowCut:highCut+1],inverse=False)
     Epoch_dis = (np.array(Epoch_dis) - Epoch_dis[0]) / 1E9 # converted data to TIME SINCE START OF DISPERSION (needed for proper plot fitting)
 
     # calculate the center point (in time) of the dispersion
@@ -413,12 +411,6 @@ else:
                 a2_param = params[2]
 
                 print(data[0],a2_param,inverseFunc(a2_param,*paramsFit))
-
-
-
-
-
-
 
     if LambdaPerpPlot:
 

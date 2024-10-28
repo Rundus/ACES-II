@@ -9,10 +9,8 @@ __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
-import matplotlib.pyplot as plt
-import numpy as np
-from my_matplotlib_Assets.colorbars.apl_rainbow_black0 import apl_rainbow_black0_cmap
-from ACESII_code.myImports import *
+import spaceToolsLib as stl
+from myImports import *
 start_time = time.time()
 
 # --- --- --- --- ---
@@ -27,34 +25,36 @@ outputPath_modifier = 'science\AlfvenSignatureAnalysis' # e.g. 'L2' or 'Langmuir
 # --- Plot toggles - General ---
 ################################
 figure_width = 12 # in inches
-figure_height = 8.5 # in inches
+figure_height = 3*4.25 # in inches
 Title_FontSize = 20
-Label_FontSize = 15
+Label_FontSize = 20
 Label_Padding = 8
-Line_LineWidth = 2.5
+
 Text_Fontsize = 25
-Tick_FontSize = 25
+
+Tick_FontSize = 15
 Tick_FontSize_minor = 20
-Tick_Length = 10
+Tick_Length = 6
 Tick_Width = 2
-Tick_Length_minor = 5
-Tick_Width_minor = 1
+
 Plot_LineWidth = 0.5
 Plot_MarkerSize = 14
 Legend_fontSize = 15
 dpi = 200
 
 
+cbar_low, cbar_high = 0, 40
+cbar_fontSize = 15
+
 # --- --- --- ---
 # --- TOGGLES ---
 # --- --- --- ---
 # plot all of the dispersion functions over a range of pitch angles (user input)
-wDispersions = [2,3,4,5] # [] -> plot all dispersion traces, [#,#,#,...] plot specific ones. USE THE DISPERSION NUMBER NOT PYTHON -1 INDEX
+wDispersions = [2, 3, 4, 5] # [] -> plot all dispersion traces, [#,#,#,...] plot specific ones. USE THE DISPERSION NUMBER NOT PYTHON -1 INDEX
 wPitch = 2 # plots specific pitch angles by their index
 # ---------------------------
 justPlotKeyDispersions = False #IF ==TRUE no cross-correlation will occur
 applyMaskVal = True
-cbar_low, cbar_high = 0, 30
 maskVal = 5 # apply a single mask to the dispersion feature
 # ---------------------------
 isolateAlfvenSignature = True # removes unwanted data from the alfven signature
@@ -76,10 +76,9 @@ LambdaPerpFit = False
 
 from scipy.signal import correlate, correlation_lags
 from itertools import combinations
-from ACESII_code.Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
-from myspaceToolsLib.physicsVariables import Re
+from Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
 
-mycmap = apl_rainbow_black0_cmap()
+mycmap = stl.apl_rainbow_black0_cmap()
 
 
 
@@ -117,7 +116,7 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
     Energy = data_dict['Energy'][0]
     Pitch = data_dict['Pitch_Angle'][0]
     lowCut, highCut = np.abs(data_dict['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis-1][0]).argmin(), np.abs(data_dict['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis-1][1]).argmin()
-    Epoch_dis = dateTimetoTT2000(data_dict['Epoch'][0][lowCut:highCut+1],inverse=False)
+    Epoch_dis = stl.dateTimetoTT2000(data_dict['Epoch'][0][lowCut:highCut+1],inverse=False)
     Epoch_dis = (np.array(Epoch_dis) - Epoch_dis[0]) / 1E9 # converted data to TIME SINCE START OF DISPERSION (needed for proper plot fitting)
 
     # calculate the center point (in time) of the dispersion
@@ -137,9 +136,6 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
         eepaa_dis = np.array(dispersionAttributes.isolationFunctions[wDispersion_key](eepaa_dis, Energy, Epoch_dis)) # pply the isolation functions found in dispersionAttributes.py
 
 
-
-
-
     # --- Reduce data to Pitch Slice of Interest ---
     # gets one slice in pitch of the data and flips
     # data from dimensions 0 == Time to --> dimension 0 == Energy so that the first index gets energy for all time
@@ -156,7 +152,7 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
         fig.set_figwidth(figure_width)
         fig.set_figheight(figure_height)
         fig.suptitle(f'STEB {wDis}\n Pitch = {Pitch[wPitch]}deg\n {data_dict["Epoch"][0][lowCut].strftime("%H:%M:%S.%f")} to {data_dict["Epoch"][0][highCut].strftime("%H:%M:%S.%f")}')
-        cmap = ax[0].pcolormesh(Epoch_dis, Energy, np.array(eepaa_dis[:, wPitch, :]).T, cmap=mycmap, vmin=cbar_low, vmax=cbar_high)
+        cmap = ax[0].pcolormesh(Epoch_dis, Energy, eepaa_dis_onePitch, cmap=mycmap, vmin=cbar_low, vmax=cbar_high)
         ax[0].set_yscale('log')
         ax[0].set_ylim(Energy[-1], Energy[np.abs(Energy - dispersionAttributes.keyDispersionEnergyLimits[wDis - 1][1]).argmin() - 1])
         ax[1].pcolormesh(Epoch_dis, Energy, np.array(data_dict['eepaa'][0][lowCut:highCut + 1, wPitch, :]).T,cmap=mycmap, vmin=cbar_low, vmax=cbar_high)
@@ -177,7 +173,6 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
                     engyIndx = engy
                     tmeIndex = tme
                     # print(wDis, Energy[engyIndx], Epoch_dis[tmeIndex], peakVal)
-
 
         # for each energy in the eepaa data, check if there's at least 1 count in that energy "row". If so, consider this energy
         validEngyIndicies = []
@@ -275,34 +270,12 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
         fitData_poly = fitFunc_polynomial(deltaVs, *paramsPoly)
         r_corr_poly = np.corrcoef([deltaTs,fitData_poly])[0][1]
 
-
-        # calculate chisquare
-        # varianceT = np.var(deltaTs)
-        # varianceV = np.var(deltaVs)
-        # variance = varianceT + varianceV
-        # ExpectedLin = fitFunc_linear(deltaVs,*paramsLin)
-        # ExpectedPoly = fitFunc_polynomial(deltaVs,*paramsPoly)
-        # print('\n')
-        # print('lin',ExpectedLin)
-        # print('poly',ExpectedPoly)
-        #
-        # ChiLin =  sum( [ (ExpectedLin[i] - deltaTs[i])**2/(0.05**2) for i in range(len(deltaVs))])
-        # ChiPoly = sum([ (ExpectedPoly[i] - deltaTs[i])**2/(0.05**2)   for i in range(len(deltaVs))])
-        #
-        # print('ChiLin', ChiLin)
-        # print('ChiPoly', ChiPoly)
-        #
-        # fig, ax = plt.subplots()
-        # ax.plot(deltaVs,deltaTs,color='blue')
-        # ax.plot(deltaVs,ExpectedPoly,color='red')
-        # plt.show()
-
         ########################################
         # --- Return results of the Analysis ---
         ########################################
         # return an array of: [STEB Number,Observation Time, Observation Altitude, Z_acc, Z_acc_error, correlationR]
         errorZ_avg = sum(errorZ) / len(errorZ)
-        return [wDis, whenSTEBoccured_time, whenSTEBoccured_Alt, paramsLin, errorZ_avg, r_corr_linear, paramsPoly, deltaVs, deltaTs,r_corr_poly]
+        return [wDis, whenSTEBoccured_time, whenSTEBoccured_Alt, paramsLin, errorZ_avg, r_corr_linear, paramsPoly, deltaVs, deltaTs, r_corr_poly, eepaa_dis_onePitch]
 
 
 # --- --- --- ---
@@ -314,6 +287,14 @@ for wDis in tqdm(wDispersions):
     results = AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileNames, wDis)
     STEBfitResults.append(results)
 
+for thing in STEBfitResults:
+    print('\n')
+    print(f'Dispersion No: {thing[0]}')
+    print(f'Params (Linear): {thing[3]}')
+    print(f'R-corr (Linear): {thing[5]}')
+    print(f'Params (Poly): {thing[6]}')
+    print(f'R-corr (Poly): {thing[9]}')
+    print('\n')
 
 
 
@@ -321,12 +302,57 @@ if not justPrintFileNames:
     ##################
     # --- PLOTTING ---
     ##################
-    fig, ax = plt.subplots(nrows=2,ncols=2)
+    fig, ax = plt.subplots(nrows=4,ncols=2,height_ratios=[1,0.1,1,1])
     fig.set_size_inches(figure_width, figure_height)
     counter = 0
     Pitch = [-10 + i*10 for i in range(21)]
 
-    for rowIdx in range(2):
+    # === Plot the example data for S2 and S5 ===
+    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wRocket - 4]}{modifier}\*eepaa_fullcal*')
+    data_dict = loadDictFromFile(inputFiles[0])
+    Energy = data_dict['Energy'][0]
+    Pitch = data_dict['Pitch_Angle'][0]
+
+    wDisKeys = ['s2', 's5']
+    wDis_indicies = [2, 5]
+
+    for k, wDispersion_key in enumerate(wDisKeys):
+
+        lowCut, highCut = np.abs(data_dict['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis_indicies[k] - 1][0]).argmin(), np.abs(data_dict['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis_indicies[k] - 1][1]).argmin()
+        Epoch_dis = deepcopy(stl.dateTimetoTT2000(data_dict['Epoch'][0][lowCut:highCut + 1], inverse=False))
+        Epoch_dis = (np.array(Epoch_dis) - Epoch_dis[0]) / 1E9  # converted data to TIME SINCE START OF DISPERSION (needed for proper plot fitting)
+
+        # eepaa_dis = deepcopy(data_dict['eepaa'][0][lowCut:highCut + 1])
+        if wDis_indicies[k]==2:
+            eepaa_dis = STEBfitResults[0][-1]
+        else:
+            eepaa_dis = STEBfitResults[-1][-1]
+
+        # --- Plot everything ---
+        cmap = ax[0, k].pcolormesh(Epoch_dis, Energy, eepaa_dis, cmap=mycmap, vmin=cbar_low, vmax=cbar_high)
+        ax[0, k].set_yscale('log')
+        props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
+        ax[0, k].text((Epoch_dis[-1] - Epoch_dis[0])/2, 900, wDispersion_key.upper(), fontsize=Text_Fontsize, weight='bold', color='black', bbox=props, ha='center')
+        ax[0, k].set_xlabel('Seconds [s]',fontsize=Label_FontSize-8)
+        ax[0, k].tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
+        ax[0, k].tick_params(axis='y', which='minor', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length * 0.6)
+        ax[0, k].tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
+        ax[0, k].tick_params(axis='x', which='minor', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length * 0.6)
+        ax[0, k].set_ylim(30, 1000)
+
+        if k ==0:
+            ax[0, k].set_ylabel(r'$\alpha = 10^{\circ}$' + '\nEnergy [eV]',fontsize=Label_FontSize,weight='bold')
+        if k == 1:
+            ax[0, k].tick_params(axis='y', which='both',labelleft=False)
+
+
+    # turn off the intentially blank plot
+    ax[1, 0].axis('off')
+    ax[1, 1].axis('off')
+
+    # === Plot fitted TOF data ===
+
+    for rowIdx in [2,3]:
         for colIdx in range(2):
             wDis = STEBfitResults[counter][0]
             deltaVs = STEBfitResults[counter][7]
@@ -334,38 +360,59 @@ if not justPrintFileNames:
             paramsLin = STEBfitResults[counter][3]
             paramsPoly = STEBfitResults[counter][6]
             r_corr_linear = STEBfitResults[counter][5]
-            r_corr_poly = STEBfitResults[counter][-1]
-
+            r_corr_poly = STEBfitResults[counter][9]
 
             x_s = np.linspace(deltaVs.min(), deltaVs.max(), 20)
             fitData = fitFunc_linear(x_s, *paramsLin)
             fitData_poly = fitFunc_polynomial(x_s, *paramsPoly)
 
-            ax[rowIdx, colIdx].set_title(f'S{wDis}', fontsize=Title_FontSize)
+            props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
+            ax[rowIdx, colIdx].text(0.25E-4, 0.62, f'S{wDis}', fontsize=Title_FontSize, weight='bold', color='black', bbox=props, ha='center')
 
 
             # Raw Data
             ax[rowIdx, colIdx].scatter(deltaVs, deltaTs)
+            ax[rowIdx, colIdx].tick_params(axis='both', which='both', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
 
             if colIdx == 0:
-                ax[rowIdx, colIdx].set_ylabel('Delay time [s]',fontsize=Label_FontSize)
-            if rowIdx == 1:
-                ax[rowIdx, colIdx].set_xlabel('1/v [s/km]',fontsize=Label_FontSize)
+                ax[rowIdx, colIdx].set_ylabel('Delay time [s]',fontsize=Label_FontSize,weight='bold')
+
+            if colIdx == 1:
+                ax[rowIdx, colIdx].tick_params(axis='y', which='both', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length, labelleft=False)
+
+            if rowIdx == 2:
+                ax[rowIdx, colIdx].tick_params(axis='x', which='both', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length,labelbottom=False)
+
+            if rowIdx == 3:
+                ax[rowIdx, colIdx].set_xlabel('1/v [s/km]',fontsize=Label_FontSize,weight='bold')
+
             ax[rowIdx, colIdx].plot(x_s, fitData, color="red", label=f'r-corr. (first order) = {round(r_corr_linear, 3)}')
             ax[rowIdx, colIdx].plot(x_s, fitData_poly, color='black', label=f'r-corr. (second order) = {round(r_corr_poly,3)}')
-            # ax.plot(x_s, fitData_poly, color='black', label=f'a0 = {paramsPoly[0]}\n a1 = {paramsPoly[1]} \n a2 = {0}\n r_corr_poly = {r_corr_poly}')
-
-            xticks = np.linspace(0, deltaVs.max(), 6)
-            xtick_labels = [f'{x:.2e}' for x in xticks]
-            xtick_labels[0] = '0'
-            ax[rowIdx, colIdx].set_xticks(xticks, xtick_labels)
+            ax[rowIdx, colIdx].set_xlim(0, 2.8E-4)
+            ax[rowIdx, colIdx].set_ylim(-0.1, 0.71)
             ax[rowIdx, colIdx].legend(loc='lower right', fontsize=Legend_fontSize)
+            ax[rowIdx, colIdx].ticklabel_format(axis='x',style='sci',scilimits=(0,0))
             counter += 1
 
-    plt.tight_layout()
-    plt.savefig(rf'C:\Users\cfelt\OneDrive\Desktop\Papers\ACESII_Alfven_Observations\Plot9\Plot9_TOFfunc_base.png', dpi=dpi)
 
+    ##################
+    # --- Colorbar ---
+    ##################
+    cax = fig.add_axes([0.89, 0.691, 0.025, 0.284])
+    cbar = plt.colorbar(cmap, cax=cax)
+    cbar.ax.minorticks_on()
+    cbar.ax.tick_params(labelsize=Tick_FontSize, length=Tick_Length)
 
+    cbar.ax.get_yaxis().labelpad = 17
+    for l in cbar.ax.yaxis.get_ticklabels():
+        l.set_weight("bold")
+        l.set_fontsize(cbar_fontSize)
+
+    cbar.set_label('Counts',rotation=90,fontsize=cbar_fontSize+10,weight='bold')
+
+    plt.subplots_adjust(left=0.1, bottom=0.06, right=0.87, top=0.975, wspace=0.05, hspace=0.05)
+    fig.align_ylabels(ax[:])
+    plt.savefig(rf'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot7\Plot7_TOFfunc_base.png', dpi=dpi)
 
 
 
@@ -427,7 +474,7 @@ if LambdaPerpPlot:
     ax.set_xlabel('1/v [s/km]')
     ax.set_xlim(0,3E-4)
     plt.legend()
-    plt.savefig(rf'C:\Users\cfelt\OneDrive\Desktop\Papers\ACESII_Alfven_Observations\TOFanalysis\STEB_LambdaPerp.png')
+    plt.savefig(rf'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot7\STEB_LambdaPerp.png')
 
 
 
