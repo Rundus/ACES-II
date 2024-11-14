@@ -13,7 +13,7 @@ __version__ = "1.0.0"
 
 import numpy as np
 
-from ACESII_code.myImports import *
+from myImports import *
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -65,7 +65,6 @@ solidAngleHfactor =[
 # --- IMPORTS ---
 # --- --- --- ---
 from numpy import trapz
-from ACESII_code.class_var_func import erg_to_eV
 
 
 def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflyer, wfile):

@@ -78,7 +78,7 @@ class dispersionAttributes(object):
         [dt.datetime(2022, 11, 20, 17, 24, 56, 000000), dt.datetime(2022, 11, 20, 17, 24, 57, 600000)],# s1
         [dt.datetime(2022, 11, 20, 17, 24, 57, 630000), dt.datetime(2022, 11, 20, 17, 24, 59, 186000)],# s2
         [dt.datetime(2022, 11, 20, 17, 24, 58, 800000), dt.datetime(2022, 11, 20, 17, 25, 00, 50000)],# s3
-        [dt.datetime(2022, 11, 20, 17, 24, 59, 965000), dt.datetime(2022, 11, 20, 17, 25, 00, 758000)],# s4  right before Inverted V
+        [dt.datetime(2022, 11, 20, 17, 24, 59, 965000), dt.datetime(2022, 11, 20, 17, 25, 00, 600000)],# s4  right before Inverted V
         [dt.datetime(2022, 11, 20, 17, 25, 00, 501000), dt.datetime(2022, 11, 20, 17, 25, 1, 350000)], # s5 inside inverted V's left edge
         [dt.datetime(2022, 11, 20, 17, 25, 0, 850000),  dt.datetime(2022, 11, 20, 17, 25, 2, 0000)], # s6 under V, it's faint
         [dt.datetime(2022, 11, 20, 17, 25, 3, 800000), dt.datetime(2022, 11, 20, 17, 25, 5, 200000)], # s7 in choatic region
@@ -221,12 +221,17 @@ class dispersionAttributes(object):
         EnergyStartPoint, TimeStart, TimeEnd = 80, 1.1, 1.6
         newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
 
-
-        # # --- DIAGONAL REMOVE ---
-        # remove upper Right stuff (COARSE)
-        upper = True
-        EnergyStartPoint, TimeStart, TimeEnd = 70, 0.9, 1.6
-        newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
+        #
+        # # # --- DIAGONAL REMOVE ---
+        # # remove Right side of STEB stuff (COARSE)
+        # upper = True
+        # EnergyStartPoint, TimeStart, TimeEnd = 70, 0.9, 1.6
+        # newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
+        #
+        # --- BOX REMOVE ---
+        # remove lower left
+        EnergyMin, EnergyMax, TimeMin, TimeMax = 300, 10000, -0.1, 0.6
+        newData = boxRemove(newData, EnergyMin, EnergyMax, TimeMin, TimeMax, Energy, Time)
 
         return newData
 
@@ -266,7 +271,7 @@ class dispersionAttributes(object):
         # --- DIAGONAL REMOVE ---
         # remove bottom left stuff (COARSE)
         upper = False
-        EnergyStartPoint, TimeStart, TimeEnd = 150, -0.1, 0.47
+        EnergyStartPoint, TimeStart, TimeEnd = 100, -0.1, 0.2
         newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
 
         # --- DIAGONAL REMOVE ---
@@ -276,16 +281,15 @@ class dispersionAttributes(object):
         newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
 
 
-        # # --- DIAGONAL REMOVE ---
-        # # remove bottom left stuff (COARSE)
-        # upper = True
-        # EnergyStartPoint, TimeStart, TimeEnd = 116, 0.45, 1
-        # newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
-
         # --- DIAGONAL REMOVE ---
         # remove bottom left stuff (COARSE)
+        upper = True
+        EnergyStartPoint, TimeStart, TimeEnd = 150, 0.45, 1
+        newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
+
+        # # --- DIAGONAL REMOVE ---
         # upper = False
-        # EnergyStartPoint, TimeStart, TimeEnd = 55, 0.5, 1
+        # EnergyStartPoint, TimeStart, TimeEnd = 500, 0.5, 1
         # newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
 
 
@@ -299,13 +303,18 @@ class dispersionAttributes(object):
             # --- DIAGONAL REMOVE ---
             # remove lower left (COARSE)
             upper = False
-            EnergyStartPoint, TimeStart, TimeEnd = 210, -0.1, 0.25
+            EnergyStartPoint, TimeStart, TimeEnd = 245, -0.1, 0.18
             newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
 
 
             # --- DIAGONAL REMOVE ---
             upper = True
-            EnergyStartPoint, TimeStart, TimeEnd = 250, 0.4, 1.5
+            EnergyStartPoint, TimeStart, TimeEnd = 210, 0.4, 1.5
+            newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
+
+            # --- DIAGONAL REMOVE ---
+            upper = True
+            EnergyStartPoint, TimeStart, TimeEnd = 800, 0.2, 0.5
             newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
 
         return newData

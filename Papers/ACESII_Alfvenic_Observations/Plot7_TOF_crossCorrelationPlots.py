@@ -9,6 +9,7 @@ __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
+import numpy as np
 import spaceToolsLib as stl
 from myImports import *
 start_time = time.time()
@@ -25,7 +26,7 @@ outputPath_modifier = 'science\AlfvenSignatureAnalysis' # e.g. 'L2' or 'Langmuir
 # --- Plot toggles - General ---
 ################################
 figure_width = 12 # in inches
-figure_height = 3*4.25 # in inches
+figure_height = 15 # in inches
 Title_FontSize = 20
 Label_FontSize = 20
 Label_Padding = 8
@@ -41,21 +42,22 @@ Plot_LineWidth = 0.5
 Plot_MarkerSize = 14
 Legend_fontSize = 15
 dpi = 200
+mycmap = stl.apl_rainbow_black0_cmap()
+mycmap.set_bad(color=(0, 0, 0))
 
-
-cbar_low, cbar_high = 0, 40
-cbar_fontSize = 15
+cbar_low, cbar_high = 0, 45
+cbar_fontSize = 20
 
 # --- --- --- ---
 # --- TOGGLES ---
 # --- --- --- ---
 # plot all of the dispersion functions over a range of pitch angles (user input)
-wDispersions = [2, 3, 4, 5] # [] -> plot all dispersion traces, [#,#,#,...] plot specific ones. USE THE DISPERSION NUMBER NOT PYTHON -1 INDEX
+wDispersions = [2,3,4,5] # [] -> plot all dispersion traces, [#,#,#,...] plot specific ones. USE THE DISPERSION NUMBER NOT PYTHON -1 INDEX
 wPitch = 2 # plots specific pitch angles by their index
 # ---------------------------
 justPlotKeyDispersions = False #IF ==TRUE no cross-correlation will occur
 applyMaskVal = True
-maskVal = 5 # apply a single mask to the dispersion feature
+maskVal = 3 # apply a single mask to the dispersion feature
 # ---------------------------
 isolateAlfvenSignature = True # removes unwanted data from the alfven signature
 # ---------------------------
@@ -67,8 +69,7 @@ showErrorBars = False
 weightLinearFitByCounts = False
 outputCorrelationPlot = True
 # ---------------------------
-LambdaPerpPlot = False
-LambdaPerpFit = False
+generateLatexTable = True
 
 # --- --- --- ---
 # --- IMPORTS ---
@@ -77,8 +78,8 @@ LambdaPerpFit = False
 from scipy.signal import correlate, correlation_lags
 from itertools import combinations
 from Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
+import matplotlib.gridspec as gridspec
 
-mycmap = stl.apl_rainbow_black0_cmap()
 
 
 
@@ -259,6 +260,8 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
         p0 = [-9.113E-1, 7.350E3, -1.108E7]
         paramsPoly, covPoly = curve_fit(fitFunc_polynomial, deltaVs, deltaTs, p0=p0, maxfev=int(1E6))
         paramsLin, covLin = curve_fit(fitFunc_linear, deltaVs, deltaTs)
+        # print(paramsLin)
+        # print(paramsPoly)
 
         # --- CORRELATION ---
         # # linear
@@ -287,25 +290,21 @@ for wDis in tqdm(wDispersions):
     results = AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileNames, wDis)
     STEBfitResults.append(results)
 
-for thing in STEBfitResults:
-    print('\n')
-    print(f'Dispersion No: {thing[0]}')
-    print(f'Params (Linear): {thing[3]}')
-    print(f'R-corr (Linear): {thing[5]}')
-    print(f'Params (Poly): {thing[6]}')
-    print(f'R-corr (Poly): {thing[9]}')
-    print('\n')
-
-
-
 if not justPrintFileNames:
+
     ##################
     # --- PLOTTING ---
     ##################
-    fig, ax = plt.subplots(nrows=4,ncols=2,height_ratios=[1,0.1,1,1])
+
+    fig = plt.figure()
     fig.set_size_inches(figure_width, figure_height)
+    gs0 = gridspec.GridSpec(3,1, figure=fig, height_ratios=[1, 0.05, 1])
+
+    gs00 = gridspec.GridSpecFromSubplotSpec(2,2,subplot_spec=gs0[0],hspace=0.16)
+    gsNull = gridspec.GridSpecFromSubplotSpec(1,1,subplot_spec=gs0[1],hspace=0.0)
+    gs01 = gridspec.GridSpecFromSubplotSpec(2,2,subplot_spec=gs0[2],hspace=0.05)
+
     counter = 0
-    Pitch = [-10 + i*10 for i in range(21)]
 
     # === Plot the example data for S2 and S5 ===
     inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wRocket - 4]}{modifier}\*eepaa_fullcal*')
@@ -313,8 +312,8 @@ if not justPrintFileNames:
     Energy = data_dict['Energy'][0]
     Pitch = data_dict['Pitch_Angle'][0]
 
-    wDisKeys = ['s2', 's5']
-    wDis_indicies = [2, 5]
+    wDisKeys = ['s2', 's3','s4','s5']
+    wDis_indicies = [2, 3, 4, 5]
 
     for k, wDispersion_key in enumerate(wDisKeys):
 
@@ -322,38 +321,57 @@ if not justPrintFileNames:
         Epoch_dis = deepcopy(stl.dateTimetoTT2000(data_dict['Epoch'][0][lowCut:highCut + 1], inverse=False))
         Epoch_dis = (np.array(Epoch_dis) - Epoch_dis[0]) / 1E9  # converted data to TIME SINCE START OF DISPERSION (needed for proper plot fitting)
 
-        # eepaa_dis = deepcopy(data_dict['eepaa'][0][lowCut:highCut + 1])
-        if wDis_indicies[k]==2:
-            eepaa_dis = STEBfitResults[0][-1]
-        else:
-            eepaa_dis = STEBfitResults[-1][-1]
-
         # --- Plot everything ---
-        cmap = ax[0, k].pcolormesh(Epoch_dis, Energy, eepaa_dis, cmap=mycmap, vmin=cbar_low, vmax=cbar_high)
-        ax[0, k].set_yscale('log')
-        props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
-        ax[0, k].text((Epoch_dis[-1] - Epoch_dis[0])/2, 900, wDispersion_key.upper(), fontsize=Text_Fontsize, weight='bold', color='black', bbox=props, ha='center')
-        ax[0, k].set_xlabel('Seconds [s]',fontsize=Label_FontSize-8)
-        ax[0, k].tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-        ax[0, k].tick_params(axis='y', which='minor', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length * 0.6)
-        ax[0, k].tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
-        ax[0, k].tick_params(axis='x', which='minor', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length * 0.6)
-        ax[0, k].set_ylim(30, 1000)
+        if wDis_indicies[k] == 2:
+            eepaa_dis = STEBfitResults[0][-1]
+            isoIdx_row = 0
+            isoIdx_col = 0
+            ax = fig.add_subplot(gs00[isoIdx_row,isoIdx_col])
+            ax.set_ylabel(r'$\mathbf{\alpha = 10}^{\circ}$' + '\nEnergy [eV]', fontsize=Label_FontSize, weight='bold')
+            # ax.tick_params(axis='x', which='both', labelbottom=False)
+        elif wDis_indicies[k] == 3:
+            eepaa_dis = STEBfitResults[1][-1]
+            isoIdx_row = 0
+            isoIdx_col = 1
+            ax = fig.add_subplot(gs00[isoIdx_row, isoIdx_col])
+            ax.tick_params(axis='y', which='both', labelleft=False)
+            # ax.tick_params(axis='x', which='both', labelbottom=False)
+        elif wDis_indicies[k] == 4:
+            eepaa_dis = STEBfitResults[2][-1]
+            isoIdx_row = 1
+            isoIdx_col = 0
+            ax = fig.add_subplot(gs00[isoIdx_row, isoIdx_col])
+            ax.set_ylabel(r'$\mathbf{\alpha = 10}^{\circ}$' + '\nEnergy [eV]', fontsize=Label_FontSize, weight='bold')
+            ax.set_xlabel('Seconds [s]', fontsize=Label_FontSize, weight='bold')
+        elif wDis_indicies[k] == 5:
+            eepaa_dis = STEBfitResults[-1][-1]
+            isoIdx_row = 1
+            isoIdx_col = 1
+            ax = fig.add_subplot(gs00[isoIdx_row, isoIdx_col])
+            ax.tick_params(axis='y', which='both', labelleft=False)
+            ax.set_xlabel('Seconds [s]', fontsize=Label_FontSize, weight='bold')
 
-        if k ==0:
-            ax[0, k].set_ylabel(r'$\alpha = 10^{\circ}$' + '\nEnergy [eV]',fontsize=Label_FontSize,weight='bold')
-        if k == 1:
-            ax[0, k].tick_params(axis='y', which='both',labelleft=False)
+        cmap = ax.pcolormesh(Epoch_dis, Energy, eepaa_dis, cmap=mycmap, vmin=cbar_low, vmax=cbar_high,norm=None)
+        ax.set_yscale('log')
+        props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
+        ax.text(0.91*Epoch_dis[-1], 600, wDispersion_key.upper(), fontsize=Text_Fontsize, weight='bold', color='black', bbox=props, ha='center')
+        ax.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
+        ax.tick_params(axis='y', which='minor', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length * 0.6)
+        ax.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
+        ax.tick_params(axis='x', which='minor', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length * 0.6)
+        ax.set_ylim(27, 1000)
+
 
 
     # turn off the intentially blank plot
-    ax[1, 0].axis('off')
-    ax[1, 1].axis('off')
+    # ax = fig.add_subplot(gsNull[0])
+    # ax.axis('off')
 
     # === Plot fitted TOF data ===
 
-    for rowIdx in [2,3]:
+    for rowIdx in range(2):
         for colIdx in range(2):
+            ax = fig.add_subplot(gs01[rowIdx, colIdx])
             wDis = STEBfitResults[counter][0]
             deltaVs = STEBfitResults[counter][7]
             deltaTs = STEBfitResults[counter][8]
@@ -367,38 +385,38 @@ if not justPrintFileNames:
             fitData_poly = fitFunc_polynomial(x_s, *paramsPoly)
 
             props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
-            ax[rowIdx, colIdx].text(0.25E-4, 0.62, f'S{wDis}', fontsize=Title_FontSize, weight='bold', color='black', bbox=props, ha='center')
-
+            ax.text(0.25E-4, 0.6, f'S{wDis}', fontsize=Title_FontSize, weight='bold', color='black', bbox=props, ha='center',va='center')
 
             # Raw Data
-            ax[rowIdx, colIdx].scatter(deltaVs, deltaTs)
-            ax[rowIdx, colIdx].tick_params(axis='both', which='both', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
+            ax.scatter(deltaVs, deltaTs)
+            ax.tick_params(axis='both', which='both', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
 
             if colIdx == 0:
-                ax[rowIdx, colIdx].set_ylabel('Delay time [s]',fontsize=Label_FontSize,weight='bold')
+                ax.set_ylabel('Delay time [s]',fontsize=Label_FontSize,weight='bold')
 
             if colIdx == 1:
-                ax[rowIdx, colIdx].tick_params(axis='y', which='both', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length, labelleft=False)
+                ax.tick_params(axis='y', which='both', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length, labelleft=False)
 
-            if rowIdx == 2:
-                ax[rowIdx, colIdx].tick_params(axis='x', which='both', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length,labelbottom=False)
+            if rowIdx == 0:
+                ax.tick_params(axis='x', which='both', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length,labelbottom=False)
 
-            if rowIdx == 3:
-                ax[rowIdx, colIdx].set_xlabel('1/v [s/km]',fontsize=Label_FontSize,weight='bold')
+            if rowIdx == 1:
+                ax.set_xlabel('$\mathbf{\Delta (v^{-1})}$ [s/km]',fontsize=Label_FontSize,weight='bold')
 
-            ax[rowIdx, colIdx].plot(x_s, fitData, color="red", label=f'r-corr. (first order) = {round(r_corr_linear, 3)}')
-            ax[rowIdx, colIdx].plot(x_s, fitData_poly, color='black', label=f'r-corr. (second order) = {round(r_corr_poly,3)}')
-            ax[rowIdx, colIdx].set_xlim(0, 2.8E-4)
-            ax[rowIdx, colIdx].set_ylim(-0.1, 0.71)
-            ax[rowIdx, colIdx].legend(loc='lower right', fontsize=Legend_fontSize)
-            ax[rowIdx, colIdx].ticklabel_format(axis='x',style='sci',scilimits=(0,0))
+            ax.plot(x_s, fitData, color="red", label=f'r-corr. (first order) = {round(r_corr_linear, 3)}')
+            ax.plot(x_s, fitData_poly, color='black', label=f'r-corr. (second order) = {round(r_corr_poly,3)}')
+            ax.set_xlim(0, 2.8E-4)
+            ax.set_ylim(-0.15, 0.7)
+            ax.legend(loc='lower right', fontsize=Legend_fontSize)
+            ax.ticklabel_format(axis='x',style='sci',scilimits=(0,0))
+            ax.xaxis.offsetText.set_fontsize(24)
             counter += 1
 
 
     ##################
     # --- Colorbar ---
     ##################
-    cax = fig.add_axes([0.89, 0.691, 0.025, 0.284])
+    cax = fig.add_axes([0.87, 0.555, 0.025, 0.42])
     cbar = plt.colorbar(cmap, cax=cax)
     cbar.ax.minorticks_on()
     cbar.ax.tick_params(labelsize=Tick_FontSize, length=Tick_Length)
@@ -410,71 +428,56 @@ if not justPrintFileNames:
 
     cbar.set_label('Counts',rotation=90,fontsize=cbar_fontSize+10,weight='bold')
 
-    plt.subplots_adjust(left=0.1, bottom=0.06, right=0.87, top=0.975, wspace=0.05, hspace=0.05)
-    fig.align_ylabels(ax[:])
+    plt.subplots_adjust(left=0.1, bottom=0.06, right=0.85, top=0.975, wspace=0.05, hspace=0.1)
     plt.savefig(rf'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot7\Plot7_TOFfunc_base.png', dpi=dpi)
 
 
+if generateLatexTable:
+    from decimal import Decimal
+
+    # Calculate the z_src
+    m = stl.m_e
+    q = stl.q0
+    Emin = [28.22,28.22,28.22,28.22]
+    Emax = [245.74,245.74,725.16,987.89]
+    zsrc_linear = [round(val[3][0]) for val in STEBfitResults]
+    a0 = [val[6][0] for val in STEBfitResults]
+    a1 = [val[6][1]for val in STEBfitResults]
+    a2 = [val[6][2]for val in STEBfitResults]
+    r_corr_linear = [val[5] for val in STEBfitResults]
+    r_corr_poly = [val[9] for val in STEBfitResults]
+    def TOF_polyfit(x,Emax,a1,a2):
+        return a2*(1E3 / np.cos(np.radians(10))) * np.sqrt(m/(2*q)) * ( x**(-0.5)  -Emax**(-0.5)) + a1
+
+    z_src_poly = [ f'{ round(TOF_polyfit(Emin[i],Emax[i],a1[i],a2[i]) )} to { round(TOF_polyfit(Emax[i],Emax[i],a1[i],a2[i]) )}' for i in range(len(STEBfitResults))]
 
 
-if LambdaPerpFit:
+    from texttable import Texttable
+    import latextable
 
-    Tanaka_XDat = [1,3,9]
-    Tanaka_YDat = [-2.77E7,-9.71E6,-8.29E6]
-
-
-    def fitFunc(x, a0, a2):
-        return a0*np.log(x+1) + a2
-
-    guess = [1E6,-1.04E7]
-    paramsFit,cov = curve_fit(fitFunc,Tanaka_XDat,Tanaka_YDat, p0=guess)
-
-
-    x_s = np.linspace(min(Tanaka_XDat),max(Tanaka_XDat),200)
-    fitDat = fitFunc(x_s,*paramsFit)
-    fig,ax = plt.subplots()
-    ax.scatter(Tanaka_XDat,Tanaka_YDat)
-    ax.plot(x_s,fitDat)
-    plt.show()
-
-    def inverseFunc(x,a,c):
-        return np.exp((x-c)/a)+1
-    print(paramsFit)
-
-    for data in STEBfitResults:
-        if data[0] in [2, 3, 4, 5]:
-            params = data[6]
-            deltaV = data[7]
-            deltaT = data[8]
-
-            a2_param = params[2]
-
-            print(data[0],a2_param,inverseFunc(a2_param,*paramsFit))
-
-if LambdaPerpPlot:
-
-    fig, ax = plt.subplots()
-
-    for data in STEBfitResults:
-        if data[0] in [2, 3, 4, 5]:
-            params = data[6]
-            deltaV = data[7]
-            deltaT = data[8]
-
-            x_s = np.linspace(deltaV.min(), deltaV.max(), 20)
-            # x_s = np.linspace(deltaV.min(), 3E-4, 20)
-
-            def fitFunc_polynomial(x, a0, a1, a2):
-                return a0 + a1 * x + a2 * (x ** 2)
-            fitData_poly = fitFunc_polynomial(x_s, *params)
-
-            ax.plot(x_s, fitData_poly,label=f'STEB {data[0]}')
-
-    ax.set_ylabel('Delay time [s]')
-    ax.set_xlabel('1/v [s/km]')
-    ax.set_xlim(0,3E-4)
-    plt.legend()
-    plt.savefig(rf'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot7\STEB_LambdaPerp.png')
+    a1_temp = np.array(["%.2E" % Decimal(f"{val[6][1]}") for val in STEBfitResults])
+    a2_temp = np.array(["%.2E" % Decimal(f"{val[6][2]}") for val in STEBfitResults])
+    a1 = [rf'{val[0:4]} $\times 10^{val[-1]}$' for val in a1_temp]
+    a2 = [rf'{val[0:5]} $\times 10^{val[-1]}$' for val in a2_temp]
+    print(a1)
+    print(a2)
+    table_1 = Texttable()
+    table_1.set_cols_align(["c", "c", "c","c","c","c"])
+    table_1.add_rows([
+        ['Parameters','S2','S3','S4','S5','unit'],
+        ['E$_{min}$'] + Emin + ['eV'],
+        ['E$_{max}$'] + Emax+ ['eV'],
+        ['z$_{src}$ (linear)'] + zsrc_linear+['km'],
+        ['r-corr (linear)'] +r_corr_linear+ ['-'],
+        ['$a_{0}$'] + a0 + ['s'],
+        ['$a_{1}$'] +a1 +['km'],
+        ['$a_{2}$'] +a2 +['km$^{2}$/s'],
+        ['r-corr (second order)'] + r_corr_poly+ ['-'],
+        ['$z_{src}$ (second order)'] + z_src_poly + ['km'],
+    ]
+    )
+    print(table_1.draw())
+    print(latextable.draw_latex(table_1))
 
 
 
