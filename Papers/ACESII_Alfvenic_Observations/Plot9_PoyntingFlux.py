@@ -26,7 +26,7 @@ print(color.UNDERLINE + f'Plot9_keyObservations' + color.END)
 #################
 # --- TOGGLES ---
 #################
-figure_height = (7.5)
+figure_height = 3*(3.75)
 figure_width = (15)
 
 plot_LineWidth = 3
@@ -95,6 +95,10 @@ inputFile_EISCAT_high = 'C:\Data\ACESII\science\EISCAT_ACESII_Slice\high\ACESII_
 data_dict_EISCAT_high = deepcopy(loadDictFromFile(inputFile_EISCAT_high, targetVar=[targetVar, targetVarName],wKeys_Load=['Ion_Comp', 'Op_Comp','ILat','Epoch']))
 data_dict_EISCAT_interp_high = InterpolateDataDict(InputDataDict=data_dict_EISCAT_high,InputEpochArray=data_dict_EISCAT_high['Epoch'][0],targetEpochArray=data_dict_B_high['Epoch'][0],wKeys=[])
 data_dict_EISCAT_high = deepcopy(data_dict_EISCAT_interp_high)
+
+# Electron Energy Flux - High Flyer
+inputFile_EFlux_high = 'C:\Data\ACESII\L3\Energy_Flux\high\ACESII_36359_eepaa_Energy_Flux.cdf'
+data_dict_EFlux_high = deepcopy(loadDictFromFile(inputFile_EFlux_high, targetVar=[targetVar, targetVarName]))
 
 #=======================
 # --- Low Flyer Data ---
@@ -178,47 +182,69 @@ S_est_LF = VA_t_LF*(dBperp**2)/ (u0) # calculate Estimated Poynting Flux
 ############################
 
 prgMsg('Beginning Plot')
-fig, ax = plt.subplots(nrows=2,sharex=True)
+fig, ax = plt.subplots(nrows=3,sharex=True)
 fig.set_size_inches(figure_width, figure_height)
 
 
 
-# --- High Flyer - Poynting Flux ---
-ax[0].plot(data_dict_deltaB_high['Epoch'][0], PoyntingScale*S_est_HF, plot_Colors[2], linewidth=plot_LineWidth,zorder=2, label=r'$\delta S_{\parallel} \sim \frac{\delta B_{\perp}^{2}}{\mu_{0}} V_{A}$')
-ax[0].set_ylabel('High Flyer\n'+'$\mathbf{\delta}$ S$_{\parallel}$ [erg/cm$^{2}$s]',fontsize=labels_FontSize, weight='bold')
-ax[0].set_ylim(-0.3E-2, 5.4E-2)
+# --- High Flyer - Electron Flux ---
+ax[0].plot(data_dict_EFlux_high['Epoch'][0],data_dict_EFlux_high['Energy_Flux_Downward'][0], linewidth=plot_LineWidth,zorder=2)
+ax[0].set_ylabel('High Flyer\n'+'$e^{-} \Phi_{E,\parallel}$  [erg/cm$^{2}$s]',fontsize=labels_FontSize, weight='bold')
+ax[0].set_ylim(1, 1000)
 ax[0].set_xmargin(0)
 ax[0].tick_params(axis='both', which='major', labelsize=tick_LabelSize, width=tick_Width, length=tick_Length)
 ax[0].tick_params(axis='both', which='minor', labelsize=tick_LabelSize-2, width=tick_Width, length=tick_Length)
 ax[0].tick_params(axis='x', which='major', labelbottom=False)
-ax[0].text(dt.datetime(2022,11,20,17,24,54,000000),0.047,'(a)',color='black',fontsize=text_FontSize+10,va='center',ha='center',weight='bold')
+for k, tme in enumerate(STEBtimes):
+    lowIdx = np.abs(data_dict_EFlux_high['Epoch'][0] - tme[0]).argmin()
+    highIdx = np.abs(data_dict_EFlux_high['Epoch'][0] - tme[1]).argmin()
+    ax[0].axvspan(data_dict_EFlux_high['Epoch'][0][lowIdx], data_dict_EFlux_high['Epoch'][0][highIdx], color=plot_Colors[k], alpha=0.25,zorder=1)
+    textPlacement = pycdf.lib.tt2000_to_datetime(
+        int((pycdf.lib.datetime_to_tt2000(data_dict_EFlux_high['Epoch'][0][lowIdx])+ pycdf.lib.datetime_to_tt2000(data_dict_EFlux_high['Epoch'][0][highIdx]))/2)
+    )
+    props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
+    ax[0].text(textPlacement, 970, f'S{wSTEBtoPlot[k]}', ha='center', weight='bold',fontsize=plot_textFontSize,bbox=props)
+ax[0].grid(alpha=0.5)
+ax[0].set_yscale('log')
+
+
+# --- High Flyer - Poynting Flux ---
+ax[1].plot(data_dict_deltaB_high['Epoch'][0], PoyntingScale*S_est_HF, plot_Colors[2], linewidth=plot_LineWidth,zorder=2, label=r'$\delta S_{\parallel} \sim \frac{\delta B_{\perp}^{2}}{\mu_{0}} V_{A}$')
+ax[1].set_ylabel('High Flyer\n'+'$\mathbf{\delta}$ S$_{\parallel}$ [erg/cm$^{2}$s]',fontsize=labels_FontSize, weight='bold')
+ax[1].set_ylim(-0.3E-2, 5.4E-2)
+ax[1].set_xmargin(0)
+ax[1].tick_params(axis='both', which='major', labelsize=tick_LabelSize, width=tick_Width, length=tick_Length)
+ax[1].tick_params(axis='both', which='minor', labelsize=tick_LabelSize-2, width=tick_Width, length=tick_Length)
+ax[1].tick_params(axis='x', which='major', labelbottom=False)
+ax[1].text(dt.datetime(2022,11,20,17,24,54,000000),0.047,'(a)',color='black',fontsize=text_FontSize+10,va='center',ha='center',weight='bold')
 
 # plot the color regions
 for k,tme in enumerate(STEBtimes):
     lowIdx = np.abs(data_dict_deltaB_high['Epoch'][0] - tme[0]).argmin()
     highIdx = np.abs(data_dict_deltaB_high['Epoch'][0] - tme[1]).argmin()
-    ax[0].axvspan(data_dict_deltaB_high['Epoch'][0][lowIdx], data_dict_deltaB_high['Epoch'][0][highIdx], color=plot_Colors[k], alpha=0.25,zorder=1)
+    ax[1].axvspan(data_dict_deltaB_high['Epoch'][0][lowIdx], data_dict_deltaB_high['Epoch'][0][highIdx], color=plot_Colors[k], alpha=0.25,zorder=1)
     textPlacement = pycdf.lib.tt2000_to_datetime(
         int((pycdf.lib.datetime_to_tt2000(data_dict_deltaB_high['Epoch'][0][lowIdx])+ pycdf.lib.datetime_to_tt2000(data_dict_deltaB_high['Epoch'][0][highIdx]))/2)
     )
     props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
-    ax[0].text(textPlacement, 0.052, f'S{wSTEBtoPlot[k]}', ha='center', weight='bold',fontsize=plot_textFontSize,bbox=props)
-ax[0].grid(alpha=0.5)
-ax[0].legend(loc='upper right',fontsize=Legend_FontSize)
+    ax[1].text(textPlacement, 0.052, f'S{wSTEBtoPlot[k]}', ha='center', weight='bold',fontsize=plot_textFontSize,bbox=props)
+ax[1].grid(alpha=0.5)
+ax[1].legend(loc='upper right',fontsize=Legend_FontSize)
 
 # --- Low Flyer - Poynting Flux ---
-ax[1].plot(data_dict_deltaB_low['Epoch'][0], PoyntingScale*data_dict_Poynting_low['S_p'][0],linewidth=plot_LineWidth,zorder=2, label=r'$(\mathbf{\vec{E}} \times \mathbf{\vec{B}})_{\parallel}$')
-ax[1].plot(data_dict_deltaB_low['Epoch'][0], PoyntingScale*S_est_LF, plot_Colors[2],linewidth=plot_LineWidth,zorder=2, label=r'$\delta S_{\parallel} \sim \frac{\delta B_{\perp}^{2}}{\mu_{0}} V_{A}$')
-ax[1].set_ylabel('Low Flyer\n'+'$\mathbf{\delta}$ S$_{\parallel}$ [erg/cm$^{2}$s]',fontsize=labels_FontSize, weight='bold')
-ax[1].set_ylim(-0.3E-2, 5.4E-2)
-ax[1].set_xmargin(0)
-ax[1].tick_params(axis='both', which='major', labelsize=tick_LabelSize, width=tick_Width, length=tick_Length)
-ax[1].tick_params(axis='both', which='minor', labelsize=tick_LabelSize-2, width=tick_Width, length=tick_Length)
-ax[1].tick_params(axis='x', which='major')
-ax[1].grid(alpha=0.5)
-ax[1].set_xlabel('Time [UTC]',fontsize=labels_FontSize, weight = 'bold')
-ax[1].legend(fontsize=Legend_FontSize,loc='upper right')
-ax[1].text(dt.datetime(2022,11,20,17,24,54,000000),0.047,'(b)',color='black',fontsize=text_FontSize+10,va='center',ha='center',weight='bold')
+ax[2].plot(data_dict_deltaB_low['Epoch'][0], PoyntingScale*data_dict_Poynting_low['S_p'][0],linewidth=plot_LineWidth,zorder=2, label=r'$(\mathbf{\vec{E}} \times \mathbf{\vec{B}})_{\parallel}$')
+ax[2].plot(data_dict_deltaB_low['Epoch'][0], PoyntingScale*S_est_LF, plot_Colors[2],linewidth=plot_LineWidth,zorder=2, label=r'$\delta S_{\parallel} \sim \frac{\delta B_{\perp}^{2}}{\mu_{0}} V_{A}$')
+ax[2].set_ylabel('Low Flyer\n'+'$\mathbf{\delta}$ S$_{\parallel}$ [erg/cm$^{2}$s]',fontsize=labels_FontSize, weight='bold')
+ax[2].set_ylim(-0.3E-2, 5.4E-2)
+ax[2].set_xmargin(0)
+ax[2].tick_params(axis='both', which='major', labelsize=tick_LabelSize, width=tick_Width, length=tick_Length)
+ax[2].tick_params(axis='both', which='minor', labelsize=tick_LabelSize-2, width=tick_Width, length=tick_Length)
+ax[2].tick_params(axis='x', which='major')
+ax[2].grid(alpha=0.5)
+ax[2].set_xlabel('Time [UTC]',fontsize=labels_FontSize, weight = 'bold')
+ax[2].legend(fontsize=Legend_FontSize,loc='upper right')
+ax[2].text(dt.datetime(2022,11,20,17,24,54,000000),0.047,'(b)',color='black',fontsize=text_FontSize+10,va='center',ha='center',weight='bold')
+
 
 plt.tight_layout()
 plt.savefig(r'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot9\Plot9_PoyntingFlux.png',dpi=dpi)

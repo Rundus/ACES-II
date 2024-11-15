@@ -31,13 +31,16 @@ outputPath_modifier = 'l3\Energy_Flux' # e.g. 'L2' or 'Langmuir'. It's the name 
 # ---------------------------
 outputData = True
 # ---------------------------
-downwardPitchRange = [1,2+1] # what pitch indicies to consider when calculating parallel (downward) # 0-90deg
-upwardPitchRange = [18,19+1] # 90-180deg
+maxEnergyVal = 900 # value of the maximum energy to use when integrating.
+downwardPitchRange = [1, 7+1] # what pitch indicies to consider when calculating parallel (downward) # 0-80deg
+upwardPitchRange = [11, 19+1] # 90-180deg
+
+erg_to_eV = 6.242E11 # eV per erg
 
 # solid angle contributions of each pitch bin (starting at 0deg to -190 deg)
-solidAngleHfactor =[
-    204.4, # -10deg
-    25.714, # 0 deg
+solidAnglefactor =[
+    0.3735911, # -10deg
+    0.1901849, # 0 deg
     204.4, # 10 deg
     402.9, # 20 deg
     589, # 30
@@ -115,8 +118,12 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
 
         Epoch = data_dict['Epoch'][0]
         Pitch = data_dict['Pitch_Angle'][0]
-        Energy = data_dict['Energy'][0][::-1]
-        diffEflux = data_dict['Differential_Energy_Flux'][0]
+
+        # reduce the data by the maximum energy value
+        engyMaxIdx = np.abs(data_dict['Energy'][0] - maxEnergyVal).argmin()
+        Energy = data_dict['Energy'][0][engyMaxIdx:]
+        diffEflux = data_dict['Differential_Energy_Flux'][0][:,:,engyMaxIdx:]
+        Energy = Energy[::-1]
 
         diffEFlux_avg = [ [[] for ptch in Pitch] for tme in Epoch]
         Eflux = [ [[] for ptch in Pitch] for tme in Epoch]
@@ -141,7 +148,6 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
         diffEFlux_avg = np.array(diffEFlux_avg)
         Eflux = np.array(Eflux)
         Done(start_time)
-
 
         # Calculate Upward and Downward Particle Energy Flux
         EFlux_downward = np.zeros(shape=(len(Eflux)))
@@ -173,7 +179,7 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
                                 'Energy': data_dict['Energy'],
                                 'Epoch': data_dict['Epoch']}
             data_dict_output['Energy_Flux'][1]['LABLAXIS'] = 'Energy_Flux'
-            data_dict_output['Energy_Flux'][1]['UNITS'] = 'erg cm!A-2!N'
+            data_dict_output['Energy_Flux'][1]['UNITS'] = 'erg cm!A-2!N s!A-1!N'
             data_dict_output['Differential_Energy_Flux_avg'][1]['LABLAXIS'] = 'Differential_Energy_Flux_avg'
 
             data_dict_output = {**data_dict_output,**{
