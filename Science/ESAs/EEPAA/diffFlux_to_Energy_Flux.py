@@ -10,9 +10,7 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
-
 import numpy as np
-
 from myImports import *
 start_time = time.time()
 # --- --- --- --- ---
@@ -27,40 +25,17 @@ wFiles = [0]
 modifier = ''
 inputPath_modifier = 'l2' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
 outputPath_modifier = 'l3\Energy_Flux' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+isolateSTEBs = False
 
 # ---------------------------
 outputData = True
 # ---------------------------
-maxEnergyVal = 900 # value of the maximum energy to use when integrating.
-downwardPitchRange = [1, 7+1] # what pitch indicies to consider when calculating parallel (downward) # 0-80deg
+maxEnergyVal = 1000 # value of the maximum energy to use when integrating.
+downwardPitchRange = [1, 9+1] # what pitch indicies to consider when calculating parallel (downward) # 0-90deg (IDX: 6)
 upwardPitchRange = [11, 19+1] # 90-180deg
 
 erg_to_eV = 6.242E11 # eV per erg
 
-# solid angle contributions of each pitch bin (starting at 0deg to -190 deg)
-solidAnglefactor =[
-    0.3735911, # -10deg
-    0.1901849, # 0 deg
-    204.4, # 10 deg
-    402.9, # 20 deg
-    589, # 30
-    757.1, # 40
-    902.3, # 50
-    1020.1, # 60
-    1106.9, # 70
-    1160, # 80
-    1177.9, # 90
-    1160, # 100
-    1106.9, # 110
-    1020.1, # 120
-    902.3, # 130
-    757.1, # 140
-    589, # 150 deg
-    402.9, # 160 deg
-    204.4, # 170deg
-    25.714, # 180deg
-    204.4 # 190 deg
-]
 
 
 
@@ -68,6 +43,8 @@ solidAnglefactor =[
 # --- IMPORTS ---
 # --- --- --- ---
 from numpy import trapz
+import spaceToolsLib as stl
+
 
 
 def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflyer, wfile):
@@ -119,11 +96,23 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
         Epoch = data_dict['Epoch'][0]
         Pitch = data_dict['Pitch_Angle'][0]
 
-        # reduce the data by the maximum energy value
+        # Isolate STEBs and reduce the data by the maximum energy value
         engyMaxIdx = np.abs(data_dict['Energy'][0] - maxEnergyVal).argmin()
         Energy = data_dict['Energy'][0][engyMaxIdx:]
-        diffEflux = data_dict['Differential_Energy_Flux'][0][:,:,engyMaxIdx:]
         Energy = Energy[::-1]
+        if isolateSTEBs:
+            from Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
+            wDispersion_key = 'sDispersive'
+            lowCut, highCut = np.abs(data_dict['Epoch'][0] - dispersionAttributes.keyDispersionTimes[-1][0]).argmin(), np.abs(data_dict['Epoch'][0] - dispersionAttributes.keyDispersionTimes[-1][1]).argmin()
+            Epoch_dis = stl.dateTimetoTT2000(data_dict['Epoch'][0][lowCut:highCut + 1], inverse=False)
+            Epoch_dis = (np.array(Epoch_dis) - Epoch_dis[0]) / 1E9  # converted data to TIME SINCE START OF DISPERSION (needed for proper plot fitting)
+            eepaa_dis = data_dict['Differential_Energy_Flux'][0][lowCut:highCut + 1]
+            eepaa_dis = np.array(dispersionAttributes.isolationFunctions[wDispersion_key](eepaa_dis, Energy,Epoch_dis))  # pply the isolation functions found in dispersionAttributes.py
+            diffEflux = eepaa_dis[:, :, engyMaxIdx:]
+            print(np.shape(diffEflux))
+        else:
+            diffEflux = data_dict['Differential_Energy_Flux'][0][:, :, engyMaxIdx:]
+            print(np.shape(diffEflux))
 
         diffEFlux_avg = [ [[] for ptch in Pitch] for tme in Epoch]
         Eflux = [ [[] for ptch in Pitch] for tme in Epoch]
@@ -132,10 +121,16 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
         for tme in tqdm(range(len(Epoch))):
             for ptch in range(len(Pitch)):
                 diffFLux_data = diffEflux[tme][ptch][::-1]
+                if ptch == 0:
+                    pitchAngleVal = [5,15]
+                elif ptch == 1:
+                    pitchAngleVal = [0,5]
+                else:
+                    pitchAngleVal = [Pitch[ptch] - 5, Pitch[ptch] + 5]
 
                 if all(np.array(diffFLux_data) >= 0): # see if there's any fillvals or negative values in array. If not, then you can integrate
                     integratedValue = trapz(y=diffFLux_data, x=Energy)
-                    EFluxVal = (1/erg_to_eV) * integratedValue * solidAngleHfactor[ptch]
+                    EFluxVal = (1/erg_to_eV) * integratedValue * stl.steradian(theta1=pitchAngleVal[0], theta2=pitchAngleVal[1],phi1=0,phi2=360,useDeg=True)
                 else:
                     EFluxVal = rocketAttrs.epoch_fillVal
                     integratedValue = rocketAttrs.epoch_fillVal
@@ -158,7 +153,6 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
 
             # remove fillval contributions
             EFluxArray = Eflux[tme]
-
             EFluxArray[EFluxArray ==rocketAttrs.epoch_fillVal ] = 0
             EFlux_contribution = np.array(Eflux[tme]) * cosineContribution
             EFlux_Upward[tme] = -1*sum(EFlux_contribution[upwardPitchRange[0]:upwardPitchRange[1]])

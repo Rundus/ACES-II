@@ -93,6 +93,7 @@ class dispersionAttributes(object):
         [dt.datetime(2022, 11, 20, 17, 24, 45, 200000), dt.datetime(2022, 11, 20, 17, 24, 46, 000)], # s16 near the south edge of inverted V, almost undernearth it.
         [dt.datetime(2022, 11, 20, 17, 25, 23, 700000), dt.datetime(2022, 11, 20, 17, 25, 24, 300000)], # s17 Strong edge-type STEB near big aurora
         [dt.datetime(2022, 11, 20, 17, 26, 10, 000000), dt.datetime(2022, 11, 20, 17, 26, 11, 000000)], # s18 small STEB above aurora
+        [dt.datetime(2022, 11, 20, 17, 24, 55, 500000), dt.datetime(2022, 11, 20, 17, 25, 4, 250000)] # The Whole Dispersion Region for S1 to S5
     ]
 
     # the overhead noise on the dispersion features shouldn't be included. Here we have the energy indicies for the ~max energy the feature appears to be at when looking at pitch 0deg
@@ -164,6 +165,7 @@ class dispersionAttributes(object):
         [dt.datetime(2022, 11, 20, 17, 24, 45, 558000), dt.datetime(2022, 11, 20, 17, 24, 45, 800000)], # s16 near the south edge of inverted V, almost undernearth it.
         [dt.datetime(2022, 11, 20, 17, 25, 23, 758000), dt.datetime(2022, 11, 20, 17, 25, 24, 166000)], # s17 Strong edge-type STEB near big aurora
         [dt.datetime(2022, 11, 20, 17, 26, 10, 262000), dt.datetime(2022, 11, 20, 17, 26, 10, 860000)], # s18 small STEB above aurora
+        [dt.datetime(2022,11,20,17,24,55,500000), dt.datetime(2022,11,20,17,25,4,250000)] # The Whole Dispersion Region for S1 to S5
     ]
     )
 
@@ -186,7 +188,8 @@ class dispersionAttributes(object):
         'Auroral',  # s15
         'edgetype',  # s16
         'edgetype',  # s17
-        'edgetype'  # s18
+        'edgetype',  # s18
+        'N/A'
     ]
 
     ##############################
@@ -318,6 +321,29 @@ class dispersionAttributes(object):
             newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
 
         return newData
+
+    @staticmethod
+    def cleanDispersive(inputData, Energy, Time):
+        newData = inputData
+
+        if dispersionAttributes.additionalRemoval:
+            # --- BOX REMOVE ---
+            # remove lower left
+            EnergyMin, EnergyMax, TimeMin, TimeMax = 120,345 , 5, 5.148
+            newData = boxRemove(newData, EnergyMin, EnergyMax, TimeMin, TimeMax, Energy, Time)
+
+            # --- DIAGONAL REMOVE ---
+            upper = True
+            EnergyStartPoint, TimeStart, TimeEnd = 210, 5.45, 10
+            newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
+
+            # --- DIAGONAL REMOVE ---
+            upper = True
+            EnergyStartPoint, TimeStart, TimeEnd = 800, 5.2, 10
+            newData = diagonalRemove(newData, EnergyStartPoint, TimeStart, TimeEnd, Energy, Time, upper)
+
+        return newData
+
 
     @staticmethod
     def cleanS6(inputData, Energy, Time):
@@ -675,4 +701,5 @@ class dispersionAttributes(object):
                           's15': cleanS15,
                           's16': cleanS16,
                           's17': cleanS17,
-                          's18': cleanS18}
+                          's18': cleanS18,
+                          'sDispersive':cleanDispersive}

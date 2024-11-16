@@ -18,15 +18,15 @@ import datetime as dt
 ######################
 
 
-from spaceToolsLib.Variables import IonMasses,u0,q0,m_e,cm_to_m,kB,ep0,Re
-from spaceToolsLib.Tools.coordinates import getCoordinateKeys
-# from spaceToolsLib.Tools.epochTime import dateTimetoTT2000
-from spaceToolsLib.Tools.interpolate import InterpolateDataDict
-from spaceToolsLib.Tools.diagnoistics import Done,prgMsg
+from spaceToolsLib.variables import IonMasses,u0,q0,m_e,cm_to_m,kB,ep0,Re
+from spaceToolsLib.tools.coordinates import getCoordinateKeys
+# from spaceToolsLib.tools.epochTime import dateTimetoTT2000
+from spaceToolsLib.tools.interpolate import InterpolateDataDict
+from spaceToolsLib.tools.diagnoistics import Done,prgMsg
 from spaceToolsLib.setupFuncs.setupSpacepy import setupPYCDF
-from spaceToolsLib.Tools.colors import color
-from spaceToolsLib.Tools.CDF_load import loadDictFromFile,getInputFiles
-from spaceToolsLib.Tools.CDF_output import outputCDFdata
+from spaceToolsLib.tools.colors import color
+from spaceToolsLib.tools.CDF_load import loadDictFromFile,getInputFiles
+from spaceToolsLib.tools.CDF_output import outputCDFdata
 
 from tqdm import tqdm
 from glob import glob

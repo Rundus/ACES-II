@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import power, cos, radians, exp, sin,pi,abs,arctan2
-from myspaceToolsLib.physicsVariables import m_e,q0
+from spaceToolsLib.variables import m_e,q0
 import datetime as dt
 
 
@@ -9,7 +9,6 @@ import datetime as dt
 # --- VARIABLES ---
 # --- --- --- --- -
 ###################
-datasetReduction_TargetTime = [dt.datetime(2022,11, 20, 17, 24, 50, 000000), dt.datetime(2022,11,20,17,25,15,000000)]
 
 ###################
 # --- --- --- --- -
@@ -17,10 +16,10 @@ datasetReduction_TargetTime = [dt.datetime(2022,11, 20, 17, 24, 50, 000000), dt.
 # --- --- --- --- -
 ###################
 
-def loadDiffNFluxData():
-    from ACESII_code.missionAttributes import ACES_mission_dicts, TRICE_mission_dicts
+def loadDiffNFluxData(datasetReduction_TargetTime):
+    from missionAttributes import ACES_mission_dicts, TRICE_mission_dicts
     from glob import glob
-    from myspaceToolsLib.CDF_load import loadDictFromFile
+    from spaceToolsLib import loadDictFromFile
     from copy import deepcopy
     targetVar = [datasetReduction_TargetTime, 'Epoch']
 
