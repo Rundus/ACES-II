@@ -34,7 +34,7 @@ justPrintFileNames = False
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # select which files to convert
 # [] --> all files
@@ -116,13 +116,13 @@ def Distribution_Function(wRocket, wFile, rocketFolderPath, justPrintFileNames, 
         prgMsg('Calculating the Distribution Function')
 
         # --- CALCULATE DISTRIBUTION FUNCTION ---
-        diffEFlux = data_dict['Differential_Energy_Flux'][0]
+        diffNFlux = data_dict['Differential_Number_Flux'][0]
         oneCountLevel = data_dict['oneCountLevel'][0]
         pitchAngle = data_dict['Pitch_Angle'][0]
         Energies = data_dict['Energy'][0]
 
         # define empty numpy array
-        sizes = [len(diffEFlux),len(diffEFlux[0]), len(diffEFlux[0][0])]
+        sizes = [len(diffNFlux),len(diffNFlux[0]), len(diffNFlux[0][0])]
         ranges = [range(sizes[0]), range(sizes[1]), range(sizes[2])]
         distFunc = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
         distFunc_oneCount = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
@@ -136,17 +136,16 @@ def Distribution_Function(wRocket, wFile, rocketFolderPath, justPrintFileNames, 
 
         # --- Calculate DistFunc in SI units ---
         for tme, ptch, engy in tqdm(itertools.product(*ranges)):
-            if diffEFlux[tme][ptch][engy] <= rocketAttrs.epoch_fillVal:
+            if diffNFlux[tme][ptch][engy] <= rocketAttrs.epoch_fillVal:
                 distFunc[tme][ptch][engy] = rocketAttrs.epoch_fillVal
             else:
-                distVal = (cm_to_m*cm_to_m/(q0*q0*q0))*(((m**2)*diffEFlux[tme][ptch][engy]) / (2 * Energies[engy] * Energies[engy]))
+                distVal = (cm_to_m*cm_to_m/(q0*q0 ))*(((m**2)*diffNFlux[tme][ptch][engy]) / (2 * Energies[engy]))
                 if distVal < 0:
                     distFunc[tme][ptch][engy] = 0
                 else:
                     distFunc[tme][ptch][engy] = distVal
 
-            distFunc_oneCount[tme][ptch][engy] = (cm_to_m*cm_to_m/(q0*q0*q0))*(((m**2)*oneCountLevel[tme][ptch][engy]) / (2 * Energies[engy] * Energies[engy]))
-
+            distFunc_oneCount[tme][ptch][engy] = (cm_to_m*cm_to_m/(q0*q0 ))*(((m**2)*oneCountLevel[tme][ptch][engy]) / (2 * Energies[engy]))
 
         distFunc = np.array(distFunc)
 
@@ -169,7 +168,7 @@ def Distribution_Function(wRocket, wFile, rocketFolderPath, justPrintFileNames, 
                                                        'DEPEND_1': 'Pitch_Angle',
                                                        'DEPEND_2': 'Energy',
                                                        'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
-                                                       'UNITS': '!m!U-6!N s!U3!',
+                                                       'UNITS': 'm!A-6!Ns!A3!N',
                                                        'VALIDMIN': distFunc.min(), 'VALIDMAX': distFunc.max(),
                                                        'VAR_TYPE': 'data', 'SCALETYP': 'log'}]}}
 
@@ -179,7 +178,7 @@ def Distribution_Function(wRocket, wFile, rocketFolderPath, justPrintFileNames, 
                                                          'DEPEND_1': 'Pitch_Angle',
                                                          'DEPEND_2': 'Energy',
                                                          'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
-                                                         'UNITS': '!m!U-6!N s!U3!',
+                                                         'UNITS': 'm!A-6!Ns!A3!N',
                                                          'VALIDMIN': distFunc.min(), 'VALIDMAX': distFunc.max(),
                                                          'VAR_TYPE': 'support_data', 'SCALETYP': 'log'}]}}
 

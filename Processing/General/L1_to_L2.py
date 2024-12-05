@@ -120,7 +120,8 @@ def L1_to_L2(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
             ranges = [range(sizes[0]), range(sizes[1]), range(sizes[2])]
             diffNFlux = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
             diffEFlux = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
-            diffEFlux_oneCount =np.zeros(shape=(sizes[0], sizes[1], sizes[2])) # useful to for fitting the distribution function to maxwellian
+            diffEFlux_oneCount = np.zeros(shape=(sizes[0], sizes[1], sizes[2])) # useful to for fitting the distribution function to maxwellian
+            diffNFlux_stdDev = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
 
             Energies = data_dict['Energy'][0]
             counts = data_dict[rocketAttrs.InstrNames_LC[wInstr[0]]][0]
@@ -137,9 +138,11 @@ def L1_to_L2(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
 
                 if counts[tme][ptch][engy] == rocketAttrs.epoch_fillVal:
                     diffNFlux[tme][ptch][engy] = rocketAttrs.epoch_fillVal
+                    diffNFlux_stdDev[tme][ptch][engy] = rocketAttrs.epoch_fillVal
                     diffEFlux[tme][ptch][engy] = rocketAttrs.epoch_fillVal
                 else:
                     diffNFlux[tme][ptch][engy] = int((counts[tme][ptch][engy]) / (Energies[engy] * geo_factor[ptch] * deltaT))
+                    diffNFlux_stdDev[tme][ptch][engy] = int(  np.sqrt(counts[tme][ptch][engy]) / (Energies[engy] * geo_factor[ptch] * deltaT))
                     diffEFlux[tme][ptch][engy] = int((counts[tme][ptch][engy]) / (geo_factor[ptch] * deltaT))
 
                 deltaT_oneCount = (count_interval[tme]) - (1 * rocketAttrs.deadtime[wflyer])
@@ -184,6 +187,16 @@ def L1_to_L2(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
                                                           'UNITS': 'cm!U-2!N str!U-1!N s!U-1!N eV/eV',
                                                           'VALIDMIN': diffEFlux.min(), 'VALIDMAX': diffEFlux.max(),
                                                           'VAR_TYPE': 'data', 'SCALETYP': 'log'}]}}
+            data_dict = {**data_dict, **{'Differential_Number_Flux_stdDev':
+                                             [diffNFlux_stdDev, {'LABLAXIS': 'Differential_Energy_Flux_stdDev',
+                                                                   'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle',
+                                                                   'DEPEND_2': 'Energy',
+                                                                   'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                   'FORMAT': 'E12.2',
+                                                                   'UNITS': 'cm!U-2!N str!U-1!N s!U-1!N eV/eV',
+                                                                   'VALIDMIN': diffNFlux_stdDev.min(),
+                                                                   'VALIDMAX': diffNFlux_stdDev.max(),
+                                                                   'VAR_TYPE': 'data', 'SCALETYP': 'log'}]}}
 
             outputCDFdata(outputPath= outputPath,data_dict= data_dict,ModelData= L2ModelData, globalAttrsMod= globalAttrsMod,instrNam=wInstr[1])
             Done(start_time)
