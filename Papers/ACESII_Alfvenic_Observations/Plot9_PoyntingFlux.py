@@ -188,7 +188,7 @@ fig.set_size_inches(figure_width, figure_height)
 fig.suptitle('Dispersive Region Energy Flux', weight='bold',fontsize=title_FontSize)
 
 # --- High Flyer - Electron Flux ---
-ax[0].plot(data_dict_EFlux_high['Epoch'][0],data_dict_EFlux_high['Energy_Flux_Downward'][0], linewidth=plot_LineWidth,zorder=2,label=r'Parallel $e^{-}$ Flux'+ '\n'+r'($0^{\circ} < \alpha < 50^{\circ}$)',color='maroon')
+ax[0].plot(data_dict_EFlux_high['Epoch'][0],data_dict_EFlux_high['Energy_Flux_Downward'][0], linewidth=plot_LineWidth,zorder=2,label=r'Parallel $e^{-}$ Flux',color='maroon')
 for k, tme in enumerate(STEBtimes):
     lowIdx = np.abs(data_dict_EFlux_high['Epoch'][0] - tme[0]).argmin()
     highIdx = np.abs(data_dict_EFlux_high['Epoch'][0] - tme[1]).argmin()
@@ -197,8 +197,7 @@ for k, tme in enumerate(STEBtimes):
         int((pycdf.lib.datetime_to_tt2000(data_dict_EFlux_high['Epoch'][0][lowIdx])+ pycdf.lib.datetime_to_tt2000(data_dict_EFlux_high['Epoch'][0][highIdx]))/2)
     )
     props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
-    ax[0].text(textPlacement, 0.9, f'S{wSTEBtoPlot[k]}', ha='center', weight='bold',fontsize=plot_textFontSize,bbox=props,va='center')
-ax[0].grid(alpha=0.5)
+    ax[0].text(textPlacement, 1, f'S{wSTEBtoPlot[k]}', ha='center', weight='bold',fontsize=plot_textFontSize,bbox=props,va='center')
 
 # --- High Flyer - Poynting Flux ---
 ax[0].plot(data_dict_deltaB_high['Epoch'][0], PoyntingScale*S_est_HF, linewidth=plot_LineWidth,zorder=2,color='tab:orange', label=r'$\delta S_{\parallel} \sim \frac{\delta B_{\perp}^{2}}{\mu_{0}} V_{A}$')
@@ -208,9 +207,10 @@ ax[0].tick_params(axis='both', which='major', labelsize=tick_LabelSize, width=ti
 ax[0].tick_params(axis='both', which='minor', labelsize=tick_LabelSize-2, width=tick_Width, length=tick_Length)
 ax[0].tick_params(axis='x', which='major', labelbottom=False)
 ax[0].text(dt.datetime(2022,11,20,17,24,56,000000),0.4,'(a)',color='black',fontsize=text_FontSize+10,va='center',ha='center',weight='bold')
-ax[0].set_ylim(1E-4, 1)
-ax[0].set_yscale('log')
+ax[0].set_ylim(0.001, 1)
 ax[0].legend(loc='upper right',fontsize=Legend_FontSize)
+ax[0].set_yscale('log')
+ax[0].grid(alpha=0.5)
 
 # --- Low Flyer - Poynting Flux ---
 ax[1].plot(data_dict_deltaB_low['Epoch'][0], PoyntingScale*data_dict_Poynting_low['S_p'][0], linewidth=plot_LineWidth,zorder=2, color='tab:blue',label=r'$(\mathbf{\vec{E}} \times \mathbf{\vec{B}})_{\parallel}$')

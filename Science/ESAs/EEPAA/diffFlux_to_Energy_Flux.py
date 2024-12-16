@@ -31,7 +31,7 @@ isolateSTEBs = False
 outputData = True
 # ---------------------------
 maxEnergyVal = 1000 # value of the maximum energy to use when integrating.
-downwardPitchRange = [1, 6+1] # what pitch indicies to consider when calculating parallel (downward) # 0-90deg (IDX: 6)
+downwardPitchRange = [0, 9+1] # what pitch indicies to consider when calculating parallel (downward) # 0-90deg (IDX: 6)
 upwardPitchRange = [11, 19+1] # 90-180deg
 
 erg_to_eV = 6.242E11 # eV per erg
