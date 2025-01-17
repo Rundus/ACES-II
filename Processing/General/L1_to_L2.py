@@ -1,4 +1,4 @@
-# --- L0_to_L1.py ---
+# --- L1_to_L2.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Convert electrostatic analyzer data from counts to differential energy flux
 
@@ -35,7 +35,7 @@ justPrintFileNames = False
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # select which files to convert
 # [] --> all files

@@ -190,7 +190,8 @@ def ACES_mission_dicts():
             [8.63E-5 for i in range(21)], # CONFIRMED: in units of cm^2 str^1
             [8.63E-5 / 100 for i in range(21)],  # LEESA geofactor was ~EEPAA/100
             [8.63E-5 for i in range(7)]],
-        'deadtime': [674E-9, 674E-9],
+        # 'deadtime': [674E-9, 674E-9],
+        'deadtime': [324E-9, 324E-9],
         'Instr_sector_to_pitch': [
             [-10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190],
             [-10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190],
