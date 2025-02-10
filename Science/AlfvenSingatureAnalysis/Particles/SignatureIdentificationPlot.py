@@ -16,8 +16,7 @@ __version__ = "1.0.0"
 import time
 
 import matplotlib.pyplot as plt
-
-from ACESII_code.class_var_func import Done, setupPYCDF
+import spaceToolsLib as stl
 
 start_time = time.time()
 # --- --- --- --- ---
@@ -46,13 +45,14 @@ outputPath_modifier = 'science\AlfvenSignatureAnalysis' # e.g. 'L2' or 'Langmuir
 # --- --- --- ---
 import numpy as np
 import datetime as dt
-from ACESII_code.missionAttributes import ACES_mission_dicts
-from ACESII_code.data_paths import ACES_data_folder, fliers
-from ACESII_code.class_var_func import color, prgMsg, L2_TRICE_Quick,loadDictFromFile
+from myImports import *
+# from ACESII_code.missionAttributes import ACES_mission_dicts
+# from ACESII_code.data_paths import ACES_data_folder, fliers
+# from ACESII_code.class_var_func import color, prgMsg, L2_TRICE_Quick,loadDictFromFile
 from glob import glob
 from os.path import getsize
 
-setupPYCDF()
+# setupPYCDF()
 from spacepy import pycdf
 pycdf.lib.set_backward(False)
 
@@ -114,7 +114,7 @@ def IdentificationPlot(wFile, rocketFolderPath, justPrintFileNames, wflyer):
         prgMsg('creating identification plot')
 
         # --- prepare the data ---
-        from ACESII_code.Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
+        from Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
         Energy = data_dict['Energy'][0][EnergyBounds[0]:EnergyBounds[1]]
         Pitch = data_dict['Pitch_Angle'][0]
         targetTimes = [pycdf.lib.datetime_to_tt2000(dt.datetime(2022, 11, 20, 17, 24, 55, 000000)),

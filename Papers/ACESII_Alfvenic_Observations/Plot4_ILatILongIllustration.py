@@ -103,13 +103,13 @@ fig.set_figheight(Figure_height)
 
 # High Flyer - ILat/ILong
 rColor='tab:orange'
-ax.plot(ILongs_km[0], ILats_km[0], color=rColor, label='HF Magnetic Footprint (150 km)',linewidth=Plot_LineWidth,linestyle='--',zorder=0)
+ax.plot(ILongs_km[0], ILats_km[0], color=rColor, label='HF Magnetic Footpoint (150 km)',linewidth=Plot_LineWidth,linestyle='--',zorder=0)
 
 
 
 # Low Flyer - ILat/ILong
 rColor='tab:cyan'
-ax.plot(ILongs_km[1], ILats_km[1], color=rColor, label='LF Magnetic Footprint (150 km)',linewidth=Plot_LineWidth,linestyle='--',zorder=0)
+ax.plot(ILongs_km[1], ILats_km[1], color=rColor, label='LF Magnetic Footpoint (150 km)',linewidth=Plot_LineWidth,linestyle='--',zorder=0)
 
 
 # HF Point of Interest
@@ -150,7 +150,7 @@ ax.yaxis.set_minor_locator(AutoMinorLocator())
 ax.legend(loc='lower right',fontsize=Legend_FontSize)
 plt.tight_layout()
 
-plt.savefig(r'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\PLOTS\Plot4\Plot4_ILatILongIllustration.png', dpi=dpi)
+plt.savefig(r'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot4\Plot4_ILatILongIllustration.png', dpi=dpi)
 
 
 

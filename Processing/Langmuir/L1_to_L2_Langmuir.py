@@ -25,7 +25,7 @@ import numpy as np
 
 # --- --- --- --- ---
 
-from ACESII_code.myImports import *
+from myImports import *
 
 start_time = time.time()
 # --- --- --- --- ---
@@ -45,7 +45,6 @@ justPrintFileNames = False
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
 wRocket = 4
-
 useNanoAmps = True
 
 ###############################
@@ -176,27 +175,33 @@ def L1_to_Langmuir(wRocket, rocketFolderPath, justPrintFileNames, wflyer):
 
             analog_vals, calibrationCurrents = np.array(analog_vals), np.array(calibrationCurrents)
 
-            # apply a log scale to the data in order to prepare it for fitting
+            # apply a natural log scale to the data in order to prepare it for fitting
             calibrationCurrents = np.array([np.log(-1*cur) for cur in calibrationCurrents])
 
             # Fit a linear line to the log'd data
             parameters, covariance = scipy.optimize.curve_fit(calFunction_fixed, analog_vals, calibrationCurrents, maxfev=10000)
 
             if plotFixedCalCurve:
+                figWidth =10
+                figHeight =10
+                Label_Fontsize = 15
+                Title_Fontsize = 15
+
                 import matplotlib
                 matplotlib.rc('figure', figsize=(5, 5))
+                plt.rcParams["figure.figsize"] = (figHeight, figWidth)
                 xDataFit = np.array([i for i in range(1, 4096)])
                 yDataFit = [calFunction_fixed(val, *parameters) for val in xDataFit]
                 plt.plot(xDataFit, yDataFit, color='red')
                 plt.scatter(analog_vals, calibrationCurrents)
-                plt.xlabel('ADC Value')
-                plt.ylabel(r'Ln($I_{cal}$) [nA]')
+                plt.xlabel('ADC Value',fontsize=Label_Fontsize)
+                plt.ylabel(r'Ln($I_{cal}$) [nA]',fontsize=Label_Fontsize)
                 plt.suptitle(f'FIXED LP - {rocketAttrs.rocketID[wRocket-4]}\n'
-                             'Calculated Calibration Current vs Analog Value')
+                             'Calculated Calibration Current vs Analog Value',fontsize=Title_Fontsize)
                 plt.legend(['ln(y) = mx + b\n'
                            f'm: {parameters[0]}\n'
                            f'b: {parameters[1]}'])
-                plt.show()
+                plt.savefig(rf'C:\Users\cfelt\Desktop\rockets\ACES-II\Instruments\fixedLangmuirProbe\Calibration\ACESII_{fliers[wflyer]}_CalCurve.png')
 
             # Apply the calibration function curve
             index = np.abs(data_dict['Epoch_ni'][0] - dt.datetime(2022,11,20,17,25,44,500000)).argmin()

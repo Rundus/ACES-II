@@ -29,7 +29,7 @@ outputPath_modifier = 'science\AlfvenSignatureAnalysis' # e.g. 'L2' or 'Langmuir
 wDispersions = [2,3,4,5] # [] -> plot all dispersion traces, [#,#,#,...] plot specific ones. USE THE DISPERSION NUMBER NOT PYTHON -1 INDEX
 wPitch = 2 # plots specific pitch angles by their index
 # ---------------------------
-justPlotKeyDispersions = False #IF ==TRUE no cross-correlation will occur
+justPlotKeyDispersions = True #IF ==TRUE no cross-correlation will occur
 import spaceToolsLib as stl
 mycmap = stl.apl_rainbow_black0_cmap()
 cbar_low, cbar_high = 0, 30
@@ -39,7 +39,7 @@ maskVal = 2 # apply a single mask to the dispersion feature
 # ---------------------------
 isolateAlfvenSignature = True # removes unwanted data from the alfven signature
 # ---------------------------
-plotCorrelationProcess = True
+plotCorrelationProcess = False
 DetectorTimeResolution = 0.05 # in seconds
 DetectorEnergyResolution = 0.18
 # ---------------------------

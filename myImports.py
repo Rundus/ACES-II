@@ -18,7 +18,7 @@ import datetime as dt
 ######################
 
 
-from spaceToolsLib.variables import IonMasses,u0,q0,m_e,cm_to_m,kB,ep0,Re
+from spaceToolsLib.variables import u0,q0,m_e,cm_to_m,kB,ep0,Re, ion_dict
 from spaceToolsLib.tools.coordinates import getCoordinateKeys
 # from spaceToolsLib.tools.epochTime import dateTimetoTT2000
 from spaceToolsLib.tools.interpolate import InterpolateDataDict

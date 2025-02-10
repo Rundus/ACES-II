@@ -122,6 +122,7 @@ def L1_to_L2(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
             diffEFlux = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
             diffEFlux_oneCount = np.zeros(shape=(sizes[0], sizes[1], sizes[2])) # useful to for fitting the distribution function to maxwellian
             diffNFlux_stdDev = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
+            diffEFlux_stdDev = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
 
             Energies = data_dict['Energy'][0]
             counts = data_dict[rocketAttrs.InstrNames_LC[wInstr[0]]][0]

@@ -74,11 +74,11 @@ cbarMin,cbarMax = 1E5, 1E7
 prgMsg('Loading Data')
 
 # Dispersive region fit data
-inputFile = rf'C:\Data\ACESII\science\invertedV\TempDensityPotential_Fitting\DispersiveRegion\invertedVFitdata_DispersiveRegion.cdf'
+inputFile = rf'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot7p5\primaryBeam_fitting_parameters_DispersiveRegion.cdf'
 data_dict_dispersiveFitData = loadDictFromFile(inputFilePath=inputFile)
 
 # primary inverted-V data
-inputFile = rf'C:\Data\ACESII\science\invertedV\TempDensityPotential_Fitting\PrimaryInvertedV\invertedVFitdata_PrimaryV.cdf'
+inputFile = rf'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot7p5\primaryBeam_fitting_parameters_PrimaryInvertedV.cdf'
 data_dict_invertedVFitData = loadDictFromFile(inputFilePath=inputFile)
 
 data_dicts = [data_dict_dispersiveFitData, data_dict_invertedVFitData]
@@ -124,17 +124,16 @@ for tmeRangeIdx in range(2):
     data_dict = data_dicts[tmeRangeIdx]
 
     # pull out the individual data
-    Epoch = data_dict['Epoch'][0].flatten()
-    Density = data_dict['Density'][0].flatten()
-    Temperature = data_dict['Temperature'][0].flatten()
-    Potential = data_dict['potential'][0].flatten()
-    ChiSquare = data_dict['chiSquare'][0].flatten()
-    ptchVal = data_dict['pitchAngle'][0].flatten()
+    Epoch = data_dict['timestamp_fitData'][0].flatten()
+    Density = data_dict['n'][0][:,2].flatten()
+    Temperature = data_dict['Te'][0][:,2].flatten()
+    Potential = data_dict['V0'][0][:,2].flatten()
+    ChiSquare = data_dict['ChiSquare'][0][:,2].flatten()
 
     # --- Do some initial processing on the data ---
 
     ### find the average electrostatic potential for each time##
-    avgPeakE = np.sum(data_dict['potential'][0],axis=1)/len(data_dict['potential'][0])
+    avgPeakE = np.sum(data_dict['V0'][0],axis=1)/len(data_dict['V0'][0])
     avgPeakE_Epoch = Epoch[0]
 
     # --- [1] make the spectrogram from 0 to 40 deg ---
@@ -295,74 +294,77 @@ Done(start_time)
 # --- Get Example fitted data ---
 Energy = data_dict_diffNFlux['Energy'][0]
 Pitch = data_dict_diffNFlux['Pitch_Angle'][0]
-ptchChoiceIdx = np.abs(Pitch - data_dict_dispersiveFitData["pitchAngle"][0][wExamplePtch][0]).argmin()
+ptchChoiceIdx = np.abs(Pitch - 10).argmin()
 exampleFitted_data = data_dict_diffNFlux['Differential_Number_Flux'][0][targetidx][ptchChoiceIdx]
 
 # get the model parameters
-modelParamsIdx = np.abs(data_dict_dispersiveFitData['Epoch'][0][wExamplePtch] - targetTime).argmin()
-exampleFit_Density = data_dict_dispersiveFitData['Density'][0][wExamplePtch][modelParamsIdx]
-exampleFit_Temperature = data_dict_dispersiveFitData['Temperature'][0][wExamplePtch][modelParamsIdx]
-exampleFit_Potential = data_dict_dispersiveFitData['potential'][0][wExamplePtch][modelParamsIdx]
-exampleFit_ChiSquare = data_dict_dispersiveFitData['chiSquare'][0][wExamplePtch][modelParamsIdx]
-exampleFit_Energies = data_dict_dispersiveFitData['fitted_Energies'][0][wExamplePtch][modelParamsIdx]
-exampleFit_diffNFlux = data_dict_dispersiveFitData['fitted_NFluxes'][0][wExamplePtch][modelParamsIdx]
-exampleFit_StdDev = data_dict_diffNFlux['Differential_Number_Flux_stdDev'][0][targetidx][ptchChoiceIdx]
+modelParamsIdx = np.abs(data_dict_dispersiveFitData['timestamp_fitData'][0] - targetTime).argmin()
 
-# plot the example fit
-axExampleFit.set_title(rf'Example Fit ($\alpha$ = {data_dict_dispersiveFitData["pitchAngle"][0][wExamplePtch][0]}$^\circ$, {data_dict_dist["Epoch"][0][targetidx].strftime("%H:%M:%S.%f")} UTC)',weight='bold',fontsize=Title_FontSize)
-axExampleFit.plot(exampleFit_Energies,exampleFit_diffNFlux,color='red',label=rf'n$_0$ =   {round(exampleFit_Density,2)} [cm$^{-3}$]' +'\n'+
-                                                                             rf'$T_e=$ {round(exampleFit_Temperature,1)} [eV]' +'\n'+
-                                                                             rf'$V_0=$ {round(exampleFit_Potential,0)} [eV]'+'\n'+
-                                                                             rf'$\chi^2_\nu=$ {round(exampleFit_ChiSquare,2)}',zorder=2)
-axExampleFit.plot(data_dict_dist['Energy'][0],diffNFlux_NoiseCount,color='black',label=f'{countNoiseLevel}-count noise')
-axExampleFit.vlines(exampleFit_Potential,ymin=0,ymax=1E13,color='red',linewidth=Plot_Linewidth,zorder=1)
-axExampleFit.errorbar(data_dict_dist['Energy'][0], exampleFitted_data,yerr=exampleFit_StdDev,color='tab:blue',marker='o',capsize=Errorbar_capsize,zorder=0)
-axExampleFit.set_yscale('log')
-axExampleFit.set_ylabel('[cm$^{-2}$s$^{-1}$sr$^{-1}$eV$^{-1}$]',fontsize=Label_FontSize,weight='bold')
-axExampleFit.set_ylim(3E4, 5E7)
-axExampleFit.set_xscale('log')
-axExampleFit.set_xlim(25, 1000)
-axExampleFit.legend(fontsize=Legend_fontSize,loc='upper right')
-axExampleFit.set_xlabel('Energy [eV]',fontsize=Label_FontSize,weight='bold')
-axExampleFit.tick_params(axis='y', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
-axExampleFit.tick_params(axis='x', labelsize=Tick_FontSize-5, length=Tick_Length, width=Tick_Width)
-axExampleFit.grid(True, alpha=0.4,which='both')
-axExampleFit.text(250, 5E4,s='Primaries',fontsize=Text_FontSize,weight='bold',va='center',ha='center')
-axExampleFit.text(70, 5E4,s='Secondaries/Backscatter', fontsize=Text_FontSize, weight='bold', va='center', ha='center')
+#
+# exampleFit_Density = data_dict_dispersiveFitData['Density'][0][wExamplePtch][modelParamsIdx]
+# exampleFit_Temperature = data_dict_dispersiveFitData['Te'][0][wExamplePtch][modelParamsIdx]
+# exampleFit_Potential = data_dict_dispersiveFitData['V0'][0][wExamplePtch][modelParamsIdx]
+# exampleFit_ChiSquare = data_dict_dispersiveFitData['VhiSquare'][0][wExamplePtch][modelParamsIdx]
+# exampleFit_Energies = data_dict_dispersiveFitData['fitted_Energies'][0][wExamplePtch][modelParamsIdx]
+# exampleFit_diffNFlux = data_dict_dispersiveFitData['fitted_NFluxes'][0][wExamplePtch][modelParamsIdx]
+# exampleFit_StdDev = data_dict_diffNFlux['Differential_Number_Flux_stdDev'][0][targetidx][ptchChoiceIdx]
+#
+# # plot the example fit
+# axExampleFit.set_title(rf'Example Fit ($\alpha$ = {data_dict_dispersiveFitData["pitchAngle"][0][wExamplePtch][0]}$^\circ$, {data_dict_dist["Epoch"][0][targetidx].strftime("%H:%M:%S.%f")} UTC)',weight='bold',fontsize=Title_FontSize)
+# axExampleFit.plot(exampleFit_Energies,exampleFit_diffNFlux,color='red',label=rf'n$_0$ =   {round(exampleFit_Density,2)} [cm$^{-3}$]' +'\n'+
+#                                                                              rf'$T_e=$ {round(exampleFit_Temperature,1)} [eV]' +'\n'+
+#                                                                              rf'$V_0=$ {round(exampleFit_Potential,0)} [eV]'+'\n'+
+#                                                                              rf'$\chi^2_\nu=$ {round(exampleFit_ChiSquare,2)}',zorder=2)
+# axExampleFit.plot(data_dict_dist['Energy'][0],diffNFlux_NoiseCount,color='black',label=f'{countNoiseLevel}-count noise')
+# axExampleFit.vlines(exampleFit_Potential,ymin=0,ymax=1E13,color='red',linewidth=Plot_Linewidth,zorder=1)
+# axExampleFit.errorbar(data_dict_dist['Energy'][0], exampleFitted_data,yerr=exampleFit_StdDev,color='tab:blue',marker='o',capsize=Errorbar_capsize,zorder=0)
+# axExampleFit.set_yscale('log')
+# axExampleFit.set_ylabel('[cm$^{-2}$s$^{-1}$sr$^{-1}$eV$^{-1}$]',fontsize=Label_FontSize,weight='bold')
+# axExampleFit.set_ylim(3E4, 5E7)
+# axExampleFit.set_xscale('log')
+# axExampleFit.set_xlim(25, 1000)
+# axExampleFit.legend(fontsize=Legend_fontSize,loc='upper right')
+# axExampleFit.set_xlabel('Energy [eV]',fontsize=Label_FontSize,weight='bold')
+# axExampleFit.tick_params(axis='y', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+# axExampleFit.tick_params(axis='x', labelsize=Tick_FontSize-5, length=Tick_Length, width=Tick_Width)
+# axExampleFit.grid(True, alpha=0.4,which='both')
+# axExampleFit.text(250, 5E4,s='Primaries',fontsize=Text_FontSize,weight='bold',va='center',ha='center')
+# axExampleFit.text(70, 5E4,s='Secondaries/Backscatter', fontsize=Text_FontSize, weight='bold', va='center', ha='center')
 
 #############################
 # --- DISTRIBUTIONS PLOTS ---
 #############################
 # theoreticalMaximumPSengy = exampleFit_Energies[-1] - exampleFit_Energies[0] # Technically what it should be
-theoreticalMaximumPSengy = 1+390.74 - exampleFit_Energies[0] # what it is if I'm above noise count 4
-print(theoreticalMaximumPSengy)
-velSpace_engy = [-1*engy for engy in data_dict_dist['Energy'][0] if engy <= theoreticalMaximumPSengy]+[0] + [engy for engy in data_dict_dist['Energy'][0] if engy <= theoreticalMaximumPSengy] # in eV
-velSpace_vel =  [-1*np.sqrt(2*q0*engy/m_e) for engy in data_dict_dist['Energy'][0] if engy <= theoreticalMaximumPSengy]+[0] + [np.sqrt(2*q0*engy/m_e) for engy in data_dict_dist['Energy'][0] if engy <= theoreticalMaximumPSengy] # in eV
-from Science.InvertedV.Evans_class_var_funcs import dist_Maxwellian
-dist_PrimaryV = [dist_Maxwellian(0, vel, avg_fitParams[0][0:2]) for vel in velSpace_vel]
-dist_DisReg = [dist_Maxwellian(0, vel, avg_fitParams[1][0:2]) for vel in velSpace_vel]
-
-# plot the distributions
-axDist = fig.add_subplot(gs02[0, 1])
-axDist.scatter(velSpace_engy,dist_PrimaryV,color='tab:blue',label=f'Dispersive Region Plasma Sheet Model (Avg)')
-axDist.scatter(velSpace_engy,dist_DisReg,color='tab:red', label=f'Primary inverted-V Plasma Sheet Model (Avg)')
-distDispersive = data_dict_dist['Distribution_Function'][0][targetidx][ptchChoiceIdx]
-distDispersive_vel = [np.sqrt(2*q0*engyVal/m_e) for engyVal in data_dict_dist['Energy'][0]]
-distDispersive_engy = [engyVal for engyVal in data_dict_dist['Energy'][0]]
-axDist.set_title('Model Comparison',fontsize=Title_FontSize,weight='bold')
-axDist.scatter(distDispersive_engy, distDispersive,color='black',label=f'Inverted-V (T={data_dict_dist["Epoch"][0][targetidx].strftime("%H:%M:%S.%f")} UTC)')
-axDist.set_ylim(1E-17, 1E-12)
-axDist.set_yscale('log')
-axDist.set_xlim(25, 1E3)
-axDist.set_xscale('log')
-axDist.set_xlabel('Energy [eV]',fontsize=Label_FontSize,weight='bold')
-axDist.set_ylabel('Dist. Function [$\mathbf{m^{-6}s^{3}}$]',fontsize=Label_FontSize-3,weight='bold')
-axDist.legend(fontsize=Legend_fontSize,loc='upper right')
-axDist.tick_params(axis='x', labelsize=Tick_FontSize-5, length=Tick_Length, width=Tick_Width)
-axDist.tick_params(axis='y', labelsize=Tick_FontSize-5, length=Tick_Length, width=Tick_Width)
-axDist.yaxis.set_label_position("right")
-axDist.yaxis.tick_right()
-axDist.grid(True,alpha=0.4,which='both')
+# theoreticalMaximumPSengy = 1+390.74 - exampleFit_Energies[0] # what it is if I'm above noise count 4
+# print(theoreticalMaximumPSengy)
+# velSpace_engy = [-1*engy for engy in data_dict_dist['Energy'][0] if engy <= theoreticalMaximumPSengy]+[0] + [engy for engy in data_dict_dist['Energy'][0] if engy <= theoreticalMaximumPSengy] # in eV
+# velSpace_vel =  [-1*np.sqrt(2*q0*engy/m_e) for engy in data_dict_dist['Energy'][0] if engy <= theoreticalMaximumPSengy]+[0] + [np.sqrt(2*q0*engy/m_e) for engy in data_dict_dist['Energy'][0] if engy <= theoreticalMaximumPSengy] # in eV
+#
+# from Science.InvertedV.Evans_class_var_funcs import dist_Maxwellian
+# dist_PrimaryV = [dist_Maxwellian(0, vel, avg_fitParams[0][0:2]) for vel in velSpace_vel]
+# dist_DisReg = [dist_Maxwellian(0, vel, avg_fitParams[1][0:2]) for vel in velSpace_vel]
+#
+# # plot the distributions
+# axDist = fig.add_subplot(gs02[0, 1])
+# axDist.scatter(velSpace_engy,dist_PrimaryV,color='tab:blue',label=f'Dispersive Region Plasma Sheet Model (Avg)')
+# axDist.scatter(velSpace_engy,dist_DisReg,color='tab:red', label=f'Primary inverted-V Plasma Sheet Model (Avg)')
+# distDispersive = data_dict_dist['Distribution_Function'][0][targetidx][ptchChoiceIdx]
+# distDispersive_vel = [np.sqrt(2*q0*engyVal/m_e) for engyVal in data_dict_dist['Energy'][0]]
+# distDispersive_engy = [engyVal for engyVal in data_dict_dist['Energy'][0]]
+# axDist.set_title('Model Comparison',fontsize=Title_FontSize,weight='bold')
+# axDist.scatter(distDispersive_engy, distDispersive,color='black',label=f'Inverted-V (T={data_dict_dist["Epoch"][0][targetidx].strftime("%H:%M:%S.%f")} UTC)')
+# axDist.set_ylim(1E-17, 1E-12)
+# axDist.set_yscale('log')
+# axDist.set_xlim(25, 1E3)
+# axDist.set_xscale('log')
+# axDist.set_xlabel('Energy [eV]',fontsize=Label_FontSize,weight='bold')
+# axDist.set_ylabel('Dist. Function [$\mathbf{m^{-6}s^{3}}$]',fontsize=Label_FontSize-3,weight='bold')
+# axDist.legend(fontsize=Legend_fontSize,loc='upper right')
+# axDist.tick_params(axis='x', labelsize=Tick_FontSize-5, length=Tick_Length, width=Tick_Width)
+# axDist.tick_params(axis='y', labelsize=Tick_FontSize-5, length=Tick_Length, width=Tick_Width)
+# axDist.yaxis.set_label_position("right")
+# axDist.yaxis.tick_right()
+# axDist.grid(True,alpha=0.4,which='both')
 
 
 # --- --- --- --- --- -
