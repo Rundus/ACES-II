@@ -76,6 +76,8 @@ def saturationFunc(x, a0, a1, a2):
 # --- MAIN FUNCTION ---
 #######################
 def L2_Langmuir_to_SciLangmuir(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
+
+    
     # --- ACES II Flight/Integration Data ---
     rocketAttrs, b, c = ACES_mission_dicts()
     rocketID = rocketAttrs.rocketID[wflyer]
@@ -109,8 +111,7 @@ def L2_Langmuir_to_SciLangmuir(wRocket, wFile, rocketFolderPath, justPrintFileNa
     # --- get the data from the L2 file ---
     prgMsg(f'Loading data from {inputPath_modifier} Files')
     data_dict = loadDictFromFile(inputFiles[wFile])
-    if SECTION_SweptProbeniTe:
-        data_dict['Epoch_swept_Current'][0] = np.array([pycdf.lib.datetime_to_tt2000(data_dict['Epoch_swept_Current'][0][i]) for i in (range(len(data_dict['Epoch_swept_Current'][0])))])
+    data_dict['Epoch_swept_Current'][0] = np.array([pycdf.lib.datetime_to_tt2000(data_dict['Epoch_swept_Current'][0][i]) for i in (range(len(data_dict['Epoch_swept_Current'][0])))])
     Done(start_time)
 
     # --- get IRI data ---
@@ -141,7 +142,7 @@ def L2_Langmuir_to_SciLangmuir(wRocket, wFile, rocketFolderPath, justPrintFileNa
 
     # determining n_i from Ion saturation
     # using the fixed LP data (now calibrated), determine n_i from the basic ion saturation current equation
-    if fixedTi_assumed: # use fixed Ti and m_i
+    if fixed_Ti_assumed: # use fixed Ti and m_i
         vth_i = [np.sqrt( 2*(q0*Ti_assumed)/(data_dict_IRI_interp['m_i_avg'][0][k])) for k in range(len(ni))]
     else: # use IRI model
         vth_i = [np.sqrt((kB*data_dict_IRI_interp['Ti'][0][k])/(data_dict_IRI_interp['m_i_avg'][0][k])) for k in range(len(ni))]

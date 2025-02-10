@@ -3,9 +3,7 @@ class FixedLPToggles:
     ### FIXED PROBE ###
     ###################
     SECTION_calculateFixedni = True
-    fixedTi_assumed = True  # IF FALSE use IRI model
-    tromsoCal = True  # scale the output density based off the tromso ionosonde and
-    # tromsoScales = [1/58, 1/180] # values used to make LP density match ~ 5.7E4 cm^-4 at the E-Region
+    fixed_Ti_assumed = True  # IF FALSE use IRI model
     tromsoScales = [1 / 50, 1 / 50]  # values used to make LP density match ~ 5.7E4 cm^-4 at the E-Region
     Ti_assumed = 0.1  # assuming an ion temperature (in eV)
     unit_conversion = 1E9  # 1 for Amps 10**9 for nano amps, etc

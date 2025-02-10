@@ -57,7 +57,7 @@ filterwarnings("ignore")
 from tqdm import tqdm
 from src.missionAttributes import ACES_mission_dicts
 from src.data_paths import Integration_data_folder, ACES_data_folder, TRICE_data_folder, fliers
-from src.class_var_func import L2_ACES_Quick
+from src.archive.class_var_func import L2_ACES_Quick
 from spaceToolsLib import color,prgMsg,cm_to_m,q0,IonMasses,m_e
 from glob import glob
 from os.path import getsize
