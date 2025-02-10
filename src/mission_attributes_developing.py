@@ -65,15 +65,14 @@ class ACESII:
                   [11, 27, 44, 86, 102, 115, 143]]
     ESA_max_counts = 4095
     ESA_clk_input = 625
+    ESA_time_between_steps_in_ns = 0.001 * (10 ** (9))
+    ESA_count_tnterval = 917  # measured in ns
 
+    LP_words = [15, 29, 46, 66, 90, 104, 117, 133, 145]
+    LP_variables_names = ["deltaNdivN", "step", "ne_swept", "ni_swept", "ni"]
 
-    time_between_steps_in_ns = 0.001 * (10 ** (9))
+    minor_frame_time = 250000
 
-
-    'LP_words': [15, 29, 46, 66, 90, 104, 117, 133, 145],
-    'LP_Variables': ["deltaNdivN", "step", "ne_swept", "ni_swept", "ni"],
-    'MinorFrameTime': 250000,
-    'Count_Interval': 917,  # measured in ns
     'LPSamplePeriod': 31250,
     'LPFixedProbeBias': [-5.05, -4.96],
 
