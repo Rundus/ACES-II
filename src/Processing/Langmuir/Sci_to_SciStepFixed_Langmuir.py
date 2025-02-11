@@ -1,9 +1,9 @@
-import numpy as np
+import spaceToolsLib as stl
 from scipy import signal
 from matplotlib import pyplot as plt
-from ACESII_code.myImports import *
+from src.my_imports import *
 inputFile_Langmuir = 'C:\Data\ACESII\L3\Langmuir\low\ACESII_36364_langmuir_fixed.cdf'
-data_dict_langmuir = deepcopy(loadDictFromFile(inputFile_Langmuir,wKeys_Load=['ni','Epoch','ILat']))
+data_dict_langmuir = deepcopy(stl.loadDictFromFile(inputFile_Langmuir,wKeys_Load=['ni','Epoch','ILat']))
 d = data_dict_langmuir['ni'][0][1000:4000]
 
 # Convolution part

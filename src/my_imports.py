@@ -1,18 +1,22 @@
-# --- myImports.py ---
+# --- my_imports.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: There are some common imports that every file uses. In order to de-clutter my code
 # I can place these imports here. Only the imports which EVERY file uses will go here.
 
-#########################
-# --- IMPORTS IMPORTS ---
-#########################
-######################
-# --- FROM IMPORTS ---
-######################
-
-
-# from spaceToolsLib.tools.epochTime import dateTimetoTT2000
+#################
+# --- IMPORTS ---
+#################
 from spaceToolsLib.setupFuncs.setupSpacepy import setupPYCDF
+from copy import deepcopy
+from glob import glob
+from src.data_paths import DataPaths
+from src.mission_attributes import ACESII
+
+import spaceToolsLib as stl
+import os
+import numpy as np
+import spaceToolsLib as stl
+
 
 #####################
 # --- SETUP PYCDF ---

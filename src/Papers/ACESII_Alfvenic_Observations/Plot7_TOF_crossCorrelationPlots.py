@@ -10,7 +10,7 @@ __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
 import spaceToolsLib as stl
-from src.myImports import *
+from src.my_imports import *
 start_time = time.time()
 
 # --- --- --- --- ---

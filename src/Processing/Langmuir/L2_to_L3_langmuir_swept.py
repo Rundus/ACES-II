@@ -1,4 +1,4 @@
-# --- L2_langmuir_to_sci_langmuir_swept.py ---
+# --- L2_to_L3_langmuir_swept.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Takes in the L2 Langmuir Data and
 # (1) Converts fixed Fixed LP current to ni
@@ -17,7 +17,7 @@ __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
-from src.myImports import *
+from src.my_imports import *
 
 start_time = time.time()
 # --- --- --- --- ---
@@ -61,8 +61,8 @@ outputData = True
 # --- IMPORTS ---
 # --- --- --- ---
 
-from src.Science.LangmuirProbes.archive.LP_gridSearch_toggles import searchStartsHere, a0_range,a1_range,a2_range,satNumPoints
-from src.Science.LangmuirProbes.toggles import SweptLPToggles
+from src.Science.LangmuirProbes import searchStartsHere, a0_range,a1_range,a2_range,satNumPoints
+from src.Science.LangmuirProbes import SweptLPToggles
 
 ##############################
 # --- FITTED CHI FUNCTIONS ---

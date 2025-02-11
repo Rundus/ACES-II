@@ -1,4 +1,4 @@
-#--- L1_to_L2_Langmuir.py ---
+#--- L1_to_L2_langmuir_fixed.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Convert the engineering Langmuir data to scientifically useful units.
 # Also renames "Boom_Monitor_1/2" --> "Fixed_Boom_Monitor_1/2" etc

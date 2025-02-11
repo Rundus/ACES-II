@@ -1,15 +1,36 @@
-class FixedLPToggles:
-    ###################
-    ### FIXED PROBE ###
-    ###################
+
+
+class L1toL2_FixedLPToggles:
+
+
+
+class L2toL3_FixedLPToggles:
+
+    # --- FILE I/O ---
+    modifier = ''
+    inputPath_modifier = 'L2'  # e.g. 'L1' or 'L1'. It's the name of the broader input folder
+    outputPath_modifier = 'L3\Langmuir'  # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+    errorPath_modifier = 'calibration\LP_calibration'
+
+    ####################
+    # -- FIXED PROBE ---
+    ####################
     SECTION_calculateFixedni = True
     fixed_Ti_assumed = True  # IF FALSE use IRI model
     tromsoScales = [1 / 50, 1 / 50]  # values used to make LP density match ~ 5.7E4 cm^-4 at the E-Region
     Ti_assumed = 0.1  # assuming an ion temperature (in eV)
+    V_plas_assumed = 2
     unit_conversion = 1E9  # 1 for Amps 10**9 for nano amps, etc
 
 
-class SweptLPToggles:
+class L2toL3_SweptLPToggles:
+
+    # --- FILE I/O ---
+    modifier = ''
+    inputPath_modifier = 'L2'  # e.g. 'L1' or 'L1'. It's the name of the broader input folder
+    outputPath_modifier = 'L3\Langmuir'  # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+    errorPath_modifier = 'calibration\LP_calibration'
+
     ###################
     ### SWEPT PROBE ###
     ###################

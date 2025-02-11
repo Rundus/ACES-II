@@ -40,7 +40,7 @@ outputPath_modifier = 'science\AlfvenSignatureAnalysis' # e.g. 'L2' or 'Langmuir
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.myImports import *
+from src.my_imports import *
 # from ACESII_code.missionAttributes import ACES_mission_dicts
 # from ACESII_code.data_paths import ACES_data_folder, fliers
 # from ACESII_code.class_var_func import color, prgMsg, L2_TRICE_Quick,loadDictFromFile

@@ -4,7 +4,7 @@
 
 
 # --- --- --- --- ---
-from src.myImports import *
+from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
 

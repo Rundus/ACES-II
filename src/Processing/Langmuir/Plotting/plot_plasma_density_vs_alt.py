@@ -1,4 +1,4 @@
-# --- PlasmaDensity_vs_Alt.py ---
+# --- plot_plasma_density_vs_alt.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Using the derived plasma density from the Fixed Langmuir Probe, we can
 # see how this density looks when plotted vs altitude
