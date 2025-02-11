@@ -2,6 +2,28 @@
 
 class L1toL2_FixedLPToggles:
 
+    # --- FILE I/O ---
+    modifier = ''
+    inputPath_modifier = 'L1'  # e.g. 'L1' or 'L1'. It's the name of the broader input folder
+    outputPath_modifier = 'L2'  # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+
+
+class L1toL2_SweptLPToggles:
+
+    # --- FILE I/O ---
+    modifier = ''
+    inputPath_modifier = 'L1'  # e.g. 'L1' or 'L1'. It's the name of the broader input folder
+    outputPath_modifier = 'L2'  # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+
+    # --- RC effect downsample ---
+    down_sample_RC_effect_bool = False
+    keep_this_many_points = 1 # how many points to keep when you downsample RC effect
+
+    # --- break into curves toggles ---
+    breakIntoCurves = True
+    targetVoltage_min = -1  # only care about voltage sweeps above this voltage value. Nominally -1
+    digitalVariance = 5  # how much the digitized step point can vary when looking for the top and bottom of curves. nominally = 5
+    indvEpochThresh = 15000000  # Value, in tt2000, that determines the time diff needed between epoch points to identify particular sweeps
 
 
 class L2toL3_FixedLPToggles:
@@ -15,12 +37,9 @@ class L2toL3_FixedLPToggles:
     ####################
     # -- FIXED PROBE ---
     ####################
-    SECTION_calculateFixedni = True
-    fixed_Ti_assumed = True  # IF FALSE use IRI model
-    tromsoScales = [1 / 50, 1 / 50]  # values used to make LP density match ~ 5.7E4 cm^-4 at the E-Region
+    fixed_Ti_assumed = False  # IF FALSE use IRI model
     Ti_assumed = 0.1  # assuming an ion temperature (in eV)
-    V_plas_assumed = 2
-    unit_conversion = 1E9  # 1 for Amps 10**9 for nano amps, etc
+    V_plas_assumed = [1,2]
 
 
 class L2toL3_SweptLPToggles:

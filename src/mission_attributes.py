@@ -17,12 +17,12 @@ class ACESII:
     instrument_names_full = ['EEPAA>Electron Energy Pitch Angle Analyzer',
                              'LEESA>Low Energy Electrostatic Analyzer',
                              'IEPAA>Ion Energy Pitch Angle Analyzer',
-                             'Langmuir_Probe>Langmuir Probe'],
+                             'Langmuir_Probe>Langmuir Probe']
 
     # --- Launch Conditions ---
     launch_lat_long = [69.294167, 16.020833] # andoya
     launch_magnetic_inclination = 78.1300 # in deg
-    launch_T0_TT2000 = [722236869184000000, 722236969184000000],  # TT2000 values corresponding to 17:20:00 and 17:21:40 for high/low flyer, respectively.
+    launch_T0_TT2000 = [722236869184000000, 722236969184000000]  # TT2000 values corresponding to 17:20:00 and 17:21:40 for high/low flyer, respectively.
 
     # --- Flight Performance ---
     avg_coning_rate = [0.05397837461866082, 0.11071336310292652]
@@ -49,9 +49,9 @@ class ACESII:
 
 
     # --- De-Coming the Data --
-    g_nWords =  150
+    g_nWords = 150
     g_nNomRecLen = 150 * 2 + 12
-    nNomDataLen = 150 - 2,
+    nNomDataLen = 150 - 2
     gSync = b'\x40\x28\x6b\xfe' # g_sSync = "\xfe\x6b\x28\x40"  is the real frame sync but the data is little endian
     nDataLen = "74I"
 
@@ -76,12 +76,12 @@ class ACESII:
                   [11, 27, 44, 86, 102, 115, 143]]
     ESA_max_counts = 4095
     ESA_clk_input = 625
-    ESA_time_between_steps_in_ns = 0.001 * (10 ** (9))
+    ESA_time_between_steps_in_ns = 0.001 * (1E9)
     ESA_count_tnterval = 917  # measured in ns
     ESA_geometric_factor_TRICEII = [
         [0.000174 for i in range(21)],
         [0.000174/100 for i in range(21)], # LEESA geofactor was ~EEPAA/100
-        [0.000174 for i in range(7)]],
+        [0.000174 for i in range(7)]]
     ESA_geometric_factor_TRACERS_ACE = [
         [8.63E-5 for i in range(21)],  # CONFIRMED: in units of cm^2 str^1
         [8.63E-5 / 100 for i in range(21)],  # LEESA geofactor was ~EEPAA/100
@@ -125,14 +125,14 @@ class ACESII:
     # Langmuir Probes
     LP_words = [15, 29, 46, 66, 90, 104, 117, 133, 145]
     LP_variables_names = ["deltaNdivN", "step", "ne_swept", "ni_swept", "ni"]
-    LP_sample_period: 31250 # in ns
+    LP_sample_period = 31250 # in ns
     LP_fixed_probe_bias = [-5.05, -4.96]
     LP_fixed_cal_resistances = [
         {'Open': 165, 500000000: 2170, 250000000: 2308, 100000000: 2540, 50000000: 2710, 10000000: 3122, 5000000: 3299},
         {'Open': 165, 500000000: 2063, 250000000: 2260, 100000000: 2500, 50000000: 2660, 10000000: 3060, 5000000: 3194}
     ]
     LP_swept_voltage_range = [[-4.72, 2.12], [-4.68, 2.08]]
-    LP_swept_cal_resistances = [10 * 10 ** (9), 500 * 10 ** (6), 250 * 10 ** (6), 100 * 10 ** (6), 50 * 10 ** (6), 10 * 10 ** (6), 5 * 10 ** (6)],
+    LP_swept_cal_resistances = [10 * 1E9, 500 * 1E6, 250 *1E6, 100 * 1E6, 50 * 1E6, 10 *1E6, 5 *1E6],
     LPswept_cal_epoch_ranges_single_sweep = [
         [  # HIGH FLYER
             [dt.datetime(2022, 11, 3, 13, 56, 11, 910063), dt.datetime(2022, 11, 3, 13, 56, 14, 88450)],  # open
@@ -177,9 +177,9 @@ class ACESII:
     ]
 
 
-    LP_probe_areas = [[0.002014, 0.002014], [0.002014, 0.002014]],  # square meters
-    LP_epoch_range_to_determine_step_DAC = [[dt.datetime(2022, 11, 20, 17, 24, 30, 300000), dt.datetime(2022, 11, 20, 17, 25, 10, 310000)], [dt.datetime(2022, 11, 20, 17, 24, 30, 440000), dt.datetime(2022, 11, 20, 17, 25, 10, 450000)]],
-    LP_start_end_langmuir_break_into_curves = [ [dt.datetime(2022, 11, 20, 17, 21, 00, 890000), dt.datetime(2022, 11, 20, 17, 29, 57, 700000)], [dt.datetime(2022, 11, 20, 17, 23, 5, 10000), dt.datetime(2022, 11, 20, 17, 28, 9, 900000)]],
+    LP_probe_areas = [[0.002014, 0.002014], [0.002014, 0.002014]]  # square meters
+    LP_epoch_range_to_determine_step_DAC = [[dt.datetime(2022, 11, 20, 17, 24, 30, 300000), dt.datetime(2022, 11, 20, 17, 25, 10, 310000)], [dt.datetime(2022, 11, 20, 17, 24, 30, 440000), dt.datetime(2022, 11, 20, 17, 25, 10, 450000)]]
+    LP_start_end_langmuir_break_into_curves = [ [dt.datetime(2022, 11, 20, 17, 21, 00, 890000), dt.datetime(2022, 11, 20, 17, 29, 57, 700000)], [dt.datetime(2022, 11, 20, 17, 23, 5, 10000), dt.datetime(2022, 11, 20, 17, 28, 9, 900000)]]
 
 
 

@@ -35,23 +35,18 @@ justPrintFileNames = False # Just print the names of files
 # 5 -> ACES II Low Flier
 wRocket = 4
 
-# select which files to convert
-# [] --> all files
-# [#0,#1,#2,...etc] --> only specific files. Follows python indexing. use justPrintFileNames = True to see which files you need.
-wFiles = [0]
-
 # --- OutputData ---
 outputData = True
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.Processing.Langmuir.toggles import L2toL3_FixedLPToggles
+from src.Processing.Langmuir.toggles import L2toL3_FixedLPToggles as fToggles
 
 #######################
 # --- MAIN FUNCTION ---
 #######################
-def L2_to_L3_langmuir_fixed(wflyer, wFile, justPrintFileNames):
+def L2_to_L3_langmuir_fixed(wflyer, justPrintFileNames):
 
     # --- FILE I/O ---
     rocket_folder_path = DataPaths.ACES_data_folder
@@ -59,31 +54,23 @@ def L2_to_L3_langmuir_fixed(wflyer, wFile, justPrintFileNames):
     globalAttrsMod = deepcopy(ACESII.global_attributes[wflyer])
     globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'LangmuirData'
 
-    inputFiles = glob(f'{rocket_folder_path}{L2toL3_FixedLPToggles.inputPath_modifier}\{ACESII.fliers[wflyer]}{L2toL3_FixedLPToggles.modifier}\*langmuir*')
-    outputFiles = glob(f'{rocket_folder_path}{L2toL3_FixedLPToggles.outputPath_modifier}\{ACESII.fliers[wflyer]}\*Temp&Density*')
-
-    input_names = [ifile.replace(f'{rocket_folder_path}{L2toL3_FixedLPToggles.inputPath_modifier}\{ACESII.fliers[wflyer]}{L2toL3_FixedLPToggles.modifier}\\', '') for ifile in inputFiles]
-    output_names = [ofile.replace(f'{rocket_folder_path}{L2toL3_FixedLPToggles.outputPath_modifier}\{ACESII.fliers[wflyer]}\\', '') for ofile in outputFiles]
-
-    input_names_searchable = [ifile.replace(L2toL3_FixedLPToggles.inputPath_modifier.lower() + '_', '').replace('_v00', '') for ifile in input_names]
-    output_names_searchable = [ofile.replace(L2toL3_FixedLPToggles.outputPath_modifier.lower() + '_', '').replace('_v00', '').replace('__', '_') for ofile in output_names]
-
-    dataFile_name = inputFiles[wFile].replace(f'{rocket_folder_path}{L2toL3_FixedLPToggles.inputPath_modifier}\{ACESII.fliers[wflyer]}{L2toL3_FixedLPToggles.modifier}\\','')
+    inputFiles = glob(f'{rocket_folder_path}{fToggles.inputPath_modifier}\{ACESII.fliers[wflyer]}{fToggles.modifier}\*langmuir_fixed*')
+    input_names = [ifile.replace(f'{rocket_folder_path}{fToggles.inputPath_modifier}\{ACESII.fliers[wflyer]}{fToggles.modifier}\\', '') for ifile in inputFiles]
+    input_names_searchable = [ifile.replace(fToggles.inputPath_modifier.lower() + '_', '').replace('_v00', '') for ifile in input_names]
+    dataFile_name = inputFiles[0].replace(f'{rocket_folder_path}{fToggles.inputPath_modifier}\{ACESII.fliers[wflyer]}{fToggles.modifier}\\','')
 
     if justPrintFileNames:
         for i, file in enumerate(inputFiles):
-            anws = ["yes" if input_names_searchable[i].replace('.cdf', "") in output_names_searchable else "no"]
-            print('[{:.0f}] {:80s}{:5.1f} MB   Made L2: {:3s} '.format(i, input_names_searchable[i], round(os.path.getsize(file) / (10 ** 6), 1), anws[0]))
+            print('[{:.0f}] {:80s}{:5.1f} MB'.format(i, input_names_searchable[i], round(os.path.getsize(file) / (10 ** 6), 1)))
         return
 
     print('\n')
-    print(stl.color.UNDERLINE + f'Converting to {L2toL3_FixedLPToggles.outputPath_modifier} data for {dataFile_name}' + stl.color.END)
-    print('[' + str(wFile) + ']   ' + str(round(os.path.getsize(inputFiles[wFile]) / (10 ** 6), 1)) + 'MiB')
+    print(stl.color.UNDERLINE + f'Converting to {fToggles.outputPath_modifier} data for {dataFile_name}' + stl.color.END)
+    print('[' + str(0) + ']   ' + str(round(os.path.getsize(inputFiles[0]) / (10 ** 6), 1)) + 'MiB')
 
     # --- get the data from the L2 file ---
-    stl.prgMsg(f'Loading data from {L2toL3_FixedLPToggles.inputPath_modifier} Files')
-    data_dict = stl.loadDictFromFile(inputFiles[wFile])
-    data_dict['Epoch_swept_Current'][0] = np.array([pycdf.lib.datetime_to_tt2000(data_dict['Epoch_swept_Current'][0][i]) for i in (range(len(data_dict['Epoch_swept_Current'][0])))])
+    stl.prgMsg(f'Loading data from {fToggles.inputPath_modifier} Files')
+    data_dict = stl.loadDictFromFile(inputFiles[0])
     stl.Done(start_time)
 
     # --- get IRI data ---
@@ -95,29 +82,32 @@ def L2_to_L3_langmuir_fixed(wflyer, wFile, justPrintFileNames):
     ##################################################################
     # --- Calculate the plasma density from Ion Saturation Current ---
     ##################################################################
-    stl.prgMsg('Calculating Fixed ni')
 
-    # get the data
-    fixed_current = data_dict['fixed_current'][0]
+    stl.prgMsg('Interpolating IRI model')
 
     # interpolate IRI model onto LP data
     data_dict_IRI_interp = stl.InterpolateDataDict(InputDataDict=data_dict_IRI,
                                                InputEpochArray=data_dict_IRI['Epoch'][0],
-                                               wKeys=[],
-                                               targetEpochArray=data_dict['fixed_Epoch'][0])
+                                               wKeys=['Ti', 'm_i_avg'],
+                                               targetEpochArray=data_dict['Epoch'][0])
+    stl.Done(start_time)
+
+    stl.prgMsg('Calculating Fixed ni')
+    # get the data
+    fixed_current = data_dict['fixed_current'][0]  # note: current is in Nano Amps
 
     # determining n_i from Ion saturation
     # using the fixed LP data (now calibrated), determine n_i from the basic ion saturation current equation
-    if L2toL3_FixedLPToggles.fixed_Ti_assumed: # use fixed Ti and m_i
-        vth_i = np.sqrt(2*(stl.q0*L2toL3_FixedLPToggles.Ti_assumed)/ (data_dict_IRI_interp['m_i_avg'][0]*np.pi))
+    if fToggles.fixed_Ti_assumed: # use fixed Ti and m_i
+        vth_i = np.array(np.sqrt(2*(stl.q0*fToggles.Ti_assumed)/ (data_dict_IRI_interp['m_i_avg'][0]*np.pi)))
         I_th = (1 / 2) * stl.q0 * ACESII.LP_probe_areas[wflyer][0] * vth_i
-        ni_density_m3 = (fixed_current * (1E-9)) / (I_th * (1 + (ACESII.LP_fixed_probe_bias[wflyer] - L2toL3_FixedLPToggles.V_plas_assumed) / L2toL3_FixedLPToggles.fixed_Ti_assumed))
+        ni_density_m3 = (-1*fixed_current * (1E-9)) / (I_th * (1 + (ACESII.LP_fixed_probe_bias[wflyer] - fToggles.V_plas_assumed) / fToggles.fixed_Ti_assumed))
 
     else: # use IRI model
         Ti_eV = stl.kB* data_dict_IRI_interp['Ti'][0]/stl.q0
-        vth_i = np.sqrt(2*(stl.q0*Ti_eV)/ (data_dict_IRI_interp['m_i_avg'][0]*np.pi))
+        vth_i = np.array(np.sqrt(2*(stl.q0*Ti_eV)/ (data_dict_IRI_interp['m_i_avg'][0]*np.pi)))
         I_th = (1/2)*stl.q0*ACESII.LP_probe_areas[wflyer][0]*vth_i
-        ni_density_m3 = (fixed_current*(1E-9)) / (I_th*(1 + (ACESII.LP_fixed_probe_bias[wflyer] - L2toL3_FixedLPToggles.V_plas_assumed)/Ti_eV))
+        ni_density_m3 = (-1*fixed_current*(1E-9)) / (I_th*(1 + (ACESII.LP_fixed_probe_bias[wflyer] - fToggles.V_plas_assumed[wflyer])/Ti_eV))
 
     ni_density_cm3 = (1/(1E6))*ni_density_m3
     # ni_density_cm3[np.abs(ni_density_cm3) > 1E10] = ACESII.epoch_fillVal # remove outliers
@@ -135,9 +125,9 @@ def L2_to_L3_langmuir_fixed(wflyer, wFile, justPrintFileNames):
                                                                    'VAR_TYPE': 'data', 'SCALETYP': 'linear'}
 
     data_dict_fixed = {'ni': [ni_density_cm3, varAttrs],
-                       'Epoch': deepcopy(data_dict['fixed_Epoch']),
-                       'Fixed_Boom_Monitor': deepcopy(data_dict['Fixed_Boom_Monitor']),
-                       'Epoch_Fixed_Boom_Monitor': deepcopy(data_dict['Epoch_Fixed_Boom_Monitor'])
+                       'Epoch': deepcopy(data_dict['Epoch']),
+                       'fixed_boom_monitor': deepcopy(data_dict['fixed_boom_monitor']),
+                       'Epoch_boom_monitor': deepcopy(data_dict['Epoch_boom_monitor'])
                        }
 
 
@@ -159,6 +149,7 @@ def L2_to_L3_langmuir_fixed(wflyer, wFile, justPrintFileNames):
     # deltaNi = data_dict['ni_percent_error'][0][0]*np.array(data_dict_fixed['ni'][0])
     # data_dict_fixed = {**data_dict_fixed, **{'ni_error':[deltaNi,deepcopy(data_dict_fixed['ni'][1])]}}
     # stl.Done(start_time)
+    stl.Done(start_time)
 
 
     if outputData:
@@ -167,8 +158,8 @@ def L2_to_L3_langmuir_fixed(wflyer, wFile, justPrintFileNames):
         # --- WRITE OUT THE DATA ---
         # --- --- --- --- --- --- ---
         stl.prgMsg('Creating output file')
-        fileoutName_fixed = f'ACESII_{rocketID}_langmuir_fixed.cdf'
-        outputPath = f'{rocket_folder_path}{L2toL3_FixedLPToggles.outputPath_modifier}\{ACESII.fliers[wflyer]}\\{fileoutName_fixed}'
+        fileoutName_fixed = f'ACESII_{rocketID}_l3_langmuir_fixed.cdf'
+        outputPath = f'{rocket_folder_path}{fToggles.outputPath_modifier}\{ACESII.fliers[wflyer]}\\{fileoutName_fixed}'
         stl.outputCDFdata(outputPath, data_dict_fixed, instrNam= 'Langmuir Probe',globalAttrsMod=globalAttrsMod)
         stl.Done(start_time)
 
@@ -177,11 +168,10 @@ def L2_to_L3_langmuir_fixed(wflyer, wFile, justPrintFileNames):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-data_directory = f'{DataPaths.ACES_data_folder}{L2toL3_FixedLPToggles.inputPath_modifier}\{ACESII.fliers[wRocket-4]}{L2toL3_FixedLPToggles.modifier}\*.cdf'
+data_directory = f'{DataPaths.ACES_data_folder}{fToggles.inputPath_modifier}\{ACESII.fliers[wRocket-4]}{fToggles.modifier}\*.cdf'
 
 if len(glob(data_directory)) == 0:
     print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
-    for file_idx in wFiles:
-        L2_to_L3_langmuir_fixed(wRocket-4, file_idx, justPrintFileNames)
+    L2_to_L3_langmuir_fixed(wRocket-4, justPrintFileNames)
 
