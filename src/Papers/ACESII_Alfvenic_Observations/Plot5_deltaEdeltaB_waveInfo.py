@@ -13,8 +13,8 @@ __version__ = "1.0.0"
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-from ACESII_code.myImports import *
+from src.my_imports import *
+import time
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -23,11 +23,9 @@ start_time = time.time()
 # --- IMPORTS ---
 # --- --- --- ---
 from numpy.fft import rfft, fftfreq
-from myspaceToolsLib.physicsVariables import u0
-from myspaceToolsLib.interpolate import InterpolateDataDict
 from scipy.integrate import simpson
 from scipy.signal import spectrogram
-from my_matplotlib_Assets.colorbars.matlab_parula import matlab_parula_cmap
+import spaceToolsLib as stl
 
 # --- --- --- ---
 # --- TOGGLES ---
@@ -102,8 +100,8 @@ targetVarName = 'ILat'
 # --- LOAD IN THE DATA ---
 # --- --- --- --- --- ---
 
-print(color.UNDERLINE + f'Plot3_WaveAnalysis' + color.END)
-prgMsg('Loading Data')
+print(stl.color.UNDERLINE + f'Plot3_WaveAnalysis' + stl.color.END)
+stl.prgMsg('Loading Data')
 
 # inputFile_deltaB = glob('C:\Data\ACESII\L3\deltaB\low\*Field_Aligned*')[0] # get the deltaB data
 # inputFile_deltaE = glob('C:\Data\ACESII\L3\deltaE\low\*Field_Aligned*')[0] # get the deltaE data
@@ -128,13 +126,13 @@ dict_sets = []
 sectionTimeRange = []
 
 for i in range(len(targetVar)):
-    data_dict_E = loadDictFromFile(inputFile_E,targetVar=[targetVar[i], targetVarName])
-    data_dict_B = loadDictFromFile(inputFile_B,targetVar=[targetVar[i], targetVarName])
-    data_dict_deltaB = deepcopy(loadDictFromFile(inputFile_deltaB,targetVar=[targetVar[i], targetVarName]))
-    data_dict_deltaE = deepcopy(loadDictFromFile(inputFile_deltaE,targetVar=[targetVar[i], targetVarName]))
-    data_dict_poynting = deepcopy(loadDictFromFile(inputFile_poynting,targetVar=[targetVar[i], targetVarName]))
-    data_dict_langmuir = deepcopy(loadDictFromFile(inputFile_Langmuir,targetVar=[targetVar[i], targetVarName],wKeys_Load=['ni', 'Epoch', 'ILat']))
-    data_dict_EISCAT = deepcopy(loadDictFromFile(inputFile_EISCAT, targetVar=[targetVar[i], targetVarName],wKeys_Load=['Ion_Comp', 'Op_Comp','ILat','Epoch']))
+    data_dict_E = stl.loadDictFromFile(inputFile_E,targetVar=[targetVar[i], targetVarName])
+    data_dict_B = stl.loadDictFromFile(inputFile_B,targetVar=[targetVar[i], targetVarName])
+    data_dict_deltaB = deepcopy(stl.loadDictFromFile(inputFile_deltaB,targetVar=[targetVar[i], targetVarName]))
+    data_dict_deltaE = deepcopy(stl.loadDictFromFile(inputFile_deltaE,targetVar=[targetVar[i], targetVarName]))
+    data_dict_poynting = deepcopy(stl.loadDictFromFile(inputFile_poynting,targetVar=[targetVar[i], targetVarName]))
+    data_dict_langmuir = deepcopy(stl.loadDictFromFile(inputFile_Langmuir,targetVar=[targetVar[i], targetVarName],wKeys_Load=['ni', 'Epoch', 'ILat']))
+    data_dict_EISCAT = deepcopy(stl.loadDictFromFile(inputFile_EISCAT, targetVar=[targetVar[i], targetVarName],wKeys_Load=['Ion_Comp', 'Op_Comp','ILat','Epoch']))
 
     # downsample the langmuir data
     indexVals = [np.abs(data_dict_langmuir['ILat'][0] - ILat).argmin() for ilt, ILat in enumerate(data_dict_B['ILat'][0])]
@@ -143,7 +141,7 @@ for i in range(len(targetVar)):
     data_dict_langmuir['ILat'][0] = deepcopy(data_dict_langmuir['ILat'][0][indexVals])
 
     # Up-sample the EISCAT data (it's fine since the EISCAT variables are very slowly varying)
-    data_dict_EISCAT_interp = InterpolateDataDict(InputDataDict=data_dict_EISCAT,InputEpochArray=data_dict_EISCAT['Epoch'][0],targetEpochArray=data_dict_deltaE['Epoch'][0],wKeys=[])
+    data_dict_EISCAT_interp = stl.InterpolateDataDict(InputDataDict=data_dict_EISCAT,InputEpochArray=data_dict_EISCAT['Epoch'][0],targetEpochArray=data_dict_deltaE['Epoch'][0],wKeys=[])
     data_dict_EISCAT = deepcopy(data_dict_EISCAT_interp)
 
     sectionTimeRange.append([data_dict_deltaB['Epoch'][0][0], data_dict_deltaB['Epoch'][0][-1]])
@@ -163,7 +161,7 @@ for i in range(len(targetVar)):
                       ])
 
 
-Done(start_time)
+stl.Done(start_time)
 
 #######################################
 # --- PREPARE THE DATA FOR PLOTTING ---
@@ -215,13 +213,13 @@ def Plot3_deltaEdeltaB_waveInfo(targetVar,dict_sets):
         dE_p = data_dicts[1]['E_p'][0]
         dE_r = data_dicts[1]['E_r'][0]
 
-        ni = (cm_to_m ** 3) * data_dicts[3]['ni'][0]
+        ni = (stl.cm_to_m ** 3) * data_dicts[3]['ni'][0]
 
         # calculate the Alfven speed using EISCAT mass concentrations
         # Note: At 180km the primary contributions to Ions are NO+, O2+, N2+, O+
         # With the exception of O+, everything has an atomic mass around 28-32 amu. EISCAT gives these ratios of concentration
-        rhoCalc = (ni*data_dicts[6]['Ion_Comp'][0]*((IonMasses[4] + IonMasses[5] + IonMasses[7])/3) + IonMasses[1]*ni*data_dicts[6]['Op_Comp'][0])
-        VA_t = B0 / np.sqrt(u0 * rhoCalc)
+        rhoCalc = (ni*data_dicts[6]['Ion_Comp'][0]*((stl.IonMasses[4] + stl.IonMasses[5] + stl.IonMasses[7])/3) + stl.IonMasses[1]*ni*data_dicts[6]['Op_Comp'][0])
+        VA_t = B0 / np.sqrt(stl.u0 * rhoCalc)
         VA_avg = sum(VA_t)/len(VA_t)
 
         # calculate the normalization
@@ -327,7 +325,7 @@ def Plot3_deltaEdeltaB_waveInfo(targetVar,dict_sets):
 
     for wKeySet in kSets:
 
-        prgMsg('Plotting Data')
+        stl.prgMsg('Plotting Data')
         fig, ax = plt.subplots(nrows=4, ncols=len(targetVar))
         fig.set_size_inches(figure_width, figure_height)
 
@@ -565,7 +563,7 @@ def Plot3_deltaEdeltaB_waveInfo(targetVar,dict_sets):
         # cbar.set_label('Histogram Occurance (%)', labelpad=5)
 
         plt.savefig(outputPath, dpi=dpi,bbox_inches='tight')
-        Done(start_time)
+        stl.Done(start_time)
 
 
 

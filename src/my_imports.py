@@ -18,6 +18,7 @@ import os
 from os.path import getsize
 import numpy as np
 import spaceToolsLib as stl
+import time
 
 
 #####################
