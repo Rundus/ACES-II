@@ -455,7 +455,8 @@ if makeColorbarPlot:
     axColorbarPlot.set_extent([lonW, lonE, latS, latN])  # controls lat/long axes display
 
     # --- Plot the Big AllSky image ---
-    cmapBigAllSky = axColorbarPlot.pcolormesh(data_dict_allSky5577['GLongs'][0], data_dict_allSky5577['GLats'][0],
+    cmapBigAllSky = axColorbarPlot.pcolormesh(data_dict_allSky5577['GLongs'][0],
+                                              data_dict_allSky5577['GLats'][0],
                                            data_dict_allSky5577['AllSkyImages'][0][wImage],
                                            cmap=cmapColor,
                                            transform=projTransform,

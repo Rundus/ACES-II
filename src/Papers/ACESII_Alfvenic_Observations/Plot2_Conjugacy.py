@@ -172,8 +172,6 @@ ax[axNo].xaxis.set_tick_params(labelbottom=True)
 ax[axNo].set_xlabel('ILat [deg] \n time [UTC]', fontsize=Tick_FontSize, weight='bold')
 ax[axNo].xaxis.set_label_coords(-0.085, -0.26)
 
-
-
 # --- BREAK AXIS ---
 axNo +=1
 ax[axNo].axis('off')
