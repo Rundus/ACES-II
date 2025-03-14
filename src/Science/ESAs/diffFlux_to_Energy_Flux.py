@@ -10,9 +10,7 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
-
 import numpy as np
-
 from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
@@ -21,18 +19,16 @@ start_time = time.time()
 # --- --- --- ---
 # --- TOGGLES ---
 # --- --- --- ---
-justPrintFileNames = True
-wRocket = 4
-wFiles = [0]
+justPrintFileNames = False
+wRocket = 5
+wFiles = [[0], [0]]
 modifier = ''
 inputPath_modifier = 'L2' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
 outputPath_modifier = 'L3\Energy_Flux' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
 # ---------------------------
-outputData = False
+outputData = True
 # ---------------------------
-erg_to_eV = 6.242E11 # eV per erg
-
 
 
 
@@ -45,7 +41,6 @@ from tqdm import tqdm
 
 
 def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflyer, wfile):
-
 
     # --- FILE I/O ---
     rocket_folder_path = DataPaths.ACES_data_folder
@@ -77,12 +72,9 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
     Epoch = data_dict['Epoch'][0]
     Pitch = data_dict['Pitch_Angle'][0][1:20] # only get pitch angles 0deg to 180deg
     Energy = data_dict['Energy'][0]
-    diffEFlux = data_dict['Differential_Energy_Flux'][0][:,1:20,:] # ONLY get 0deg to 180deg
-    diffNFlux = data_dict['Differential_Number_Flux'][0][:,1:20,:] # ONLY get 0deg to 180deg
+    diffNFlux = data_dict['Differential_Number_Flux'][0][:, 1:20, :] # ONLY get 0deg to 180deg
 
-    downwardPitchRange = [0, 9 + 1]  # what pitch indicies to consider when calculating parallel (downward) # 0-90deg (IDX: 6)
-    upwardPitchRange = [11, 19 + 1]  # 90-180deg
-
+    # Number Fluxes
     Phi_N = np.zeros(shape=(len(Epoch)))
     Phi_N_antiParallel = np.zeros(shape=(len(Epoch)))
     Phi_N_Parallel = np.zeros(shape=(len(Epoch)))
@@ -90,20 +82,40 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
     varPhi_N_antiParallel = np.zeros(shape=(len(Epoch), len(Energy)))
     varPhi_N_Parallel = np.zeros(shape=(len(Epoch), len(Energy)))
 
+    # Energy Fluxes
+    Phi_E = np.zeros(shape=(len(Epoch)))
+    Phi_E_antiParallel = np.zeros(shape=(len(Epoch)))
+    Phi_E_Parallel = np.zeros(shape=(len(Epoch)))
+    varPhi_E = np.zeros(shape=(len(Epoch), len(Energy)))
+    varPhi_E_antiParallel = np.zeros(shape=(len(Epoch), len(Energy)))
+    varPhi_E_Parallel = np.zeros(shape=(len(Epoch), len(Energy)))
+
     # --- perform the integration ---
     steradian = 2 * np.pi * np.array([np.sin(np.radians(ptch)) for ptch in Pitch])
 
     for tme in tqdm(range(len(Epoch))):
 
-        # calculate the partial differential flux
-        prepared = np.transpose(diffNFlux[tme]*steradian)
+        # --- NUMBER FLUXES ---
+        # Integrate over pitch angle
+        prepared = np.transpose(np.array([diffNFlux[tme][ptch]*steradian[ptch] for ptch in range(len(Pitch))]))
         varPhi_N[tme] = np.array([simpson(y=prepared[idx], x=Pitch) for idx, engy in enumerate(Energy)])
-        varPhi_N_antiParallel[tme] = np.array([simpson(y=prepared[idx][0:10], x=Pitch[0:10]) for idx, engy in enumerate(Energy)])
-        varPhi_N_Parallel[tme] = np.array([simpson(y=prepared[idx][10:20], x=Pitch[10:20]) for idx, engy in enumerate(Energy)])
+        varPhi_N_Parallel[tme] = np.array([simpson(y=prepared[idx][0:10], x=Pitch[0:10]) for idx, engy in enumerate(Energy)])
+        varPhi_N_antiParallel[tme] = np.array([simpson(y=prepared[idx][10:20], x=Pitch[10:20]) for idx, engy in enumerate(Energy)])
 
-        Phi_N[tme] = simpson(y=varPhi_N[tme], x=Energy)
-        Phi_N_antiParallel[tme] = simpson(y=varPhi_N_antiParallel[tme], x=Energy)
-        Phi_N_Parallel[tme] = simpson(y=varPhi_N_Parallel[tme], x=Energy)
+        # Integrate over energy
+        Phi_N[tme] = np.array(-1*simpson(y=varPhi_N[tme], x=Energy)).clip(min=0)
+        Phi_N_antiParallel[tme] = np.array(-1*simpson(y=varPhi_N_antiParallel[tme], x=Energy)).clip(min=0)
+        Phi_N_Parallel[tme] = np.array(-1*simpson(y=varPhi_N_Parallel[tme], x=Energy)).clip(min=0)
+
+        # --- ENERGY FLUXES ---
+        varPhi_E[tme] = Energy*deepcopy(varPhi_N[tme])
+        varPhi_E_antiParallel[tme] = Energy * deepcopy(varPhi_N_antiParallel[tme])
+        varPhi_E_Parallel[tme] = Energy * deepcopy(varPhi_N_Parallel[tme])
+
+        # Integrate over energy
+        Phi_E[tme] = np.array(-1 * simpson(y=varPhi_E[tme], x=Energy)).clip(min=0)
+        Phi_E_antiParallel[tme] = np.array(-1 * simpson(y=varPhi_E_antiParallel[tme], x=Energy)).clip(min=0)
+        Phi_E_Parallel[tme] = np.array(-1 * simpson(y=varPhi_E_Parallel[tme], x=Energy)).clip(min=0)
 
     stl.Done(start_time)
 
@@ -119,6 +131,17 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
         data_dict_output = {'Phi_N': [Phi_N, deepcopy(data_dict['Differential_Energy_Flux'][1])],
                             'Phi_N_antiParallel': [Phi_N_antiParallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
                             'Phi_N_Parallel': [Phi_N_Parallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
+                            'varPhi_N': [varPhi_N, deepcopy(data_dict['Differential_Energy_Flux'][1])],
+                            'varPhi_N_antiParallel': [varPhi_N_antiParallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
+                            'varPhi_N_Parallel': [varPhi_N_Parallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
+
+                            'Phi_E': [Phi_E, deepcopy(data_dict['Differential_Energy_Flux'][1])],
+                            'Phi_E_antiParallel': [Phi_E_antiParallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
+                            'Phi_E_Parallel': [Phi_E_Parallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
+                            'varPhi_E': [varPhi_E, deepcopy(data_dict['Differential_Energy_Flux'][1])],
+                            'varPhi_E_antiParallel': [varPhi_E_antiParallel,deepcopy(data_dict['Differential_Energy_Flux'][1])],
+                            'varPhi_E_Parallel': [varPhi_E_Parallel,deepcopy(data_dict['Differential_Energy_Flux'][1])],
+
                             'Pitch_Angle': data_dict['Pitch_Angle'],
                             'Energy': data_dict['Energy'],
                             'Epoch': data_dict['Epoch']
@@ -127,16 +150,52 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
         data_dict_output['Phi_N'][1]['LABLAXIS'] = 'Number_Flux'
         data_dict_output['Phi_N'][1]['UNITS'] = 'cm!A-2!N s!A-1!N'
 
+        data_dict_output['Phi_E'][1]['LABLAXIS'] = 'Energy_Flux'
+        data_dict_output['Phi_E'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N'
+
+
+        data_dict_output['varPhi_N'][1]['UNITS'] = 'cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_N'][1]['DEPEND_1'] = 'Energy'
+        data_dict_output['varPhi_N'][1]['DEPEND_2'] = None
+
+        data_dict_output['varPhi_E'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_E'][1]['DEPEND_1'] = 'Energy'
+        data_dict_output['varPhi_E'][1]['DEPEND_2'] = None
+
+
         data_dict_output['Phi_N_antiParallel'][1]['LABLAXIS'] = 'Anti_Parallel_Number_Flux'
         data_dict_output['Phi_N_antiParallel'][1]['UNITS'] = 'cm!A-2!N s!A-1!N'
+
+        data_dict_output['Phi_E_antiParallel'][1]['LABLAXIS'] = 'Anti_Parallel_Energy_Flux'
+        data_dict_output['Phi_E_antiParallel'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N'
 
         data_dict_output['Phi_N_Parallel'][1]['LABLAXIS'] = 'Parallel_Number_Flux'
         data_dict_output['Phi_N_Parallel'][1]['UNITS'] = 'cm!A-2!N s!A-1!N'
 
+        data_dict_output['Phi_E_Parallel'][1]['LABLAXIS'] = 'Parallel_Energy_Flux'
+        data_dict_output['Phi_E_Parallel'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N'
+
+
+        data_dict_output['varPhi_N_antiParallel'][1]['UNITS'] = 'cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_N_antiParallel'][1]['DEPEND_1'] = 'Energy'
+        data_dict_output['varPhi_N_antiParallel'][1]['DEPEND_2'] = None
+
+        data_dict_output['varPhi_E_antiParallel'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_E_antiParallel'][1]['DEPEND_1'] = 'Energy'
+        data_dict_output['varPhi_E_antiParallel'][1]['DEPEND_2'] = None
+
+        data_dict_output['varPhi_N_Parallel'][1]['UNITS'] = 'cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_N_Parallel'][1]['DEPEND_1'] = 'Energy'
+        data_dict_output['varPhi_N_Parallel'][1]['DEPEND_2'] = None
+
+        data_dict_output['varPhi_E_Parallel'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_E_Parallel'][1]['DEPEND_1'] = 'Energy'
+        data_dict_output['varPhi_E_Parallel'][1]['DEPEND_2'] = None
+
         # write out the data
-        fileoutName = f'ACESII_{rocketID}_eepaa_Energy_Flux.cdf'
+        fileoutName = f'ACESII_{rocketID}_l3_eepaa_flux.cdf'
         outputPath = f'{rocketFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
-        stl.outputCDFdata(outputPath, data_dict_output, globalAttrsMod=globalAttrs, instrNam=wInstr[1])
+        stl.outputCDFdata(outputPath, data_dict_output, globalAttrsMod=globalAttrs)
         stl.Done(start_time)
 
 
@@ -149,9 +208,9 @@ if len(glob(f'{rocket_folder_path}{inputPath_modifier}\{ACESII.fliers[wRocket-4]
 else:
     if justPrintFileNames:
         diffFlux_to_Energy_Flux(wRocket, rocket_folder_path, justPrintFileNames, wRocket-4, 0)
-    elif wFiles == []:
+    elif wFiles[wRocket-4] == []:
         for i, wfile in enumerate(glob(f'{rocket_folder_path}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')):
-            diffFlux_to_Energy_Flux(wRocket, rocket_folder_path, justPrintFileNames, wfile)
+            diffFlux_to_Energy_Flux(wRocket, rocket_folder_path, justPrintFileNames, wRocket-4, wfile)
     else:
-        for wfile in wFiles:
-            diffFlux_to_Energy_Flux(wRocket, rocket_folder_path, justPrintFileNames, wfile)
+        for wfile in wFiles[wRocket-4]:
+            diffFlux_to_Energy_Flux(wRocket, rocket_folder_path, justPrintFileNames, wRocket-4,wfile)
