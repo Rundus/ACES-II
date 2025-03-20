@@ -3,6 +3,7 @@
 # DESCRIPTION: using the specs of the ACESII ESAs, convert from differential Energy Flux
 # to just energy flux as described in EEPAA_Flux_Conversion.pdf document in Overleaf
 
+# TODO:
 
 
 # --- bookkeeping ---
@@ -20,14 +21,14 @@ start_time = time.time()
 # --- TOGGLES ---
 # --- --- --- ---
 justPrintFileNames = False
-wRocket = 5
+wRocket = 4
 wFiles = [[0], [0]]
 modifier = ''
 inputPath_modifier = 'L2' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
 outputPath_modifier = 'L3\Energy_Flux' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
 # ---------------------------
-outputData = True
+outputData = False
 # ---------------------------
 
 
@@ -95,31 +96,42 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
 
     for tme in tqdm(range(len(Epoch))):
 
+        # ---------------------
         # --- NUMBER FLUXES ---
+        # ---------------------
         # Integrate over pitch angle
         prepared = np.transpose(np.array([diffNFlux[tme][ptch]*steradian[ptch] for ptch in range(len(Pitch))]))
-        varPhi_N[tme] = np.array([simpson(y=prepared[idx], x=Pitch) for idx, engy in enumerate(Energy)])
-        varPhi_N_Parallel[tme] = np.array([simpson(y=prepared[idx][0:10], x=Pitch[0:10]) for idx, engy in enumerate(Energy)])
-        varPhi_N_antiParallel[tme] = np.array([simpson(y=prepared[idx][10:20], x=Pitch[10:20]) for idx, engy in enumerate(Energy)])
+        JE_N = np.array([simpson(y=prepared[idx], x=Pitch) for idx, engy in enumerate(Energy)]) # J_N(E) diffNFlux without pitch
+        JE_N_Parallel = np.array([simpson(y=prepared[idx][0:10], x=Pitch[0:10]) for idx, engy in enumerate(Energy)])
+        JE_N_antiParallel = np.array([simpson(y=prepared[idx][10:20], x=Pitch[10:20]) for idx, engy in enumerate(Energy)])
+
+        # partially integrate over energy. To get in units of [cm^-2 s^-1]
+        # Description: We assume j(E) doesn't change over the DeltaE interval between samples. The integral between
+        # E-DeltaE and E+DeltaE around a central energy E is just: varphi(E) = DeltaE(E) * J(E) where DeltaE(E) depends on the
+        # central energy. In our detector, DeltaE(E) is designed to be ~18% always --> DeltaE(E) = (1+gamma)E -(1-gamma)E = 2*gamma*E
+        gamma = 0.18
+        varPhi_N[tme] = np.array([(2*gamma*engy)*JE_N[idx] for idx, engy in enumerate(Energy)])
+        varPhi_N_Parallel[tme] = np.array([(2*gamma*engy)*JE_N_Parallel[idx] for idx, engy in enumerate(Energy)])
+        varPhi_N_antiParallel[tme] = np.array([(2*gamma*engy)*JE_N_antiParallel[idx] for idx, engy in enumerate(Energy)])
 
         # Integrate over energy
-        Phi_N[tme] = np.array(-1*simpson(y=varPhi_N[tme], x=Energy)).clip(min=0)
-        Phi_N_antiParallel[tme] = np.array(-1*simpson(y=varPhi_N_antiParallel[tme], x=Energy)).clip(min=0)
-        Phi_N_Parallel[tme] = np.array(-1*simpson(y=varPhi_N_Parallel[tme], x=Energy)).clip(min=0)
+        Phi_N[tme] = np.array(-1*simpson(y=JE_N, x=Energy)).clip(min=0)
+        Phi_N_antiParallel[tme] = np.array(-1*simpson(y=JE_N_antiParallel, x=Energy)).clip(min=0)
+        Phi_N_Parallel[tme] = np.array(-1*simpson(y=JE_N_Parallel, x=Energy)).clip(min=0)
 
+        # ---------------------
         # --- ENERGY FLUXES ---
+        # ---------------------
         varPhi_E[tme] = Energy*deepcopy(varPhi_N[tme])
         varPhi_E_antiParallel[tme] = Energy * deepcopy(varPhi_N_antiParallel[tme])
         varPhi_E_Parallel[tme] = Energy * deepcopy(varPhi_N_Parallel[tme])
 
         # Integrate over energy
-        Phi_E[tme] = np.array(-1 * simpson(y=varPhi_E[tme], x=Energy)).clip(min=0)
-        Phi_E_antiParallel[tme] = np.array(-1 * simpson(y=varPhi_E_antiParallel[tme], x=Energy)).clip(min=0)
-        Phi_E_Parallel[tme] = np.array(-1 * simpson(y=varPhi_E_Parallel[tme], x=Energy)).clip(min=0)
+        Phi_E[tme] = np.array(-1*simpson(y=JE_N*Energy, x=Energy)).clip(min=0)
+        Phi_E_antiParallel[tme] = np.array(-1*simpson(y=JE_N_antiParallel*Energy, x=Energy)).clip(min=0)
+        Phi_E_Parallel[tme] = np.array(-1*simpson(y=JE_N_Parallel*Energy, x=Energy)).clip(min=0)
 
     stl.Done(start_time)
-
-
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -154,11 +166,11 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
         data_dict_output['Phi_E'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N'
 
 
-        data_dict_output['varPhi_N'][1]['UNITS'] = 'cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_N'][1]['UNITS'] = 'cm!A-2!N s!A-1!N'
         data_dict_output['varPhi_N'][1]['DEPEND_1'] = 'Energy'
         data_dict_output['varPhi_N'][1]['DEPEND_2'] = None
 
-        data_dict_output['varPhi_E'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_E'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N'
         data_dict_output['varPhi_E'][1]['DEPEND_1'] = 'Energy'
         data_dict_output['varPhi_E'][1]['DEPEND_2'] = None
 
@@ -176,19 +188,19 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
         data_dict_output['Phi_E_Parallel'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N'
 
 
-        data_dict_output['varPhi_N_antiParallel'][1]['UNITS'] = 'cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_N_antiParallel'][1]['UNITS'] = 'cm!A-2!N s!A-1!N'
         data_dict_output['varPhi_N_antiParallel'][1]['DEPEND_1'] = 'Energy'
         data_dict_output['varPhi_N_antiParallel'][1]['DEPEND_2'] = None
 
-        data_dict_output['varPhi_E_antiParallel'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_E_antiParallel'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N'
         data_dict_output['varPhi_E_antiParallel'][1]['DEPEND_1'] = 'Energy'
         data_dict_output['varPhi_E_antiParallel'][1]['DEPEND_2'] = None
 
-        data_dict_output['varPhi_N_Parallel'][1]['UNITS'] = 'cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_N_Parallel'][1]['UNITS'] = 'cm!A-2!N s!A-1!N'
         data_dict_output['varPhi_N_Parallel'][1]['DEPEND_1'] = 'Energy'
         data_dict_output['varPhi_N_Parallel'][1]['DEPEND_2'] = None
 
-        data_dict_output['varPhi_E_Parallel'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N eV!A-1!N'
+        data_dict_output['varPhi_E_Parallel'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N'
         data_dict_output['varPhi_E_Parallel'][1]['DEPEND_1'] = 'Energy'
         data_dict_output['varPhi_E_Parallel'][1]['DEPEND_2'] = None
 
