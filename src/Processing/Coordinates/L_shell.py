@@ -32,7 +32,7 @@ justPrintFileNames = False
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # select which files to convert
 # [] --> all files
@@ -140,6 +140,7 @@ def ENU_to_Field_Aligned(wRocket, wFile, rocketFolderPath, justPrintFileNames, w
                                 'diffNFlux':data_dict_eepaa['Differential_Number_Flux'],
                                 'Energy': data_dict_eepaa['Energy'],
                                 'Pitch_Angle': data_dict_eepaa['Pitch_Angle'],
+                                'Alt':data_dict_eepaa['Alt']
                                 }
 
             data_dict_output['diffNFlux'][1]['DEPEND_0'] = 'L-Shell'

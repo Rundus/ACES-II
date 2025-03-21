@@ -3,7 +3,7 @@
 # DESCRIPTION: using the specs of the ACESII ESAs, convert from differential Energy Flux
 # to just energy flux as described in EEPAA_Flux_Conversion.pdf document in Overleaf
 
-# TODO:
+# TODO: Figure out if output is TOO large.
 
 
 # --- bookkeeping ---
@@ -21,14 +21,14 @@ start_time = time.time()
 # --- TOGGLES ---
 # --- --- --- ---
 justPrintFileNames = False
-wRocket = 4
+wRocket = 5
 wFiles = [[0], [0]]
 modifier = ''
 inputPath_modifier = 'L2' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
 outputPath_modifier = 'L3\Energy_Flux' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
 # ---------------------------
-outputData = False
+outputData = True
 # ---------------------------
 
 
@@ -156,7 +156,8 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
 
                             'Pitch_Angle': data_dict['Pitch_Angle'],
                             'Energy': data_dict['Energy'],
-                            'Epoch': data_dict['Epoch']
+                            'Epoch': data_dict['Epoch'],
+                            'Alt': data_dict['Alt'],
                             }
 
         data_dict_output['Phi_N'][1]['LABLAXIS'] = 'Number_Flux'
