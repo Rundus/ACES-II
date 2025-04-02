@@ -27,7 +27,8 @@ start_time = time.time()
 # --- --- --- ---
 
 # Just print the names of files
-justPrintFileNames = True
+justPrintFileNames = False
+
 
 # --- Select the Rocket ---
 # 0 -> Integration High Flier
@@ -36,7 +37,7 @@ justPrintFileNames = True
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # select which files to convert
 # [] --> all files
@@ -66,8 +67,8 @@ from itertools import product
 def L1_to_L1magCalESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
 
     # --- ACES II Flight/Integration Data ---
-    rocketID = ACESII.rocketID[wRocket-4]
-    globalAttrsMod = ACESII.globalAttributes[wRocket-4]
+    rocketID = ACESII.payload_IDs[wRocket-4]
+    globalAttrsMod = ACESII.global_attributes[wRocket-4]
     globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'L1'
     inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\*.cdf')
     inputFiles_magPitch = glob(f'{rocketFolderPath}{inputPath_modifier_magPitch}\{ACESII.fliers[wRocket-4]}{modifier}\*magPitch*')
@@ -274,8 +275,7 @@ def L1_to_L1magCalESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-rocketFolderPath = DataPaths.PATH_TO_DATA_FOLDER
-
+rocketFolderPath = DataPaths.ACES_data_folder
 
 if len(glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')) == 0:
     print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
