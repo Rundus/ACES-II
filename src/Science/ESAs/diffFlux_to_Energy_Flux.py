@@ -3,9 +3,6 @@
 # DESCRIPTION: using the specs of the ACESII ESAs, convert from differential Energy Flux
 # to just energy flux as described in EEPAA_Flux_Conversion.pdf document in Overleaf
 
-# TODO: Figure out if output is TOO large.
-
-
 # --- bookkeeping ---
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
@@ -21,7 +18,7 @@ start_time = time.time()
 # --- TOGGLES ---
 # --- --- --- ---
 justPrintFileNames = False
-wRocket = 5
+wRocket = 4
 wFiles = [[0], [0]]
 modifier = ''
 inputPath_modifier = 'L2' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
@@ -36,6 +33,7 @@ outputData = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
+# from scipy.integrate import trapz
 from scipy.integrate import simpson
 import spaceToolsLib as stl
 from tqdm import tqdm
@@ -63,17 +61,17 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
     # --- --- --- --- --- -
     # --- get the data from the file ---
     stl.prgMsg(f'Loading data from ESA Files')
-    data_dict, globalAttrs = stl.loadDictFromFile(inputFilePath=input_files[wfile], getGlobalAttrs=True)
+    data_dict_eepaa, globalAttrs = stl.loadDictFromFile(inputFilePath=input_files[wfile], getGlobalAttrs=True)
     stl.Done(start_time)
 
     # --- --- --- --- -
     # --- INTEGRATE ---
     # --- --- --- --- -
     stl.prgMsg('Calculating Fluxes')
-    Epoch = data_dict['Epoch'][0]
-    Pitch = data_dict['Pitch_Angle'][0][1:20] # only get pitch angles 0deg to 180deg
-    Energy = data_dict['Energy'][0]
-    diffNFlux = data_dict['Differential_Number_Flux'][0][:, 1:20, :] # ONLY get 0deg to 180deg
+    Epoch = data_dict_eepaa['Epoch'][0]
+    Pitch = data_dict_eepaa['Pitch_Angle'][0][1:20] # only get pitch angles 0deg to 180deg
+    Energy = data_dict_eepaa['Energy'][0]
+    diffNFlux = data_dict_eepaa['Differential_Number_Flux'][0][:, 1:20, :] # ONLY get 0deg to 180deg
 
     # Number Fluxes
     Phi_N = np.zeros(shape=(len(Epoch)))
@@ -91,28 +89,52 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
     varPhi_E_antiParallel = np.zeros(shape=(len(Epoch), len(Energy)))
     varPhi_E_Parallel = np.zeros(shape=(len(Epoch), len(Energy)))
 
+    # Average Energy
+    Energy_avg_Robinson = np.zeros(shape=(len(Epoch)))
+    cutoff_idx = np.abs(Energy - 100).argmin()
+
+    # determine the DeltaE to use for the varphi integrations - DeltaE = the half distance to the next energy value
+    deltaEs = []
+    for idx, engy in enumerate(Energy):
+        if idx == len(Energy)-1:
+            deltaEs.append(Energy[-2] - Energy[-1])
+        elif idx == 0:
+            deltaEs.append(Energy[0] - Energy[1])
+        else:
+            lowerE =(Energy[idx] - Energy[idx+1])/2
+            highE = (Energy[idx-1] - Energy[idx])/2
+            deltaEs.append(lowerE+highE)
+
+
     # --- perform the integration ---
-    steradian = 2 * np.pi * np.array([np.sin(np.radians(ptch)) for ptch in Pitch])
+    alpha_grid, engy_grid = np.meshgrid(Pitch, data_dict_eepaa['Energy'][0])
 
     for tme in tqdm(range(len(Epoch))):
 
-        # ---------------------
+        #######################
         # --- NUMBER FLUXES ---
-        # ---------------------
-        # Integrate over pitch angle
-        prepared = np.transpose(np.array([diffNFlux[tme][ptch]*steradian[ptch] for ptch in range(len(Pitch))]))
+        #######################
+        # --- Integrate over pitch angle ---
+
+        # omni directional
+        prepared = np.transpose(diffNFlux[tme]*2*np.pi*np.sin(np.radians(alpha_grid.T)))
         JE_N = np.array([simpson(y=prepared[idx], x=Pitch) for idx, engy in enumerate(Energy)]) # J_N(E) diffNFlux without pitch
+
+        # parallel
+        prepared = np.transpose(diffNFlux[tme]*2*np.pi* np.sin(np.radians(alpha_grid.T))*np.cos(np.radians(alpha_grid.T)))
         JE_N_Parallel = np.array([simpson(y=prepared[idx][0:10], x=Pitch[0:10]) for idx, engy in enumerate(Energy)])
+
+        # anti-parallel
+        prepared = np.transpose(diffNFlux[tme]*2*np.pi* np.sin(np.radians(alpha_grid.T)) * np.cos(np.radians(alpha_grid.T)))
         JE_N_antiParallel = np.array([simpson(y=prepared[idx][10:20], x=Pitch[10:20]) for idx, engy in enumerate(Energy)])
 
-        # partially integrate over energy. To get in units of [cm^-2 s^-1]
-        # Description: We assume j(E) doesn't change over the DeltaE interval between samples. The integral between
-        # E-DeltaE and E+DeltaE around a central energy E is just: varphi(E) = DeltaE(E) * J(E) where DeltaE(E) depends on the
-        # central energy. In our detector, DeltaE(E) is designed to be ~18% always --> DeltaE(E) = (1+gamma)E -(1-gamma)E = 2*gamma*E
-        gamma = 0.18
-        varPhi_N[tme] = np.array([(2*gamma*engy)*JE_N[idx] for idx, engy in enumerate(Energy)])
-        varPhi_N_Parallel[tme] = np.array([(2*gamma*engy)*JE_N_Parallel[idx] for idx, engy in enumerate(Energy)])
-        varPhi_N_antiParallel[tme] = np.array([(2*gamma*engy)*JE_N_antiParallel[idx] for idx, engy in enumerate(Energy)])
+        # --- partially integrate over energy. ---
+        # Description: To get in units of [cm^-2 s^-1], we assume j(E) doesn't change over the DeltaE interval between samples.
+        # The integral between E-DeltaE and E+DeltaE around a central energy E is just: varphi(E) = DeltaE(E) * J(E) where DeltaE(E) depends
+        # on the central energy. In our detector, DeltaE(E) is designed to be ~18% always --> DeltaE(E) = (1+gamma)E -(1-gamma)E = 2*gamma*E
+        varPhi_N[tme] = np.array([deltaEs[idx]*JE_N[idx] for idx, engy in enumerate(Energy)])
+        varPhi_N_Parallel[tme] = np.array([deltaEs[idx]*JE_N_Parallel[idx] for idx, engy in enumerate(Energy)])
+        varPhi_N_antiParallel[tme] = np.array([deltaEs[idx]*JE_N_antiParallel[idx] for idx, engy in enumerate(Energy)])
 
         # Integrate over energy
         Phi_N[tme] = np.array(-1*simpson(y=JE_N, x=Energy)).clip(min=0)
@@ -131,6 +153,20 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
         Phi_E_antiParallel[tme] = np.array(-1*simpson(y=JE_N_antiParallel*Energy, x=Energy)).clip(min=0)
         Phi_E_Parallel[tme] = np.array(-1*simpson(y=JE_N_Parallel*Energy, x=Energy)).clip(min=0)
 
+        # -------------------------
+        # --- ROBINSON FORMULAE ---
+        # -------------------------
+
+        # calculate the average energy
+        # NOTE: the low-energy electrons DON'T contribute to the height_integrated conductivity very much,
+        # thus ONLY use the PRIMARY beam to calculate the average energy, which is ~ 116 eV
+        Energy_avg_Robinson[tme] = np.array(-1*simpson(y=JE_N_Parallel[:cutoff_idx]*Energy[:cutoff_idx], x=Energy[:cutoff_idx]))/np.array(-1*simpson(y=JE_N_Parallel[:cutoff_idx], x=Energy[:cutoff_idx]))
+
+
+        # -------------------------
+        # --- KAEPPLER FORMULAE ---
+        # -------------------------
+
     stl.Done(start_time)
 
     # --- --- --- --- --- --- ---
@@ -140,24 +176,26 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
     if outputData:
         stl.prgMsg('Creating output file')
 
-        data_dict_output = {'Phi_N': [Phi_N, deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'Phi_N_antiParallel': [Phi_N_antiParallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'Phi_N_Parallel': [Phi_N_Parallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'varPhi_N': [varPhi_N, deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'varPhi_N_antiParallel': [varPhi_N_antiParallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'varPhi_N_Parallel': [varPhi_N_Parallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
+        data_dict_output = {'Phi_N': [Phi_N, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'Phi_N_antiParallel': [Phi_N_antiParallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'Phi_N_Parallel': [Phi_N_Parallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'varPhi_N': [varPhi_N, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'varPhi_N_antiParallel': [varPhi_N_antiParallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'varPhi_N_Parallel': [varPhi_N_Parallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
 
-                            'Phi_E': [Phi_E, deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'Phi_E_antiParallel': [Phi_E_antiParallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'Phi_E_Parallel': [Phi_E_Parallel, deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'varPhi_E': [varPhi_E, deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'varPhi_E_antiParallel': [varPhi_E_antiParallel,deepcopy(data_dict['Differential_Energy_Flux'][1])],
-                            'varPhi_E_Parallel': [varPhi_E_Parallel,deepcopy(data_dict['Differential_Energy_Flux'][1])],
+                            'Phi_E': [Phi_E, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'Phi_E_antiParallel': [Phi_E_antiParallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'Phi_E_Parallel': [Phi_E_Parallel, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'varPhi_E': [varPhi_E, deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'varPhi_E_antiParallel': [varPhi_E_antiParallel,deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
+                            'varPhi_E_Parallel': [varPhi_E_Parallel,deepcopy(data_dict_eepaa['Differential_Energy_Flux'][1])],
 
-                            'Pitch_Angle': data_dict['Pitch_Angle'],
-                            'Energy': data_dict['Energy'],
-                            'Epoch': data_dict['Epoch'],
-                            'Alt': data_dict['Alt'],
+                            'Pitch_Angle': data_dict_eepaa['Pitch_Angle'],
+                            'Energy': data_dict_eepaa['Energy'],
+                            'Epoch': data_dict_eepaa['Epoch'],
+                            'Alt': data_dict_eepaa['Alt'],
+
+                            'Energy_avg': [Energy_avg_Robinson, data_dict_eepaa['Energy'][1]],
                             }
 
         data_dict_output['Phi_N'][1]['LABLAXIS'] = 'Number_Flux'
@@ -165,7 +203,6 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
 
         data_dict_output['Phi_E'][1]['LABLAXIS'] = 'Energy_Flux'
         data_dict_output['Phi_E'][1]['UNITS'] = 'eV cm!A-2!N s!A-1!N'
-
 
         data_dict_output['varPhi_N'][1]['UNITS'] = 'cm!A-2!N s!A-1!N'
         data_dict_output['varPhi_N'][1]['DEPEND_1'] = 'Energy'
