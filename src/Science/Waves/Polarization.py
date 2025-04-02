@@ -164,7 +164,7 @@ def Polarization(wRocket, rocketFolderPath, justPrintFileNames, wflyer):
             #################################
             prgMsg('Calculating Poynting Flux using EigenFunction')
 
-            # down sample the density data onto the magnetometer data
+            # down sample the density data onto the integration_tad_files data
             indiciesDownsampled = [np.abs(data_dict_density['fixed_Epoch'][0] - data_dict_mag['Epoch'][0][i]).argmin() for i in range(len(data_dict_mag['Epoch'][0]))]
             plasmaDensity = np.array([data_dict_density['fixed_ni_density'][0][index] for index in indiciesDownsampled])
 

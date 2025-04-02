@@ -91,7 +91,7 @@ def PedersonHallConduct(wRocket, wFile, rocketFolderPath, justPrintFileNames, wf
         data_dict_density['Epoch'][0] = np.array([pycdf.lib.datetime_to_tt2000(data_dict_density['Epoch'][0][i]) for i in (range(len(data_dict_density['Epoch'][0])))])
         Done(start_time)
 
-        # --- get the data from the magnetometer file ---
+        # --- get the data from the integration_tad_files file ---
         prgMsg(f'Loading data from Magnetometer Files')
         data_dict_mag = loadDictFromFile(inputFiles_mag[0], {})
         data_dict_mag['Epoch'][0] = np.array([pycdf.lib.datetime_to_tt2000(data_dict_mag['Epoch'][0][i]) for i in (range(len(data_dict_mag['Epoch'][0])))])

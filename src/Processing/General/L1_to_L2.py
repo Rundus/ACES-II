@@ -15,9 +15,7 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
-
 from src.my_imports import *
-
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -57,20 +55,13 @@ filterwarnings("ignore")
 
 def L1_to_L2(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
 
-    if wRocket in [0,1,4,5]:
-        # --- ACES II Flight/Integration Data ---
-        rocketAttrs,b,c = ACES_mission_dicts()
-        rocketID = rocketAttrs.rocketID[wflyer]
-        globalAttrsMod = rocketAttrs.globalAttributes[wflyer]
-        globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'L2'
-        L2ModelData = L2_TRICE_Quick(wflyer)
+    # --- ACES II Flight/Integration Data ---
+    rocketAttrs,b,c = ACES_mission_dicts()
+    rocketID = rocketAttrs.rocketID[wflyer]
+    globalAttrsMod = rocketAttrs.globalAttributes[wflyer]
+    globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'L2'
+    L2ModelData = L2_TRICE_Quick(wflyer)
 
-    # --- TRICE II ---
-    elif wRocket in [2, 3]:
-        globalAttrsMod = {}
-        rocketAttrs,b,c = TRICE_mission_dicts()
-        rocketID = rocketAttrs.rocketID[wflyer]
-        L0ModelData = L2_TRICE_Quick(wflyer)
 
     L1Files = glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\*.cdf')
     L2Files = glob(f'{rocketFolderPath}{outputPath_modifier}\{fliers[wflyer]}\*.cdf')

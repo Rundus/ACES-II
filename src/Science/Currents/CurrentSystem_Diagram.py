@@ -129,7 +129,7 @@ def CurrentSystem_Diagram(rocketFolderPath):
     # --- --- --- --- --- ---
     if subtractCHAOS:
 
-        # interpolate Attitude data up to magnetometer data
+        # interpolate Attitude data up to integration_tad_files data
 
         # LF
         prgMsg('Interpolating LF Attitude Data')
@@ -212,7 +212,7 @@ def CurrentSystem_Diagram(rocketFolderPath):
     if filterData:
         prgMsg('Filtering Data')
 
-        # filter the ULTRA DC component from the magnetometer data
+        # filter the ULTRA DC component from the integration_tad_files data
 
         # B - LOW
         B_filtered_low = []

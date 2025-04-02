@@ -1,6 +1,6 @@
 # --- ENU_to_Field_Aligned.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: input a magnetometer or EFI file and use the respective attitude solution to convert
+# DESCRIPTION: input a integration_tad_files or EFI file and use the respective attitude solution to convert
 # to field aligned coordinates. Additionally, use the data from the attitude solution to
 # determine the geomagnetic coordinates of the deltaB/deltaE data on the mag epoch
 # and store them in the output file

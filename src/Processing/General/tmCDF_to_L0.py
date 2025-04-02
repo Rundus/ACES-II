@@ -1,6 +1,6 @@
 # --- tmCDF_to_L0.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: Read in CDF telemetry files and processes them to L0. ALSO, peel out magnetometer data and
+# DESCRIPTION: Read in CDF telemetry files and processes them to L0. ALSO, peel out integration_tad_files data and
 # store it for further processing
 
 

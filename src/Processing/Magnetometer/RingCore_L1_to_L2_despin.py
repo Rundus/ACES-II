@@ -1,7 +1,7 @@
 # # --- RingCore_L1_to_L2_despin.py ---
 # # --- Author: C. Feltman ---
 # # DESCRIPTION: Just interpolate the attitude solution data and apply the wallops DCM
-# to the magnetometer data, getting it in ENU coordinates. Apply it over the entire journey of the flight
+# to the integration_tad_files data, getting it in ENU coordinates. Apply it over the entire journey of the flight
 
 
 
@@ -53,7 +53,7 @@ replaceNANS = True
 
 # --- --- --- Apply Kenton/Antonio T0 correction --- --- ---
 # Description: Antontio worked with kenton to determine how to best
-# determine the T0 for the internal magnetometer timer and the rocket T0. This matters
+# determine the T0 for the internal integration_tad_files timer and the rocket T0. This matters
 # When trying to determine the deltat between E-Field and B-Field measurements.
 # For similar events observed in the E/B fields, two linear fits were done to try to bring the epochs into alignment
 # based on the peaks of the two waveforms:
@@ -262,7 +262,7 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
         # --- interpolate CHAOS onto mag Epoch ---
         ##########################################
 
-        prgMsg('Interpolating CHAOS onto magnetometer Epoch')
+        prgMsg('Interpolating CHAOS onto integration_tad_files Epoch')
         B_CHAOS_rkt_magTime = []
 
         for i in range(3):

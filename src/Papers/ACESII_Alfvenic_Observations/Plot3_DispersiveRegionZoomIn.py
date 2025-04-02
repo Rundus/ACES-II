@@ -13,7 +13,6 @@ __version__ = "1.0.0"
 import spaceToolsLib as stl
 from src.my_imports import *
 from scipy.signal import spectrogram
-plt.rcParams["font.family"] = "Arial"
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -21,7 +20,8 @@ start_time = time.time()
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-print(color.UNDERLINE + f'Plot3_DispersiveregionZoomIn' + color.END)
+print(stl.color.UNDERLINE + f'Plot3_DispersiveregionZoomIn' + stl.color.END)
+import matplotlib.pyplot as plt
 
 # --- --- --- ---
 # --- TOGGLES ---
@@ -65,20 +65,19 @@ Spectrogram_Freqlimits = [0, 12]
 # --- --- --- --- --- ---
 # --- LOAD IN THE DATA ---
 # --- --- --- --- --- ---
-prgMsg('Loading Data')
+stl.prgMsg('Loading Data')
 targetVar = [targetEpoch,'Epoch']
 
-rocketAttrs, b, c = ACES_mission_dicts()
 
 # delta B
 inputMagFiles_high = glob('C:\Data\ACESII\L3\deltaB\high\*Field_Aligned*')[0]
-data_dict_mag_high = loadDictFromFile(inputFilePath=inputMagFiles_high, targetVar=targetVar, wKeys_Reduce=['B_e', 'B_r', 'B_p', 'ILat', 'Epoch', 'Alt'])
+data_dict_mag_high = stl.loadDictFromFile(inputFilePath=inputMagFiles_high, targetVar=targetVar, wKeys_Reduce=['B_e', 'B_r', 'B_p', 'ILat', 'Epoch', 'Alt'])
 inputMagFiles_low = glob('C:\Data\ACESII\L3\deltaB\low\*Field_Aligned*')[0]
-data_dict_mag_low = loadDictFromFile(inputFilePath=inputMagFiles_low, targetVar=targetVar, wKeys_Reduce=['B_e', 'B_r', 'B_p', 'ILat', 'Epoch', 'Alt'])
+data_dict_mag_low = stl.loadDictFromFile(inputFilePath=inputMagFiles_low, targetVar=targetVar, wKeys_Reduce=['B_e', 'B_r', 'B_p', 'ILat', 'Epoch', 'Alt'])
 
 # delta E
 inputEFIFiles_low = glob('C:\Data\ACESII\L3\deltaE\low\*Field_Aligned*')[0]
-data_dict_Efield_low = loadDictFromFile(inputFilePath=inputEFIFiles_low, targetVar=targetVar, wKeys_Reduce=['E_e', 'E_r', 'E_p', 'ILat', 'Epoch', 'Alt'])
+data_dict_Efield_low = stl.loadDictFromFile(inputFilePath=inputEFIFiles_low, targetVar=targetVar, wKeys_Reduce=['E_e', 'E_r', 'E_p', 'ILat', 'Epoch', 'Alt'])
 
 data_dict_Efield_low['E_e'][0] = EField_scale*data_dict_Efield_low['E_e'][0]
 data_dict_Efield_low['E_p'][0] = EField_scale*data_dict_Efield_low['E_p'][0]
@@ -86,32 +85,25 @@ data_dict_Efield_low['E_r'][0] = EField_scale*data_dict_Efield_low['E_r'][0]
 
 # EEPAA Particle Data
 inputEEPAA_low = glob('C:\Data\ACESII\L2\low\*eepaa_fullCal*')[0]
-data_dict_eepaa_low = loadDictFromFile(inputFilePath=inputEEPAA_low, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
+data_dict_eepaa_low = stl.loadDictFromFile(inputFilePath=inputEEPAA_low, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
 inputEEPAA_high = glob('C:\Data\ACESII\L2\high\*eepaa_fullCal*')[0]
-data_dict_eepaa_high = loadDictFromFile(inputFilePath=inputEEPAA_high, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
+data_dict_eepaa_high = stl.loadDictFromFile(inputFilePath=inputEEPAA_high, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
 
-Done(start_time)
+magDicts = [data_dict_mag_high, data_dict_mag_low]
+eepaaDicts = [data_dict_eepaa_high, data_dict_eepaa_low]
 
-
-
+stl.Done(start_time)
 
 ############################
 # --- --- --- --- --- --- --
 # --- START THE PLOTTING ---
 # --- --- --- --- --- --- --
 ############################
-prgMsg('Making Plot')
+stl.prgMsg('Making Plot')
 # --- PLOT EVERYTHING ---
 fig, ax = plt.subplots(9, height_ratios=[1, 1, 1, 1,  0.6,   1, 1, 1, 1 ])
 fig.set_figwidth(Figure_width)
 fig.set_figheight(Figure_height)
-
-
-magDicts = [data_dict_mag_high, data_dict_mag_low]
-eepaaDicts = [data_dict_eepaa_high, data_dict_eepaa_low]
-
-print(data_dict_mag_high['ILat'][0][0],data_dict_mag_high['ILat'][0][-1])
-print(data_dict_mag_low['ILat'][0][0],data_dict_mag_low['ILat'][0][-1])
 
 for wRocket in [4, 5]:
 
@@ -258,7 +250,7 @@ fig.subplots_adjust(left=0.13, bottom=0.06, right=0.89, top=0.985, wspace=None,h
 fig.align_ylabels(ax[:])
 
 # output the figure
-plt.savefig(rf'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\PLOTS\Plot3\Plot3_base.png', dpi=dpi)
-Done(start_time)
+plt.savefig(rf'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_Alfven_Observations\PLOTS\Plot3\Plot3_base.png', dpi=dpi)
+stl.Done(start_time)
 
 

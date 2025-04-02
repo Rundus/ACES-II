@@ -242,7 +242,7 @@ def DistFunc_to_ESAcurrents(wRocket, wFile, rocketFolderPath, justPrintFileNames
 
                 G.append(deltaVperp * (firstVal + middleSum + lastVal))
 
-            # calculate j_parallel by one more trapizoidal integration
+            # calculate j_parallel by one more trapizoidal integration_tad_files
             j_para_temp = -2*np.pi*q0*sum([deltaVpar*(G[i+1] + G[i]) for i in range(len(G) - 1)])
             if np.abs(j_para_temp) >= 10**(-6):
                 j_para_temp = rocketAttrs.epoch_fillVal

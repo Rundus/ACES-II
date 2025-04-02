@@ -1,6 +1,6 @@
-# --- L1_to_L1magCalESA.py ---
+# --- L1_to_rebin_padPair_collection_cal1.py ---
 # --- Author: C. Feltman ---
-# CODE DESCRIPTION: performs the ChiSqaure padpair calibration on the magnetometer-aligned
+# CODE DESCRIPTION: performs the ChiSqaure padpair calibration on the integration_tad_files-aligned
 # ESA data. This constitutes the FINAL calibration needed for the ESA and so the
 # output file will be put into the "L1" folder as "ACESII_XXXXX_l1_instrNam_fullCal.cdf
 

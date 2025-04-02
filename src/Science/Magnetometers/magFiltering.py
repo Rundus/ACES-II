@@ -1,6 +1,6 @@
 # --- magFiltering.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: I use Autoplot to create nice spectrograms of the magnetometer data
+# DESCRIPTION: I use Autoplot to create nice spectrograms of the integration_tad_files data
 # I use this file to clean up/filter the mag data
 
 # --- bookkeeping ---

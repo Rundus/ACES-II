@@ -85,7 +85,7 @@ def L1_EFI_to_L2_InterpolatedMagTime(wRocket, wFile, rocketFolderPath, justPrint
     data_dict_elec['Epoch'][0] = np.array([int(pycdf.lib.datetime_to_tt2000(tme) + timeCorrection) for tme in data_dict_elec['Epoch'][0]])
 
     ##########################################################
-    # --- interpolate E-Field data onto magnetometer epoch ---
+    # --- interpolate E-Field data onto integration_tad_files epoch ---
     ##########################################################
     prgMsg('Interpolating E-Field Data')
     data_dict_elecInterp = InterpolateDataDict(InputDataDict=data_dict_elec,

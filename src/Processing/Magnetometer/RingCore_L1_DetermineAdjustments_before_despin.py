@@ -2,7 +2,7 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION: interpolate attitude data (alt,lat,long,DCM) onto ringCore Epoch and use
 # it to Despin the ringCore data. The interpolation is done by drawing a line between
-# successive points in the attitude data, seeing how many magnetometer epoch values fall
+# successive points in the attitude data, seeing how many integration_tad_files epoch values fall
 # between the two attitude epoch values, then evaluating the line at the magnetomter epoch values
 # and storing the new attitude data.
 
@@ -469,7 +469,7 @@ def RingCore_Despin(wRocket,wFile, rocketFolderPath, justPrintFileNames, wflyer)
             # [2] spun IGRF field
             # [3] Attempted RKT Despun Data
 
-            # # construct magnetometer data B-vector and despin the magnetometer data
+            # # construct integration_tad_files data B-vector and despin the integration_tad_files data
             # B_ENU = matmul(array([data_dict_mag['Bx'][0][i], data_dict_mag['By'][0][i], data_dict_mag['Bz'][0][i]]), IGRF_ENU)
 
             IGRF_east, IGRF_north, IGRF_up = array(IGRF_ENU[:, 0]), array(IGRF_ENU[:, 1]), array(IGRF_ENU[:, 2])

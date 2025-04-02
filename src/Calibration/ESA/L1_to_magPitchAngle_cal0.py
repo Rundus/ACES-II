@@ -1,6 +1,6 @@
-# --- L1_to_magPitchAngle.py ---
+# --- L1_to_magPitchAngle_cal0.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: For each rocket and each insrument, use the spun magnetometer data
+# DESCRIPTION: For each rocket and each insrument, use the spun integration_tad_files data
 # IN THE ROCKET FRAME as well as the orientation of the ESAs to determine a pitch angle
 # for every time, pitch pad and energy of the instrument. Will use this to calibrate
 # the ESAs.
@@ -194,7 +194,7 @@ def L1_to_L1ESAmagCal(wFile, wMagFile, rocketFolderPath, justPrintFileNames, wfl
         for tme, engy in tqdm(itertools.product(*[esaRanges[0], esaRanges[2]])):
             epochFullDataSet[tme][engy] = data_dict_esa['Epoch'][0][tme] + (esaLens[2] - 1 + energyAdjust - engy) * rocketAttrs.timeBetweenSteps_in_ns
 
-        # --- assign a magnetometer Bx, By, Bz to each tme and engy ---
+        # --- assign a integration_tad_files Bx, By, Bz to each tme and engy ---
         # NOTE: don't need to do it for ptch since they're all sampled at the same time
         for tme in tqdm(esaRanges[0]):
 

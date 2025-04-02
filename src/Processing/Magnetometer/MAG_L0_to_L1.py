@@ -6,7 +6,7 @@
 # is sampled (should be sfid == 1 & 21)
 
 # Added Correction: We forgot to take into account that the coil system at Iowa and at Wallops
-# are left-handed to minimize gradients.  We simply flipped the magnetometer axis Y-Axis the
+# are left-handed to minimize gradients.  We simply flipped the integration_tad_files axis Y-Axis the
 # wrong way rather than flip the reference data axis. So we add a minus sign to the mag Y-axis in
 # our code.
 
@@ -160,7 +160,7 @@ def MAG_L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
             data_dict_mag['Bx'][0], data_dict_mag['By'][0], data_dict_mag['Bz'][0] = np.array(B[:, 0]), np.array(B[:, 1]), np.array(B[:, 2])
 
         if applyRotateToRocket:
-            # The magnetometer frame can be converted to rocket-body frame by a 90deg rotation about Z-axis
+            # The integration_tad_files frame can be converted to rocket-body frame by a 90deg rotation about Z-axis
             from ACESII_code.class_var_func import Rz
             B = []
 
@@ -176,7 +176,7 @@ def MAG_L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
 
 
         if applyFlipBy:
-            # The magnetometer Y-axis was flipped during calibration. Here we add back in the minus sign
+            # The integration_tad_files Y-axis was flipped during calibration. Here we add back in the minus sign
             data_dict_mag['By'][0] = -1*np.array(data_dict_mag['By'][0])
 
         if applyVectorCals:

@@ -74,33 +74,24 @@ from warnings import filterwarnings # USED TO IGNORE WARNING ABOUT "UserWarning:
 filterwarnings("ignore")
 
 
-def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
+def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames):
 
-    if wRocket in [0,1,4,5]:
-        # --- ACES II Flight/Integration Data ---
-        rocketAttrs,b,c = ACES_mission_dicts()
-        globalAttrsMod = rocketAttrs.globalAttributes[wflyer]
-        globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'L1'
-        L1ModelData = L1_TRICE_Quick(wflyer)
-
-    elif wRocket in [2, 3]:
-        # --- TRICE II ---
-        globalAttrsMod = {}
-        rocketAttrs,b,c = TRICE_mission_dicts()
-        L1ModelData = L1_TRICE_Quick(wflyer)
-
+    # --- ACES II Flight/Integration Data ---
+    globalAttrsMod = ACESII.global_attributes[wRocket-4]
+    globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'L1'
+    # L1ModelData = ACESII.L1_TRICE_Quick(wRocket-4)
 
     # Set the paths for the file names
-    L0Files = glob(f'{rocketFolderPath}L0\{fliers[wflyer]}\*.cdf')
-    L1Files = glob(f'{rocketFolderPath}L1\{fliers[wflyer]}\*.cdf')
+    L0Files = glob(f'{rocketFolderPath}L0\{ACESII.fliers[wRocket-4]}\*.cdf')
+    L1Files = glob(f'{rocketFolderPath}L1\{ACESII.fliers[wRocket-4]}\*.cdf')
 
-    L0_names = [ifile.replace(f'{rocketFolderPath}L0\{fliers[wflyer]}\\', '') for ifile in L0Files]
-    L1_names = [ofile.replace(f'{rocketFolderPath}L1\{fliers[wflyer]}\\', '') for ofile in L1Files]
+    L0_names = [ifile.replace(f'{rocketFolderPath}L0\{ACESII.fliers[wRocket-4]}\\', '') for ifile in L0Files]
+    L1_names = [ofile.replace(f'{rocketFolderPath}L1\{ACESII.fliers[wRocket-4]}\\', '') for ofile in L1Files]
 
     L0_names_searchable = [ifile.replace('ACESII_', '').replace('36359_', '').replace('36364_', '').replace('l0_', '').replace('_v00', '') for ifile in L0_names]
     L1_names_searchable = [ofile.replace('ACESII_', '').replace('36359_', '').replace('36364_', '').replace('l1_', '').replace('_v00','').replace('__', '_') for ofile in L1_names]
 
-    dataFile_name = L0Files[wFile].replace(f'{rocketFolderPath}L0\{fliers[wflyer]}\\', '')
+    dataFile_name = L0Files[wFile].replace(f'{rocketFolderPath}L0\{ACESII.fliers[wRocket-4]}\\', '')
     fileoutName = dataFile_name.replace('l0', 'l1')
 
     # determine which instrument the file corresponds to:
@@ -116,56 +107,56 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
         return
 
     print('\n')
-    print(color.UNDERLINE + f'Converting to L1 data for {dataFile_name}' + color.END)
+    print(stl.color.UNDERLINE + f'Converting to L1 data for {dataFile_name}' + stl.color.END)
     print('[' + str(wFile) + ']   ' + str(round(getsize(L0Files[wFile]) / (10 ** 6), 1)) + 'MiB')
 
     # --- get the data from the tmCDF file ---
-    prgMsg('Loading data from L0Files')
+    stl.prgMsg('Loading data from L0Files')
 
-    data_dict = loadDictFromFile(L0Files[wFile])
+    data_dict = stl.loadDictFromFile(L0Files[wFile])
 
-    Done(start_time)
+    stl.Done(start_time)
 
 
     # --- --- --- --- --- --- --- --- ---
     # --- Calculate Instrument Data ---
     # --- --- --- --- --- --- --- --- ---
 
-    prgMsg('\nCreating L1 instrument data')
+    stl.prgMsg('\nCreating L1 instrument data')
 
     # 0 -> EEPAA
     # 1 -> LEESA
     # 2 -> IEPAA
     # 3 -> LP
     if wInstr[0] in [0, 1, 2]:
-        data_dict = {**data_dict, **{'Energy':           [[0], {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': 'eV', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'SCALETYP': 'log', 'LABLAXIS': 'Energy'}]}}
-        data_dict = {**data_dict, **{'geometric_factor': [[0], {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': 'cm!U2!N str ev ev!U-1!N', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'SCALETYP': 'linear'}]}}
-        data_dict = {**data_dict, **{'Epoch_esa':        [[],  {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': 'ns', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'MONOTON': 'INCREASE', 'TIME_BASE': 'J2000', 'TIME_SCALE': 'Terrestrial Time', 'REFERENCE_POSITION': 'Rotating Earth Geoid', 'SCALETYP': 'linear'}]}}
-        data_dict['Pitch_Angle'] = [[0], {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': 'deg', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'SCALETYP': 'linear', 'LABLAXIS': 'Pitch_Angle'}]
+        data_dict = {**data_dict, **{'Energy':           [[0], {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': 'eV', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'SCALETYP': 'log', 'LABLAXIS': 'Energy'}]}}
+        data_dict = {**data_dict, **{'geometric_factor': [[0], {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': 'cm!U2!N str ev ev!U-1!N', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'SCALETYP': 'linear'}]}}
+        data_dict = {**data_dict, **{'Epoch_esa':        [[],  {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': 'ns', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'MONOTON': 'INCREASE', 'TIME_BASE': 'J2000', 'TIME_SCALE': 'Terrestrial Time', 'REFERENCE_POSITION': 'Rotating Earth Geoid', 'SCALETYP': 'linear'}]}}
+        data_dict['Pitch_Angle'] = [[0], {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': 'deg', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'SCALETYP': 'linear', 'LABLAXIS': 'Pitch_Angle'}]
         data_dict['28V_Monitor'][1]['DEPEND_0'] = 'Epoch_monitors'
         data_dict['Boom_Monitor'][1]['DEPEND_0'] = 'Epoch_monitors'
         sectorCounts = data_dict['Sector_Counts'][0]
 
         if wInstr[1] == 'eepaa': # EEPAA
-            data_dict['Pitch_Angle'][0] =np.array(rocketAttrs.Instr_sector_to_pitch[0])
+            data_dict['Pitch_Angle'][0] = np.array(ACESII.ESA_instr_sector_to_pitch[0])
             pitches = data_dict['Pitch_Angle'][0]
-            data_dict['Energy'][0] = np.array(rocketAttrs.Instr_Energy[0])
-            Energy = data_dict['Energy'][0]
-            data_dict['geometric_factor'][0] = np.array(rocketAttrs.geometric_factor[0])
+            data_dict['Energy'][0] =  deepcopy(np.array(ACESII.ESA_instr_Energy[0]))
+            Energy = deepcopy(data_dict['Energy'][0])
+            data_dict['geometric_factor'][0] = np.array(ACESII.ESA_geometric_factor_TRACERS_ACE[0])
 
         elif wInstr[1] == 'leesa': # LEESA
-            data_dict['Pitch_Angle'][0] = np.array(rocketAttrs.Instr_sector_to_pitch[1])
+            data_dict['Pitch_Angle'][0] = np.array(ACESII.ESA_instr_sector_to_pitch[1])
             pitches = data_dict['Pitch_Angle'][0]
-            data_dict['Energy'][0] = np.array(rocketAttrs.Instr_Energy[1])
-            Energy = data_dict['Energy'][0]
-            data_dict['geometric_factor'][0] = np.array(rocketAttrs.geometric_factor[1])
+            data_dict['Energy'][0] = deepcopy(np.array(ACESII.ESA_instr_Energy[1]))
+            Energy = deepcopy(data_dict['Energy'][0])
+            data_dict['geometric_factor'][0] = np.array(ACESII.ESA_geometric_factor_TRACERS_ACE[1])
 
         elif wInstr[1] == 'iepaa': # IEPAA
-            data_dict['Pitch_Angle'][0] = np.array(rocketAttrs.Instr_sector_to_pitch[2][::-1])
+            data_dict['Pitch_Angle'][0] = np.array(ACESII.ESA_instr_sector_to_pitch[2][::-1])
             pitches = data_dict['Pitch_Angle'][0]
-            data_dict['Energy'][0] = np.array(rocketAttrs.Instr_Energy[2])
-            Energy = data_dict['Energy'][0]
-            data_dict['geometric_factor'][0] = np.array(rocketAttrs.geometric_factor[2])
+            data_dict['Energy'][0] = deepcopy(np.array(ACESII.ESA_instr_Energy[2]))
+            Energy = deepcopy(data_dict['Energy'][0])
+            data_dict['geometric_factor'][0] = np.array(ACESII.ESA_geometric_factor_TRACERS_ACE[2])
 
         # --- PROCESS ESA DATA ---
         sweepLength = len(data_dict['Energy'][0]) + 1 # must be a total of 50 values in a sweep
@@ -179,7 +170,7 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
         no_of_sweeps = int(len(sectorCounts_reduced) / (sweepLength))
 
         # --- PLACE THE OUTPUT DATA ---
-        counts = np.zeros(shape=(no_of_sweeps, len(pitches), len(data_dict['Energy'][0]) ))
+        counts = np.zeros(shape=(no_of_sweeps, len(pitches), len(data_dict['Energy'][0])))
 
         # loop through all the sweeps to cover the entire sector variable
         for i in tqdm(range(no_of_sweeps)):
@@ -203,7 +194,6 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
         # This is opposite to the eepaa and leesa. Here we correct it by reversing the order of the pitch.
         if wInstr[1] =='iepaa':
             counts = [counts[tme][::-1] for tme in range(len(counts))]
-
         # Adjust data if energy_adjust != 0:
         if wInstr[1] =='eepaa':
             energy_adjust = energy_adjusts[0]
@@ -215,45 +205,39 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
             energy_adjust = 0
 
         if energy_adjust != 0:
-            prgMsg('Adjusting Energy')
+            stl.prgMsg('Adjusting Energy')
             data_dict['Energy'][0] = np.array(Energy[0:-energy_adjust]) # reduce the energy
-
             countsNew = [[[0 for i in range(len(data_dict['Energy'][0]))] for ptch in range(len(pitches))] for tme in range(len(counts))]
-
             counts = list(counts) # convert counts into a dynamic variable
             for tme in range(len(counts)):
                 for ptch in range(len(pitches)):
                     countsNew[tme][ptch] = counts[tme][ptch][0:-energy_adjust]
-
             counts = np.array(countsNew)
-            Done(start_time)
+            stl.Done(start_time)
         else:
             counts = np.array(counts)
-
-
 
         # --- Apply a Counts treshold to the data so that only counts > 3 exist ---
         finder = np.where(np.abs(counts) <= countNoiseThresh)
         counts[finder] = 0
 
-
-
         data_dict['Epoch_esa'][0] = np.array(data_dict['Epoch_esa'][0])
-        data_dict = {**data_dict, **{rocketAttrs.InstrNames_LC[wInstr[0]]:
-                                         [counts, {'LABLAXIS': rocketAttrs.InstrNames_LC[wInstr[0]],
+        data_dict = {**data_dict, **{ACESII.ESA_names_lower_case[wInstr[0]]:
+                                         [counts, {'LABLAXIS': ACESII.ESA_names_lower_case[wInstr[0]],
                                                    'DEPEND_0': 'Epoch_esa', 'DEPEND_1': 'Pitch_Angle',
                                                    'DEPEND_2': 'Energy',
                                                    'FILLVAL': 65535, 'FORMAT': 'E12.2',
                                                    'UNITS': 'counts', 'VALIDMIN': 0,
-                                                   'VALIDMAX': rocketAttrs.esaMaxCounts, 'VAR_TYPE': 'data',
-                                                   'SCALETYP': 'linear'}]}}
+                                                   'VALIDMAX': ACESII.ESA_max_counts, 'VAR_TYPE': 'data',
+                                                   'SCALETYP': 'linear'}]}
+                     }
 
-        del data_dict['Sector_Counts'], data_dict['sfid'], data_dict['sweep_step'],data_dict['minor_frame_counter'], data_dict['major_frame_counter']
+        del data_dict['Sector_Counts'], data_dict['sfid'], data_dict['sweep_step'], data_dict['minor_frame_counter'], data_dict['major_frame_counter']
 
         # --- --- --- --- --- --- --- --- -
         # --- ADD ATTITUDE DATA TO FILE ---
         # --- --- --- --- --- --- --- --- -
-        prgMsg('Truncating Data')
+        stl.prgMsg('Truncating Data')
 
         if truncateData:
 
@@ -269,7 +253,7 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
             Epoch_monitors_targetIndex = np.array([np.abs(pycdf.lib.datetime_to_tt2000(time) - targetDateTime_TT2000) for time in data_dict['Epoch_monitors'][0]]).argmin()
 
             noReduction = ['geometric_factor', 'Energy', 'Pitch_Angle', 'Sector_Number']
-            needsReduction_esa = [rocketAttrs.InstrNames_LC[wInstr[0]], 'Epoch_esa']
+            needsReduction_esa = [ACESII.ESA_names_lower_case[wInstr[0]], 'Epoch_esa']
             needsReduction_monitors = ['28V_Monitor', 'Boom_Monitor', 'Epoch_monitors']
 
             for key, val in data_dict.items():
@@ -282,16 +266,17 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
 
         # Change the name of the Epoch variable to ---> Epoch Housekeeping
         data_dict['Epoch_HouseKeeping'] = data_dict.pop('Epoch')
+
         # Change the name of the Epoch_esa variable to ---> Epoch
         data_dict['Epoch'] = data_dict.pop('Epoch_esa')
+
         # Update Dependencies
         data_dict[wInstr[1]][1]['DEPEND_0'] = 'Epoch'
-        Done(start_time)
+        stl.Done(start_time)
 
-
-        prgMsg('Interpolating Attitude data into ESA files')
-        inputFile_attitude = glob(f'C:\Data\ACESII\\attitude\{fliers[wflyer]}\\*Attitude_Solution*')[0]
-        data_dict_attitude = loadDictFromFile(inputFile_attitude, wKeys=['Lat', 'Long', 'Alt', 'Lat_geom', 'Long_geom', 'Alt_geom', 'Epoch'])
+        stl.prgMsg('Interpolating Attitude data into ESA files')
+        inputFile_attitude = glob(f'C:\Data\ACESII\\attitude\{ACESII.fliers[wRocket-4]}\\*Attitude_Solution*')[0]
+        data_dict_attitude = stl.loadDictFromFile(inputFile_attitude, wKeys=['Lat', 'Long', 'Alt', 'Lat_geom', 'Long_geom', 'Alt_geom', 'Epoch'])
 
         # the low flyer attitude data needs to be extended to 17:20:00
         if wRocket == 5:
@@ -307,30 +292,34 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
                     newVals = [val[0][0] for i in range(NumOfPoints)]
                     data_dict_attitude[key][0] = np.array(newVals + list(data_dict_attitude[key][0]))
                 else:
-                    newTimes = [ pycdf.lib.tt2000_to_datetime(int(targetStart + deltaT*i)) for i in range(NumOfPoints)]
+                    newTimes = [pycdf.lib.tt2000_to_datetime(int(targetStart + deltaT*i)) for i in range(NumOfPoints)]
                     data_dict_attitude[key][0] = np.array(newTimes + list(data_dict_attitude[key][0]))
 
         # interpolate attitude data onto ESA dataset
-        data_dict_attitudeInterp = InterpolateDataDict(InputDataDict=data_dict_attitude,
+        data_dict_attitudeInterp = stl.InterpolateDataDict(InputDataDict=data_dict_attitude,
                                                        InputEpochArray=data_dict_attitude['Epoch'][0],
                                                        targetEpochArray=data_dict['Epoch'][0], wKeys=[])
 
         for key, val in data_dict_attitudeInterp.items():
             val[1]['VAR_TYPE'] = 'support_data'
             data_dict = {**data_dict, **{key: val}}
-        Done(start_time)
+        stl.Done(start_time)
 
         # --- --- --- --- --- --- --- ---
         # --- WRITE OUT THE ESA DATA ---
         # --- --- --- --- --- --- --- ---
         if outputData:
-            prgMsg('Creating output ESA file')
+            stl.prgMsg('Creating output ESA file')
 
-            outputPath = f'{rocketFolderPath}L1\{fliers[wflyer]}\\{fileoutName}'
+            outputPath = f'{rocketFolderPath}L1\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
 
-            outputCDFdata(outputPath, data_dict,ModelData=  L1ModelData, globalAttrsMod= globalAttrsMod, instrNam= wInstr[1])
+            # stl.outputCDFdata(outputPath, data_dict,ModelData=L1ModelData, globalAttrsMod= globalAttrsMod, instrNam= wInstr[1])
+            stl.outputCDFdata(outputPath, data_dict, globalAttrsMod=globalAttrsMod, instrNam=wInstr[1])
 
-        Done(start_time)
+        stl.Done(start_time)
+
+
+
     elif wInstr[0] in [3]:
 
         # --- --- --- --- --- --- --- --- --- ---
@@ -341,8 +330,8 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
             L0epoch = [pycdf.lib.datetime_to_tt2000(data_dict['Epoch'][0][i]) for i in range(len(data_dict['Epoch'][0]))]
             L0ChannelCounts = data_dict['Channel_Counts'][0]
             L0sfid = data_dict['sfid'][0]
-            samplePeriod = rocketAttrs.LPSamplePeriod
-            minorFrameTime = rocketAttrs.MinorFrameTime # each LP value is really sampled 1 minorframe before its reported value in the PCM matrix
+            samplePeriod = ACESII.LPSamplePeriod
+            minorFrameTime = ACESII.MinorFrameTime # each LP value is really sampled 1 minorframe before its reported value in the PCM matrix
 
             del data_dict['Epoch'], data_dict['Channel_Counts'],data_dict['Channel_Number'], data_dict['minor_frame_counter'],data_dict['major_frame_counter'], data_dict['sfid']
             collect()
@@ -374,9 +363,9 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
 
 
             # create the 5 variables in the LP data_dict: deltaNdivN,ni,ne_swept,ni_swept,step
-            for i in range(len(rocketAttrs.LP_Variables)):
-                data_dict = {**data_dict, **{f'Epoch_{rocketAttrs.LP_Variables[i]}': [[], {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': -9223372036854775808, 'FORMAT': 'E12.2', 'UNITS': 'ns', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'MONOTON': 'INCREASE', 'TIME_BASE': 'J2000', 'TIME_SCALE': 'Terrestrial Time', 'REFERENCE_POSITION': 'Rotating Earth Geoid', 'SCALETYP': 'linear'}]}}
-                data_dict = {**data_dict, **{f'{rocketAttrs.LP_Variables[i]}': [[], {'LABLAXIS': rocketAttrs.LP_Variables[i], 'DEPEND_0': f"Epoch_{rocketAttrs.LP_Variables[i]}", 'DEPEND_1':None, 'DEPEND_2':None, 'FILLVAL': -1, 'FORMAT': 'E12.2', 'UNITS': 'Digital', 'VALIDMIN': 0, 'VALIDMAX': rocketAttrs.esaMaxCounts, 'VAR_TYPE': 'data', 'SCALETYP': 'linear'}]}}
+            for i in range(len(ACESII.LP_Variables)):
+                data_dict = {**data_dict, **{f'Epoch_{ACESII.LP_Variables[i]}': [[], {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': -9223372036854775808, 'FORMAT': 'E12.2', 'UNITS': 'ns', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data', 'MONOTON': 'INCREASE', 'TIME_BASE': 'J2000', 'TIME_SCALE': 'Terrestrial Time', 'REFERENCE_POSITION': 'Rotating Earth Geoid', 'SCALETYP': 'linear'}]}}
+                data_dict = {**data_dict, **{f'{ACESII.LP_Variables[i]}': [[], {'LABLAXIS': ACESII.LP_Variables[i], 'DEPEND_0': f"Epoch_{ACESII.LP_Variables[i]}", 'DEPEND_1':None, 'DEPEND_2':None, 'FILLVAL': -1, 'FORMAT': 'E12.2', 'UNITS': 'Digital', 'VALIDMIN': 0, 'VALIDMAX': ACESII.esaMaxCounts, 'VAR_TYPE': 'data', 'SCALETYP': 'linear'}]}}
 
             no_of_fillvals = []
 
@@ -385,25 +374,25 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
                 LP_var_counter = L0sfid[j]%4 + 1 # sets which LP_var I'm on. (step, ne_swept, ni_swept, ni)
 
                 # deltaNdivN takes the first 8 values
-                data_dict[rocketAttrs.LP_Variables[0]][0].append(L0ChannelCounts[j][0:8])
+                data_dict[ACESII.LP_Variables[0]][0].append(L0ChannelCounts[j][0:8])
 
-                if L0epoch[j] != rocketAttrs.epoch_fillVal:
+                if L0epoch[j] != ACESII.epoch_fillVal:
 
                     # assign epoch values for each point with a sample rate of 35.25kHz
-                    data_dict[f'Epoch_{rocketAttrs.LP_Variables[0]}'][0].append([(L0epoch[j] - minorFrameTime) + l * samplePeriod for l in range(8)])
+                    data_dict[f'Epoch_{ACESII.LP_Variables[0]}'][0].append([(L0epoch[j] - minorFrameTime) + l * samplePeriod for l in range(8)])
 
                     if L0ChannelCounts[j][8] > 4095: # set all values above 4095 to the fillval
-                        data_dict[rocketAttrs.LP_Variables[LP_var_counter]][0].append(-1)
+                        data_dict[ACESII.LP_Variables[LP_var_counter]][0].append(-1)
                     else:
-                        data_dict[rocketAttrs.LP_Variables[LP_var_counter]][0].append(L0ChannelCounts[j][8]) # LP_vars
+                        data_dict[ACESII.LP_Variables[LP_var_counter]][0].append(L0ChannelCounts[j][8]) # LP_vars
 
-                    data_dict[f'Epoch_{rocketAttrs.LP_Variables[LP_var_counter]}'][0].append((L0epoch[j] - minorFrameTime) + 8 * samplePeriod)
+                    data_dict[f'Epoch_{ACESII.LP_Variables[LP_var_counter]}'][0].append((L0epoch[j] - minorFrameTime) + 8 * samplePeriod)
 
                 else: # if epoch is a fillval
-                    no_of_fillvals.append([rocketAttrs.LP_Variables[LP_var_counter],j])
-                    data_dict[f'Epoch_{rocketAttrs.LP_Variables[0]}'][0].append([rocketAttrs.epoch_fillVal for l in range(8)]) # deltaNdivN
-                    data_dict[rocketAttrs.LP_Variables[LP_var_counter]][0].append(-1)  # LP_vars
-                    data_dict[f'Epoch_{rocketAttrs.LP_Variables[LP_var_counter]}'][0].append(rocketAttrs.epoch_fillVal) # LP_vars
+                    no_of_fillvals.append([ACESII.LP_Variables[LP_var_counter],j])
+                    data_dict[f'Epoch_{ACESII.LP_Variables[0]}'][0].append([ACESII.epoch_fillVal for l in range(8)]) # deltaNdivN
+                    data_dict[ACESII.LP_Variables[LP_var_counter]][0].append(-1)  # LP_vars
+                    data_dict[f'Epoch_{ACESII.LP_Variables[LP_var_counter]}'][0].append(ACESII.epoch_fillVal) # LP_vars
 
 
             # Converts all data to numpy arrays
@@ -417,7 +406,7 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
 
         except Exception as e:
             dataFailed = True
-            print(color.RED + f"{e}" + color.END)
+            print(stl.color.RED + f"{e}" + stl.color.END)
 
         # --- --- --- --- --- ---
         # --- WRITE OUT DATA ---
@@ -425,13 +414,13 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
 
         if not dataFailed:
 
-            prgMsg('\nCreating output LP file')
+            stl.prgMsg('\nCreating output LP file')
 
             # LP data is too large to be dumped all at once, must break it up
-            for i in range(len(rocketAttrs.LP_Variables)):
+            for i in range(len(ACESII.LP_Variables)):
 
                 # determine the outputPath and the variables which need to be output'd
-                outputPath = f'{rocketFolderPath}L1\{fliers[wflyer]}\\{fileoutName.replace("lp", f"lp_{rocketAttrs.LP_Variables[i]}")}'
+                outputPath = f'{rocketFolderPath}L1\{ACESII.fliers[wRocket-4]}\\{fileoutName.replace("lp", f"lp_{ACESII.LP_Variables[i]}")}'
                 noWriteVarst = ["deltaNdivN","step", "ne_swept", "ni_swept","ni"]
                 noWriteVarst.pop(i)
                 noWriteVars = [thing for thing in noWriteVarst]
@@ -467,10 +456,20 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
                     outputFile.readonly(False)
 
                     # --- write out global attributes ---
-                    inputGlobDic = L1ModelData.cdfFile.globalattsget()
+                    # inputGlobDic = L1ModelData.cdfFile.globalattsget()
+                    inputGlobDic = {'globalAttributes':
+                                    {'Source_name': f'MISSIONNAM_#####>MISSIONNAM RKT ##.###',
+                                     'Data_type': 'K0>Key Parameter',
+                                     'PI_name': 'EXAMPLE PI',
+                                     'Logical_source': f'missionNam_#####_',
+                                     'Logical_file_id': f'missionNam_#####_00000000_v01',
+                                     'Logical_source_description': 'Raw Data from the MISSIONNAMII mission organized by minorframe.150 words per minor frame.40 minor frames to a major frame.',
+                                     'TEXT': 'Raw Data from the MISSIONNAMII mission organized by minorframe.150 words per minor frame.40 minor frames to a major frame.'
+                                     },
+                                    }
                     for key, val in inputGlobDic.items():
                         if key == 'Descriptor':
-                            globalAttrsMod[key] = rocketAttrs.InstrNames_Full[wInstr[0]]
+                            globalAttrsMod[key] = ACESII.InstrNames_Full[wInstr[0]]
 
                         if key in globalAttrsMod:
                             outputFile.attrs[key] = globalAttrsMod[key]
@@ -495,39 +494,29 @@ def L0_to_L1(wRocket, wFile, rocketFolderPath, justPrintFileNames,wflyer):
                             elif attrVal != None:
                                 outputFile[varKey].attrs[attrKey] = attrVal
 
-            Done(start_time)
+            stl.Done(start_time)
 
 
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
 if wRocket == 0:  # ACES II Integration High
-    rocketFolderPath = Integration_data_folder
-    wflyer = 0
+    rocketFolderPath = DataPaths.Integration_data_folder
 elif wRocket == 1: # ACES II Integration Low
-    rocketFolderPath = Integration_data_folder
-    wflyer = 1
-elif wRocket == 2:  # TRICE II High
-    rocketFolderPath = TRICE_data_folder
-    wflyer = 0
-elif wRocket == 3: # TRICE II Low
-    rocketFolderPath = TRICE_data_folder
-    wflyer = 1
+    rocketFolderPath = DataPaths.Integration_data_folder
 elif wRocket == 4:  # ACES II High
-    rocketFolderPath = ACES_data_folder
-    wflyer = 0
+    rocketFolderPath = DataPaths.ACES_data_folder
 elif wRocket == 5: # ACES II Low
-    rocketFolderPath = ACES_data_folder
-    wflyer = 1
+    rocketFolderPath = DataPaths.ACES_data_folder
 
-if len(glob(f'{rocketFolderPath}L0\{fliers[wflyer]}\*.cdf')) == 0:
-    print(color.RED + 'There are no .cdf files in the specified directory' + color.END)
+if len(glob(f'{rocketFolderPath}L0\{ACESII.fliers[wRocket-4]}\*.cdf')) == 0:
+    print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
     if justPrintFileNames:
-        L0_to_L1(wRocket, 0, rocketFolderPath, justPrintFileNames,wflyer)
+        L0_to_L1(wRocket, 0, rocketFolderPath, justPrintFileNames)
     elif not wFiles[wRocket-4]:
-        for fileNo in (range(len(glob(f'{rocketFolderPath}L0\{fliers[wflyer]}\*.cdf')))):
-            L0_to_L1(wRocket, fileNo, rocketFolderPath, justPrintFileNames,wflyer)
+        for fileNo in (range(len(glob(f'{rocketFolderPath}L0\{ACESII.fliers[wRocket-4]}\*.cdf')))):
+            L0_to_L1(wRocket, fileNo, rocketFolderPath, justPrintFileNames)
     else:
         for filesNo in wFiles[wRocket-4]:
-            L0_to_L1(wRocket, filesNo, rocketFolderPath, justPrintFileNames,wflyer)
+            L0_to_L1(wRocket, filesNo, rocketFolderPath, justPrintFileNames)

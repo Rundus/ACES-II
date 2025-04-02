@@ -340,7 +340,7 @@ def AllSkyTrajecMovie(wSite, justPrintSiteNames, rocketFolderPath):
 
         # --- determine the timestamps for each photo and rocket data ---
         # Note: The image timestamps are taken at the beginning of the image's collection period (30seconds),
-        # so we will adjust the time tag to be the middle of the integration period by adding 15seconds
+        # so we will adjust the time tag to be the middle of the integration_tad_files period by adding 15seconds
         Epoch_AllSky_tt2000 = [[pycdf.lib.datetime_to_tt2000(time)+15E9 for time in Epoch_AllSky[0]],
                                [pycdf.lib.datetime_to_tt2000(time)+15E9 for time in Epoch_AllSky[1]]]
 

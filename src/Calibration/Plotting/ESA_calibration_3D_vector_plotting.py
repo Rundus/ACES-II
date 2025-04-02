@@ -110,7 +110,7 @@ def main(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
     ax.set_ylim([-1.5, 1.5])
     ax.set_zlim([-1.5, 1.5])
 
-    # plot the magnetometer axes
+    # plot the integration_tad_files axes
     ax.quiver(0, 0, 0, 1, 0, 0, color='red')
     ax.quiver(0, 0, 0, 0, 1, 0, color='green')
     ax.quiver(0, 0, 0, 0, 0, 1, color='blue')

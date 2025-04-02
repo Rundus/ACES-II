@@ -106,7 +106,7 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
             deltaEs.append(lowerE+highE)
 
 
-    # --- perform the integration ---
+    # --- perform the integration_tad_files ---
     alpha_grid, engy_grid = np.meshgrid(Pitch, data_dict_eepaa['Energy'][0])
 
     for tme in tqdm(range(len(Epoch))):

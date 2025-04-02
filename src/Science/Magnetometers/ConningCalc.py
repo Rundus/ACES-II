@@ -137,7 +137,7 @@ def main(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
         # --- Determine Magnetic Alignment ---
         ######################################
 
-        # Determine the angle between the payload spin axis and the ambient magnetic field using the REAL magnetometer data
+        # Determine the angle between the payload spin axis and the ambient magnetic field using the REAL integration_tad_files data
 
         # Since the mag_payload data is already in payload coordniantes, we just need the angle between B_mag and the spin axis (X-axis in payload frame) or +Yaxis (in RingCore frame)
         spin_axis = np.array([1,0,0])
