@@ -1,13 +1,6 @@
-# --- L1_to_L2.py ---
+# --- L1_to_L2_ESA.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Convert electrostatic analyzer data from counts to differential energy flux
-
-# TODO: Need to determine: (1) geometric factor (2) Count Interval (3) Deadtime
-
-# BIIIIG NOTE: When we did our ESA calibrations for the energy, the geometric factor
-# was already included
-
-
 
 
 # --- bookkeeping ---
@@ -53,7 +46,7 @@ from warnings import filterwarnings # USED TO IGNORE WARNING ABOUT "UserWarning:
 filterwarnings("ignore")
 
 
-def L1_to_L2(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
+def L1_to_L2(wRocket, wFile, rocketFolderPath, justPrintFileNames):
 
     # --- ACES II Flight/Integration Data ---
     rocketAttrs,b,c = ACES_mission_dicts()
