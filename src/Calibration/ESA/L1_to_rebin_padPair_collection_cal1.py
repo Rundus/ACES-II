@@ -125,8 +125,8 @@ def L1_to_L1magCalESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
             np.abs(data_dict_esa['Epoch'][0] - pycdf.lib.datetime_to_tt2000(dt.datetime(2022, 11, 20, 17, 23, 46, 750))).argmin()
         ]
 
-        esaRanges = [range(len(data_dict_esa[wInstr[1]][0])), range(len(data_dict_esa[wInstr[1]][0][0])), range(len(data_dict_esa[wInstr[1]][0][0][0]))]
-        esaData = data_dict_esa[wInstr[1]][0]
+        esaRanges = [range(len(data_dict_esa['counts'][0])), range(len(data_dict_esa['counts'][0][0])), range(len(data_dict_esa['counts'][0][0][0]))]
+        esaData = data_dict_esa['counts'][0]
         magPitch = data_dict_magPitch['Mag_Calculated_Pitch_Angle'][0]
         padAngles = data_dict_esa['Pitch_Angle'][0]
 
@@ -210,8 +210,8 @@ def L1_to_L1magCalESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
                 else:
                     esaDataSorted[tme][ptch][engy] = int(round(sum(dataToAverage) / len(dataToAverage)))
 
-                    if 0 < int(round(sum(dataToAverage)/len(dataToAverage))) <= 2:
-                        print(tme, ptch, engy, int(round(sum(dataToAverage)/len(dataToAverage))), esaDataSorted[tme][ptch][engy])
+                    # if 0 < int(round(sum(dataToAverage)/len(dataToAverage))) <= 2:
+                    #     print(tme, ptch, engy, int(round(sum(dataToAverage)/len(dataToAverage))), esaDataSorted[tme][ptch][engy])
 
             else:
                 esaDataSorted[tme][ptch][engy] = ACESII.epoch_fillVal
@@ -226,7 +226,7 @@ def L1_to_L1magCalESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
 
         if outputData:
             data_dict = {}
-            data_dict = {**data_dict, **{f'{wInstr[1]}':
+            data_dict = {**data_dict, **{f'counts':
                                              [esaDataSorted, {'LABLAXIS': f'{wInstr[1]}',
                                                           'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle',
                                                           'DEPEND_2': 'Energy',
@@ -236,7 +236,7 @@ def L1_to_L1magCalESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
                                                           'VAR_TYPE': 'data', 'SCALETYP': 'linear'}]}}
             # get Energy and Pitch angle into data_dict
             for key, val in data_dict_esa.items():
-                if key not in [f'{wInstr[1]}']:
+                if key not in [f'counts']:
                     data_dict = {**data_dict, **{key:data_dict_esa[key]}}
 
             # --- --- --- --- --- --- --- --- ---

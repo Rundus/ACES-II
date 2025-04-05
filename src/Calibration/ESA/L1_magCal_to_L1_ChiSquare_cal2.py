@@ -34,7 +34,7 @@ justPrintChiFileNames = False
 # --- Select the Rocket ---
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # select which files to convert
 # [] --> all files
@@ -212,7 +212,7 @@ def L1_magCalESA_to_L1_ChiSquareCald_cal2(wRocket, wFile, rocketFolderPath, just
         stl.prgMsg('Correcting Data using ChiSquare')
 
         ChiOrder = ChiOrder36359_EEPAA if wInstr[1] == 'eepaa' else ChiOrder36359_LEESA
-        esaData_fullCal = np.array(data_dict_esa[wInstr[1]][0])
+        esaData_fullCal = np.array(data_dict_esa['counts'][0])
 
         # --- loop through the pad-pairs ---
         counter = 0
@@ -301,7 +301,7 @@ def L1_magCalESA_to_L1_ChiSquareCald_cal2(wRocket, wFile, rocketFolderPath, just
 
         stl.Done(start_time)
     else:
-        esaData_fullCal = np.array(data_dict_esa[wInstr[1]][0])
+        esaData_fullCal = np.array(data_dict_esa['counts'][0])
 
 
     # --- --- --- --- --- --- --- ---
@@ -309,9 +309,9 @@ def L1_magCalESA_to_L1_ChiSquareCald_cal2(wRocket, wFile, rocketFolderPath, just
     # --- --- --- --- --- --- --- ---
     if outputData:
         stl.prgMsg('Outputting Data')
-        data_dict_esa[wInstr[1]][0] = esaData_fullCal
-        data_dict_esa[wInstr[1]][1]['VALIDMIN'] = esaData_fullCal.min()
-        data_dict_esa[wInstr[1]][1]['VALIDMAX'] = esaData_fullCal.max()
+        data_dict_esa['counts'][0] = esaData_fullCal
+        data_dict_esa['counts'][1]['VALIDMIN'] = esaData_fullCal.min()
+        data_dict_esa['counts'][1]['VALIDMAX'] = esaData_fullCal.max()
 
         # --- --- --- --- --- --- ---
         # --- WRITE OUT THE DATA ---

@@ -77,7 +77,7 @@ class ACESII:
     ESA_max_counts = 4095
     ESA_clk_input = 625
     ESA_time_between_steps_in_ns = 0.001 * (1E9)
-    ESA_count_tnterval = 917  # measured in ns
+    ESA_count_interval = 917  # measured in us
     ESA_geometric_factor_TRICEII = [
         [0.000174 for i in range(21)],
         [0.000174/100 for i in range(21)], # LEESA geofactor was ~EEPAA/100

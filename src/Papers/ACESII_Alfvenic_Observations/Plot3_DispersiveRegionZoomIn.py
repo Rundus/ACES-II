@@ -23,6 +23,7 @@ start_time = time.time()
 print(stl.color.UNDERLINE + f'Plot3_DispersiveregionZoomIn' + stl.color.END)
 import matplotlib.pyplot as plt
 
+
 # --- --- --- ---
 # --- TOGGLES ---
 # --- --- --- ---
@@ -35,15 +36,16 @@ cbar_Tick_LabelSize = 14
 my_cmap = stl.apl_rainbow_black0_cmap()
 specCbarMin, specCbarMax = 1E-2, 1E1
 spectrogramCmap = stl.blue_green_white_yellow_red_cmap()
-my_cmap.set_bad(color=(0,0,0))
+my_cmap.set_extremes(bad=(1,1,1),under=(0,0,0))
 
 # Plot toggles
+plt.rcParams["font.family"] = "Arial"
 Figure_width = 7.5 # in inches
 Figure_height =5.5*2.2# in inches
 Text_FontSize = 20
 Label_FontSize = 14.5
 Label_Padding = 5
-Tick_FontSize = 11.5
+Tick_FontSize = 12
 Tick_Length = 5
 Tick_Width = 2
 Tick_Padding = 10
@@ -53,10 +55,7 @@ Legend_FontSize = 13
 # Physics Toggles
 targetILat = [71.91, 72.03]
 targetEpoch = [dt.datetime(2022, 11, 20, 17, 24, 52, 0000000), dt.datetime(2022, 11, 20, 17, 25, 9, 500000)]
-
 EField_scale = 1000 # what to scale the deltaE field by
-EEPAAslice_wPitch = 2 # 10deg pitch
-PAengyLimits = [17, 40] # determines in the P.A. panel which energies to count
 
 Spectrogram_Freqlimits = [0, 12]
 
@@ -101,7 +100,7 @@ stl.Done(start_time)
 ############################
 stl.prgMsg('Making Plot')
 # --- PLOT EVERYTHING ---
-fig, ax = plt.subplots(9, height_ratios=[1, 1, 1, 1,  0.6,   1, 1, 1, 1 ])
+fig, ax = plt.subplots(9, height_ratios=[1, 1, 1, 1,  0.6, 1, 1, 1, 1])
 fig.set_figwidth(Figure_width)
 fig.set_figheight(Figure_height)
 
@@ -134,15 +133,16 @@ for wRocket in [4, 5]:
 
     # --- get the averaged Differential Energy FLux over all Pitch Angles (Energy vs Time) ---
     totalDirFlux_engy = np.array(eepaaDict['Differential_Energy_Flux'][0])
-    totalDirFlux_engy[totalDirFlux_engy<0] = 0
     totalDirFlux_engy = totalDirFlux_engy[:,2:19,:]
     totalDirFlux_engy = np.sum(totalDirFlux_engy, axis=1).T/(21-4)
+    totalDirFlux_engy[np.where(totalDirFlux_engy < 0)] = np.nan  # change these values to get the colorbar to look right
+    totalDirFlux_engy[np.where(totalDirFlux_engy == 0)] = 1  # change these values to get the colorbar to look right
 
     # --- get the averaged Differential Energy FLux over all energies (Pitch vs Time) ---
     totalDirFlux_ptch = np.array(eepaaDict['Differential_Energy_Flux'][0])
-    totalDirFlux_ptch[totalDirFlux_ptch < 0] = 0
     totalDirFlux_ptch = np.sum(totalDirFlux_ptch, axis=2).T / len(data_dict_eepaa_high['Energy'][0])
-
+    totalDirFlux_ptch[np.where(totalDirFlux_ptch<0) ] = np.nan  # change these values to get the colorbar to look right
+    totalDirFlux_ptch[np.where(totalDirFlux_ptch == 0)] = 1  # change these values to get the colorbar to look right
 
     # --- EEPAA Epoch vs Time Data ---
     cmap = ax[0+idxAdjust].pcolormesh(eepaaDict['Epoch'][0], eepaaDict['Energy'][0], totalDirFlux_engy, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log')
@@ -202,7 +202,7 @@ for wRocket in [4, 5]:
     ax[3+idxAdjust].set_ylim(Spectrogram_Freqlimits[0], Spectrogram_Freqlimits[1])
     ax[3 + idxAdjust].tick_params(axis='y', colors='blue')
 
-    if wRocket ==4 :
+    if wRocket ==4:
         # spectrogram colorbar HF
         cax = fig.add_axes([0.91, 0.558, 0.02, 0.103])
     elif wRocket == 5:
@@ -218,13 +218,15 @@ for wRocket in [4, 5]:
     yticks = [0, 4, 8, 12]
     ax[3+idxAdjust].set_yticks(yticks)
     ax[3+idxAdjust].set_yticklabels([str(tick) for tick in yticks])
-    xtickTimes = [dt.datetime(2022,11,20,17,24,53),
-                dt.datetime(2022,11,20,17,24,55,500000),
-                dt.datetime(2022,11,20,17,24,58),
-                dt.datetime(2022,11,20,17,25,00,500000),
-                dt.datetime(2022,11,20,17,25,3),
-                dt.datetime(2022,11,20,17,25,5,500000),
-                dt.datetime(2022,11,20,17,25,8)]
+    xtickTimes = [dt.datetime(2022,11,20,17,24,53)+dt.timedelta(seconds=i*3) for i in range(6)]
+
+    # xtickTimes = [dt.datetime(2022,11,20,17,24,53),
+    #             dt.datetime(2022,11,20,17,24,55,500000),
+    #             dt.datetime(2022,11,20,17,24,58),
+    #             dt.datetime(2022,11,20,17,25,00,500000),
+    #             dt.datetime(2022,11,20,17,25,3),
+    #             dt.datetime(2022,11,20,17,25,5,500000),
+    #             dt.datetime(2022,11,20,17,25,8)]
 
     xtick_indicies = np.array([np.abs(magDict['Epoch'][0] - tick).argmin() for tick in xtickTimes])
     ILat_ticks = [str(round(tick, 2)) for tick in magDict['ILat'][0][xtick_indicies]]

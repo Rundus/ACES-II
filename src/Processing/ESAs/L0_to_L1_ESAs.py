@@ -57,7 +57,7 @@ wFiles = [[1, 2, 3], [1, 2]]
 
 # EEPAA: how many energy values not to keep, starting from the lowest values e.g. adjusts = 8 --> remove the bottom 8 values
 energy_adjusts = [8, 0, 0]  # [EEPAA,IEPAA,LEESA]
-countNoiseThresh = 2 # anything LESS than this value is zero'd out
+countNoiseThresh = 3 # anything LESS than this value is zero'd out
 
 # Truncates all data to everything past 17:20:00 or whatever you wish
 truncate_target_time = dt.datetime(2022, 11, 20, 17, 20)
@@ -130,6 +130,12 @@ def L0_to_L1_ESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
                                               'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': 'deg',
                                               'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data',
                                               'SCALETYP': 'linear', 'LABLAXIS': 'Pitch_Angle'}],
+
+                        'counts_threshold': [np.array([countNoiseThresh]),
+                                             {'DEPEND_0': None, 'DEPEND_1': None, 'DEPEND_2': None,
+                                             'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2', 'UNITS': None,
+                                             'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'support_data',
+                                             'SCALETYP': 'linear', 'LABLAXIS': 'count_threshold'}],
                         'counts':
                             [[], {'LABLAXIS': ACESII.ESA_names_lower_case[wInstr[0]],
                                   'DEPEND_0': 'Epoch_esa', 'DEPEND_1': 'Pitch_Angle',
@@ -140,7 +146,6 @@ def L0_to_L1_ESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
                                   'SCALETYP': 'linear'}]
                          }
 
-
     # --- --- --- --- --- --- --- --- ---
     # --- Calculate Instrument Data ---
     # --- --- --- --- --- --- --- --- ---
@@ -148,17 +153,17 @@ def L0_to_L1_ESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
     if wInstr[1] == 'eepaa':  # EEPAA
         data_dict_output['Pitch_Angle'][0] = np.array(ACESII.ESA_instr_sector_to_pitch[0])
         data_dict_output['Energy'][0] = deepcopy(np.array(ACESII.ESA_instr_Energy[0]))
-        data_dict_output['geometric_factor'][0] = np.array(ACESII.ESA_geometric_factor_TRACERS_ACE[0])
+        data_dict_output['geometric_factor'][0] = np.array(ACESII.ESA_geometric_factor_TRICEII[0])
 
     elif wInstr[1] == 'leesa':  # LEESA
         data_dict_output['Pitch_Angle'][0] = np.array(ACESII.ESA_instr_sector_to_pitch[1])
         data_dict_output['Energy'][0] = deepcopy(np.array(ACESII.ESA_instr_Energy[1]))
-        data_dict_output['geometric_factor'][0] = np.array(ACESII.ESA_geometric_factor_TRACERS_ACE[1])
+        data_dict_output['geometric_factor'][0] = np.array(ACESII.ESA_geometric_factor_TRICEII[1])
 
     elif wInstr[1] == 'iepaa':  # IEPAA
         data_dict_output['Pitch_Angle'][0] = np.array(ACESII.ESA_instr_sector_to_pitch[2][::-1])
         data_dict_output['Energy'][0] = deepcopy(np.array(ACESII.ESA_instr_Energy[2]))
-        data_dict_output['geometric_factor'][0] = np.array(ACESII.ESA_geometric_factor_TRACERS_ACE[2])
+        data_dict_output['geometric_factor'][0] = np.array(ACESII.ESA_geometric_factor_TRICEII[2])
 
     # --- --- --- --- --- ----
     # --- PROCESS ESA DATA ---
@@ -250,7 +255,7 @@ def L0_to_L1_ESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
 
     # Update Dependencies
     for key, val in data_dict_output.items():
-        if key not in ['geometric_factor', 'Energy', 'Pitch_Angle', 'Sector_Number']:
+        if key not in ['geometric_factor', 'Energy', 'Pitch_Angle', 'Sector_Number','counts_threshold']:
             data_dict_output[key][1]['DEPEND_0'] = 'Epoch'
     stl.Done(start_time)
 
@@ -262,7 +267,7 @@ def L0_to_L1_ESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
     truncate_idx = np.abs(data_dict_output['Epoch'][0] - truncate_target_time).argmin()
 
     for key, val in data_dict_output.items():
-        if key not in ['geometric_factor', 'Energy', 'Pitch_Angle', 'Sector_Number']:
+        if key not in ['geometric_factor', 'Energy', 'Pitch_Angle', 'Sector_Number','counts_threshold']:
             data_dict_output[key][0] = data_dict_output[key][0][truncate_idx:]
     stl.Done(start_time)
 

@@ -10,7 +10,6 @@ __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
 from src.my_imports import *
-plt.rcParams["font.family"] = "Arial"
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -18,22 +17,11 @@ start_time = time.time()
 # --- IMPORTS ---
 # --- --- --- ---
 import matplotlib.pyplot as plt
-# plt.rcParams.update({
-#     "text.usetex": True,
-#     "font.family": "Arial",
-#     "font.sans-serif": "Helvetica",
-# })
-# import matplotlib
-# matplotlib.rc('text', usetex=True)
-# matplotlib.rc('legend', fontsize=24)
-# matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
-
-
 import matplotlib.gridspec as gridspec
 import spaceToolsLib as stl
 from src.Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
 
-print(color.UNDERLINE + f'Plot6_pitchAnglePlots' + color.END)
+print(stl.color.UNDERLINE + f'Plot6_pitchAnglePlots' + stl.color.END)
 
 #################
 # --- TOGGLES ---
@@ -65,6 +53,7 @@ NoOfSlices = 3
 ######################
 # --- PLOT TOGGLES ---
 ######################
+plt.rcParams["font.family"] = "Arial"
 figure_height = (18.5)
 figure_width = (16)
 
@@ -80,15 +69,11 @@ Tick_FontSize = 25
 Tick_Width = 3
 Tick_Length = 7
 Plot_Linewidth = 6.5
-vertical_lineStyles = ['dashdotdotted','dashdot','dashdotdotted','dashdot']
+vertical_lineStyles = ['dashdotdotted', 'dashdot', 'dashdotdotted', 'dashdot']
 cbar_Fontsize = 24
 
 my_cmap = stl.apl_rainbow_black0_cmap()
-my_cmap.set_bad(color=(0,0,0))
-my_cmap.set_under('black')
-
-
-
+my_cmap.set_extremes(bad='white', under='black')
 
 if useDiffNFlux:
     cbarLow, cbarHigh = 1E4, 5E6
@@ -103,26 +88,24 @@ normVal = 'log'
 # --- --- --- --- --- ---
 # --- LOAD IN THE DATA ---
 # --- --- --- --- --- ---
-
-prgMsg('Loading Data')
+stl.prgMsg('Loading Data')
 
 # Attitude data (for geomagnetic lat/long info)
 inputFiles_Attitude = [glob(r'C:\Data\ACESII\attitude\high\*Attitude_Solution*')[0], glob(r'C:\Data\ACESII\attitude\low\*Attitude_Solution*')[0]]
-data_dict_attitude_high = loadDictFromFile(inputFilePath=inputFiles_Attitude[0])
-data_dict_attitude_low = loadDictFromFile(inputFilePath=inputFiles_Attitude[1])
+data_dict_attitude_high = stl.loadDictFromFile(inputFilePath=inputFiles_Attitude[0])
+data_dict_attitude_low = stl.loadDictFromFile(inputFilePath=inputFiles_Attitude[1])
 
 # EEPAA Particle Data
 inputFiles_eepaa = [glob('C:\Data\ACESII\L2\high\*eepaa_fullCal*')[0], glob('C:\Data\ACESII\L2\low\*eepaa_fullCal*')[0]]
-data_dict_eepaa_high = loadDictFromFile(inputFilePath=inputFiles_eepaa[0])
-data_dict_counts_high = loadDictFromFile(inputFilePath='C:\Data\ACESII\L1\high\ACESII_36359_l1_eepaa_fullCal.cdf')
+data_dict_eepaa_high = stl.loadDictFromFile(inputFilePath=inputFiles_eepaa[0])
+data_dict_counts_high = stl.loadDictFromFile(inputFilePath='C:\Data\ACESII\L1\high\ACESII_36359_l1_eepaa_fullCal.cdf')
 
-Done(start_time)
-
+stl.Done(start_time)
 
 # --- --- --- --- --- --- --
 # --- Calc Vpara & Vperp ---
 # --- --- --- --- --- --- --
-prgMsg('Calculating Vperp and Vparallel')
+stl.prgMsg('Calculating Vperp and Vparallel')
 Energy = data_dict_eepaa_high['Energy'][0]
 Pitch = data_dict_eepaa_high['Pitch_Angle'][0]
 if useDiffNFlux:
@@ -136,12 +119,12 @@ Vpara = deepcopy(countsTemp)
 
 for ptch in range(len(countsTemp)):
     for engy in range(len(countsTemp[0])):
-        Vmag = np.sqrt(2*q0*Energy[engy]/(m_e))
+        Vmag = np.sqrt(2*stl.q0*Energy[engy]/(stl.m_e))
         Vperp[ptch][engy] = np.sin(np.radians(Pitch[ptch]))*Vmag
         Vpara[ptch][engy] = np.cos(np.radians(Pitch[ptch]))*Vmag
 
 Vpara, Vperp = np.array(Vpara)/(10000*1000), np.array(Vperp)/(10000*1000)
-Done(start_time)
+stl.Done(start_time)
 
 
 # define (in time) where the STEBS occur, this has been done already
@@ -170,13 +153,13 @@ else:
 # --- --- --- --- --- --- --
 ############################
 
-prgMsg('Beginning Plot')
+stl.prgMsg('Beginning Plot')
 fig = plt.figure()
 fig.set_size_inches(figure_width,figure_height)
 gs0 = gridspec.GridSpec(4, 1, figure=fig, height_ratios=[1, 1, 0.5, 4], hspace=0.05)
 
-ax00 = fig.add_subplot(gs0[0,:])
-ax01 = fig.add_subplot(gs0[1,:],sharex=ax00)
+ax00 = fig.add_subplot(gs0[0, :])
+ax01 = fig.add_subplot(gs0[1, :], sharex=ax00)
 
 
 ###################
@@ -190,9 +173,11 @@ ax01 = fig.add_subplot(gs0[1,:],sharex=ax00)
 
 # Sum and average the STEB pitch bins
 totalDirFlux_engy = np.array(dataArray)
-totalDirFlux_engy[totalDirFlux_engy<0] = 0
+# totalDirFlux_engy[totalDirFlux_engy<0] = 0 # THIS WAS HERE IN THE 2nd Revision
 totalDirFlux_engy = totalDirFlux_engy[:, wPitch_Engy_vs_Time_STEBS[0]:wPitch_Engy_vs_Time_STEBS[1]+1, :]
 summedData = np.sum(totalDirFlux_engy, axis=1).T/(wPitch_Engy_vs_Time_STEBS[1] - wPitch_Engy_vs_Time_STEBS[0] + 1)
+summedData[summedData<0] = np.nan # do this to make the colorbar look right
+summedData[summedData ==0] = 1 # do this to make the colorbar look right
 
 eepaaPitchSlice = ax00.pcolormesh(Epoch, Energy, summedData, cmap=my_cmap, norm=normVal, vmin=cbarLow, vmax=cbarHigh)
 ax00.set_yscale('log')
@@ -209,9 +194,10 @@ ax00.tick_params(axis='x', which='minor', labelsize=Tick_FontSize, width=Tick_Wi
 # --- --- --- --- --- --- --- --- --- --- -
 
 totalDirFlux_engy = np.array(dataArray)
-# totalDirFlux_engy[totalDirFlux_engy<0] = 0
 totalDirFlux_engy = totalDirFlux_engy[:, wPitch_Engy_vs_Time_InvertedV[0]:wPitch_Engy_vs_Time_InvertedV[1]+1, :]
 summedData = np.sum(totalDirFlux_engy, axis=1).T/(wPitch_Engy_vs_Time_InvertedV[1] - wPitch_Engy_vs_Time_InvertedV[0] + 1)
+summedData[summedData<0] = np.nan # do this to make the colorbar look right
+summedData[summedData ==0] = 1 # do this to make the colorbar look right
 
 eepaaPitchSlice = ax01.pcolormesh(Epoch, Energy, summedData, cmap=my_cmap,norm=normVal, vmin=cbarLow, vmax=cbarHigh)
 
@@ -264,8 +250,9 @@ for rowIdx in range(NoOfSlices):
             index = np.abs(data_dict_eepaa_high['Epoch'][0] - sliceTimes[f's{wDispersions[colIdx] + 1}'][rowIdx]).argmin()
             dataArray_Slice = data_dict_eepaa_high['Differential_Energy_Flux'][0][index-1:index+2]
             dataArray_Slice = np.array(dataArray_Slice)
-            dataArray_Slice[dataArray_Slice < 0] = 0
             dataArray_Slice = np.sum(dataArray_Slice, axis=0) / (3)
+            dataArray_Slice[dataArray_Slice == 0] = 1
+            dataArray_Slice[dataArray_Slice < 0] = np.nan
 
             # demarcation lines on the spectrogram plot
             sliceTime_TSL = (pycdf.lib.datetime_to_tt2000(sliceTimes[f's{wDispersions[colIdx] + 1}'][rowIdx]) - pycdf.lib.datetime_to_tt2000(data_dict_eepaa_high['Epoch'][0][0]))/1E9
@@ -274,6 +261,10 @@ for rowIdx in range(NoOfSlices):
             if rowIdx == 1:
                 props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
                 ax00.text(sliceTime_TSL, Energy_yLimit-200, f'S{colIdx+2}', fontsize=Text_FontSize, weight='bold', color='black', bbox=props, ha='center')
+
+        # if normVal == 'log':
+            # dataArray_Slice[dataArray_Slice<0] = np.nan
+            # dataArray_Slice[dataArray_Slice ==0] = 1
 
         ax.pcolormesh(Vperp, Vpara, dataArray_Slice, cmap=my_cmap, shading='nearest', norm=normVal, vmin=cbarLow, vmax=cbarHigh)
         ax.set_xlim(X_Velocity_limits[0], X_Velocity_limits[1])
@@ -309,14 +300,10 @@ for rowIdx in range(NoOfSlices):
             ax.text(X_Velocity_limits[0], -1.9, topLabels[colIdx][0], color='black', weight='bold', fontsize=Text_FontSize+12)
             ax.text((X_Velocity_limits[0]+X_Velocity_limits[1])/2, -1.9, topLabels[colIdx][1], color='black', weight='bold', fontsize=Text_FontSize + 20,ha='center')
 
-
 # add in the label for S1
 props = dict(boxstyle='round', facecolor='white', alpha=1, lw=4)
 sliceTime_TSL = (pycdf.lib.datetime_to_tt2000(sliceTimes[f's{1}'][rowIdx]) - pycdf.lib.datetime_to_tt2000(data_dict_eepaa_high['Epoch'][0][0]))/1E9
 ax00.text(sliceTime_TSL, Energy_yLimit-200, f'S1', fontsize=Text_FontSize, weight='bold', color='black', bbox=props, ha='center')
-
-
-
 
 ##################
 # --- Colorbar ---
@@ -341,12 +328,9 @@ else:
 cbar.set_label(cbarLabel,fontsize=cbar_Fontsize+25,rotation=90,labelpad=-5)
 
 
-
 # Add (a), (b), (c), etc labels
 ax00.text(296.5, 0.75E3, '(a)',color='white',weight='bold',fontsize=Text_FontSize+12)
 ax01.text(296.5, 0.75E3, '(b)',color='white',weight='bold',fontsize=Text_FontSize+12)
-
 plt.subplots_adjust(left=0.1, bottom=0.05, right=0.86, top=0.98, wspace=None, hspace=None)
-
-plt.savefig(rf'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot6\Plot6_pitchAngle_base.png', dpi=dpi)
+plt.savefig(rf'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_Alfven_Observations\PLOTS\Plot6\Plot6_pitchAngle_base.png', dpi=dpi)
 

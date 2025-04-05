@@ -2,7 +2,6 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION: Convert electrostatic analyzer data from counts to differential energy flux
 
-
 # --- bookkeeping ---
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
@@ -42,180 +41,132 @@ outputData = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
+import itertools
 from warnings import filterwarnings # USED TO IGNORE WARNING ABOUT "UserWarning: Invalid dataL1 type for dataL1.... Skip warnings.warn('Invalid dataL1 type for dataL1.... Skip')" on Epoch High dataL1.
 filterwarnings("ignore")
 
-
-def L1_to_L2(wRocket, wFile, rocketFolderPath, justPrintFileNames):
+def L1_to_L2_ESA(wRocket, wFile, rocketFolderPath, justPrintFileNames):
 
     # --- ACES II Flight/Integration Data ---
-    rocketAttrs,b,c = ACES_mission_dicts()
-    rocketID = rocketAttrs.rocketID[wflyer]
-    globalAttrsMod = rocketAttrs.globalAttributes[wflyer]
-    globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'L2'
-    L2ModelData = L2_TRICE_Quick(wflyer)
+    L1Files = glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')
+    L2Files = glob(f'{rocketFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')
 
-
-    L1Files = glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\*.cdf')
-    L2Files = glob(f'{rocketFolderPath}{outputPath_modifier}\{fliers[wflyer]}\*.cdf')
-
-    L1_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\\', '') for ifile in L1Files]
-    L2_names = [ofile.replace(f'{rocketFolderPath}{outputPath_modifier}\{fliers[wflyer]}\\', '') for ofile in L2Files]
+    L1_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\\', '') for ifile in L1Files]
+    L2_names = [ofile.replace(f'{rocketFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\\', '') for ofile in L2Files]
 
     L1_names_searchable = [ifile.replace('ACES_', '').replace('36359_', '').replace('36364_', '').replace('l1_', '').replace('_v00', '') for ifile in L1_names]
     L2_names_searchable = [ofile.replace('ACES_', '').replace('36359_', '').replace('36364_', '').replace('l2_', '').replace('_v00', '').replace('__', '_') for ofile in L2_names]
 
-    dataFile_name = L1Files[wFile].replace(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\\', '')
+    dataFile_name = L1Files[wFile].replace(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\\', '')
     fileoutName = dataFile_name.replace('l1', 'l2')
 
+    if justPrintFileNames:
+        for i, file in enumerate(L1Files):
+            anws = ["yes" if L1_names_searchable[i].replace('.cdf', "") in L2_names_searchable else "no"]
+            print('[{:.0f}] {:80s}{:5.1f} MB   Made L2: {:3s} '.format(i, L1_names_searchable[i], round(getsize(file) / (10 ** 6), 1), anws[0]))
+        return
+    print('\n')
+    print(stl.color.UNDERLINE + f'Converting to L2 data for {dataFile_name}' + stl.color.END)
+    print('[' + str(wFile) + ']   ' + str(round(getsize(L1Files[wFile]) / (10 ** 6), 1)) + 'MiB')
+
+    ##########################
+    # --- LOAD THE L1 DATA ---
+    ##########################
+    stl.prgMsg('Loading data from L1Files')
+    data_dict_L1 = stl.loadDictFromFile(L1Files[wFile])
+    stl.Done(start_time)
+
     # determine which instrument the file corresponds to:
-    for index,instr in enumerate(['eepaa', 'leesa', 'iepaa', 'lp']):
+    for index, instr in enumerate(['eepaa', 'leesa', 'iepaa', 'lp']):
         if instr in dataFile_name:
             wInstr = [index, instr]
 
-    if justPrintFileNames:
-            for i, file in enumerate(L1Files):
-                anws = ["yes" if L1_names_searchable[i].replace('.cdf', "") in L2_names_searchable else "no"]
-                print('[{:.0f}] {:80s}{:5.1f} MB   Made L2: {:3s} '.format(i, L1_names_searchable[i], round(getsize(file) / (10 ** 6), 1), anws[0]))
-    else:
-        print('\n')
-        print(color.UNDERLINE + f'Converting to L2 data for {dataFile_name}' + color.END)
-        print('[' + str(wFile) + ']   ' + str(round(getsize(L1Files[wFile]) / (10 ** 6), 1)) + 'MiB')
+    # --- prepare the output ---
+    ESA_dimensions = (len(data_dict_L1['counts'][0]),len(data_dict_L1['Pitch_Angle'][0]), len(data_dict_L1['Energy'][0]))
+    data_dict_output = {'Differential_Number_Flux': [np.zeros(shape=ESA_dimensions), {'LABLAXIS': 'Differential_Number_Flux',
+                                                  'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle',
+                                                  'DEPEND_2': 'Energy',
+                                                  'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2',
+                                                  'UNITS': 'cm!U-2!N str!U-1!N s!U-1!N eV!U-1!N',
+                                                  'VAR_TYPE': 'data', 'SCALETYP': 'log'}],
+                        'Differential_Energy_Flux': [np.zeros(shape=ESA_dimensions), {'LABLAXIS': 'Differential_Energy_Flux',
+                                         'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle',
+                                         'DEPEND_2': 'Energy',
+                                         'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2',
+                                         'UNITS': 'cm!U-2!N str!U-1!N s!U-1!N eV/eV',
+                                         'VAR_TYPE': 'data', 'SCALETYP': 'log'}],
+                        'Differential_Number_Flux_stdDev': [np.zeros(shape=ESA_dimensions), {'LABLAXIS': 'Differential_Energy_Flux_stdDev',
+                                                'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle',
+                                                'DEPEND_2': 'Energy',
+                                                'FILLVAL': ACESII.epoch_fillVal,
+                                                'FORMAT': 'E12.2',
+                                                'UNITS': 'cm!U-2!N str!U-1!N s!U-1!N eV/eV',
+                                                'VAR_TYPE': 'data', 'SCALETYP': 'log'}]
+                        }
 
-        # --- get the data from the tmCDF file ---
-        prgMsg('Loading data from L1Files')
-        data_dict = {}
-        with pycdf.CDF(L1Files[wFile]) as L0DataFile:
-            for key, val in L0DataFile.items():
-                data_dict = {**data_dict, **{key : [L0DataFile[key][...] , {key:val for key,val in L0DataFile[key].attrs.items()  }  ]  }  }
+    ###################################
+    # --- Calculate Instrument Data ---
+    ###################################
+    stl.prgMsg('Creating L2 instrument data')
 
-        Done(start_time)
+    Energies = data_dict_L1['Energy'][0]
+    counts = data_dict_L1['counts'][0]
+    geo_factor = ACESII.ESA_geometric_factor_TRACERS_ACE[wInstr[0]]
+    count_interval = (1E-3)*data_dict_L1['Count_Interval'][0] # amount of time BETWEEN energy steps that we actually collect counts (in seconds).
 
-        # --- --- --- --- --- --- --- --- ---
-        # --- Calculate Instrument Data ---
-        # --- --- --- --- --- --- --- --- ---
+    # --- PROCESS ESA DATA ---
+    for tme, ptch, engy in tqdm(itertools.product(*[range(ESA_dimensions[0]),range(ESA_dimensions[1]),range(ESA_dimensions[2])])):
+        deltaT = (count_interval[tme]) - (counts[tme][ptch][engy] * ACESII.ESA_deadtime[wRocket-4])
 
-        prgMsg('Creating L2 instrument data')
+        if counts[tme][ptch][engy] >= 0:
+            try:
+                data_dict_output['Differential_Number_Flux'][0][tme][ptch][engy] = int((counts[tme][ptch][engy]) / (Energies[engy] * geo_factor[ptch] * deltaT))
+                data_dict_output['Differential_Number_Flux_stdDev'][0][tme][ptch][engy] = int(np.sqrt(counts[tme][ptch][engy]) / (Energies[engy] * geo_factor[ptch] * deltaT))
+                data_dict_output['Differential_Energy_Flux'][0][tme][ptch][engy] = int((counts[tme][ptch][engy]) / (geo_factor[ptch] * deltaT))
+            except:
+                print(counts[tme][ptch][engy], counts[tme][ptch][engy]>=0)
+        else:
+            data_dict_output['Differential_Number_Flux'][0][tme][ptch][engy] = ACESII.epoch_fillVal
+            data_dict_output['Differential_Number_Flux_stdDev'][0][tme][ptch][engy] = ACESII.epoch_fillVal
+            data_dict_output['Differential_Energy_Flux'][0][tme][ptch][engy] = ACESII.epoch_fillVal
 
-        # --- PROCESS EEPAA/LEESA DATA ---
-        if wInstr[0] in [0, 1, 2]:
+    stl.Done(start_time)
 
-            sizes = [len(data_dict[rocketAttrs.InstrNames_LC[wInstr[0]]][0]),len(data_dict['Pitch_Angle'][0]), len(data_dict['Energy'][0])]
-            ranges = [range(sizes[0]), range(sizes[1]), range(sizes[2])]
-            diffNFlux = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
-            diffEFlux = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
-            diffEFlux_oneCount = np.zeros(shape=(sizes[0], sizes[1], sizes[2])) # useful to for fitting the distribution function to maxwellian
-            diffNFlux_stdDev = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
-            diffEFlux_stdDev = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
+    # --- --- --- --- --- --- ---
+    # --- WRITE OUT THE DATA ---
+    # --- --- --- --- --- --- ---
+    stl.prgMsg('Creating output file')
+    if outputData:
+        del data_dict_L1['counts']
+        data_dict_output = {**data_dict_output,
+                            **data_dict_L1}
 
-            Energies = data_dict['Energy'][0]
-            counts = data_dict[rocketAttrs.InstrNames_LC[wInstr[0]]][0]
 
-            # TODO: NEED COUNT INTERVAL HERE
-            count_interval = (1E-3)*data_dict['Count_Interval'][0] # amount of time BETWEEN energy steps that we actually collect counts (in seconds).
-            # count_interval = [917 for i in range(len(data_dict[rocketAttrs.InstrNames_LC[wInstr[0]]][0]))]
+        outputPath = f'{rocketFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
+        stl.outputCDFdata(outputPath= outputPath,data_dict= data_dict_output,instrNam=wInstr[1])
+        stl.Done(start_time)
 
-            geo_factor = rocketAttrs.geometric_factor[wInstr[0]]
-
-            # --- PROCESS ESA DATA ---
-            for tme, ptch, engy in tqdm(itertools.product(*ranges)):
-                deltaT = (count_interval[tme]) - (counts[tme][ptch][engy] * rocketAttrs.deadtime[wflyer])
-
-                if counts[tme][ptch][engy] == rocketAttrs.epoch_fillVal:
-                    diffNFlux[tme][ptch][engy] = rocketAttrs.epoch_fillVal
-                    diffNFlux_stdDev[tme][ptch][engy] = rocketAttrs.epoch_fillVal
-                    diffEFlux[tme][ptch][engy] = rocketAttrs.epoch_fillVal
-                else:
-                    diffNFlux[tme][ptch][engy] = int((counts[tme][ptch][engy]) / (Energies[engy] * geo_factor[ptch] * deltaT))
-                    diffNFlux_stdDev[tme][ptch][engy] = int(  np.sqrt(counts[tme][ptch][engy]) / (Energies[engy] * geo_factor[ptch] * deltaT))
-                    diffEFlux[tme][ptch][engy] = int((counts[tme][ptch][engy]) / (geo_factor[ptch] * deltaT))
-
-                deltaT_oneCount = (count_interval[tme]) - (1 * rocketAttrs.deadtime[wflyer])
-                diffEFlux_oneCount[tme][ptch][engy] = int(1 / (geo_factor[ptch] * deltaT_oneCount))
-
-            del data_dict[rocketAttrs.InstrNames_LC[wInstr[0]]]
-
-        Done(start_time)
-
-        # --- --- --- --- --- --- ---
-        # --- WRITE OUT THE DATA ---
-        # --- --- --- --- --- --- ---
-        prgMsg('Creating output file')
-
-        if outputData:
-
-            outputPath = f'{rocketFolderPath}{outputPath_modifier}\{fliers[wflyer]}\\{fileoutName}'
-
-            data_dict = {**data_dict, **{'Differential_Number_Flux':
-                                             [diffNFlux, {'LABLAXIS': 'Differential_Number_Flux',
-                                                       'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle',
-                                                       'DEPEND_2': 'Energy',
-                                                       'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
-                                                       'UNITS': 'cm!U-2!N str!U-1!N s!U-1!N eV!U-1!N',
-                                                       'VALIDMIN': diffNFlux.min(), 'VALIDMAX': diffNFlux.max(),
-                                                       'VAR_TYPE': 'data', 'SCALETYP': 'log'}]}}
-
-            data_dict = {**data_dict, **{'Differential_Energy_Flux':
-                                             [diffEFlux, {'LABLAXIS': 'Differential_Energy_Flux',
-                                                          'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle',
-                                                          'DEPEND_2': 'Energy',
-                                                          'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
-                                                          'UNITS': 'cm!U-2!N str!U-1!N s!U-1!N eV/eV',
-                                                          'VALIDMIN': diffEFlux.min(), 'VALIDMAX': diffEFlux.max(),
-                                                          'VAR_TYPE': 'data', 'SCALETYP': 'log'}]}}
-
-            data_dict = {**data_dict, **{'oneCountLevel':
-                                             [diffEFlux_oneCount, {'LABLAXIS': 'Differential_Energy_Flux',
-                                                          'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle',
-                                                          'DEPEND_2': 'Energy',
-                                                          'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
-                                                          'UNITS': 'cm!U-2!N str!U-1!N s!U-1!N eV/eV',
-                                                          'VALIDMIN': diffEFlux.min(), 'VALIDMAX': diffEFlux.max(),
-                                                          'VAR_TYPE': 'data', 'SCALETYP': 'log'}]}}
-            data_dict = {**data_dict, **{'Differential_Number_Flux_stdDev':
-                                             [diffNFlux_stdDev, {'LABLAXIS': 'Differential_Energy_Flux_stdDev',
-                                                                   'DEPEND_0': 'Epoch', 'DEPEND_1': 'Pitch_Angle',
-                                                                   'DEPEND_2': 'Energy',
-                                                                   'FILLVAL': rocketAttrs.epoch_fillVal,
-                                                                   'FORMAT': 'E12.2',
-                                                                   'UNITS': 'cm!U-2!N str!U-1!N s!U-1!N eV/eV',
-                                                                   'VALIDMIN': diffNFlux_stdDev.min(),
-                                                                   'VALIDMAX': diffNFlux_stdDev.max(),
-                                                                   'VAR_TYPE': 'data', 'SCALETYP': 'log'}]}}
-
-            outputCDFdata(outputPath= outputPath,data_dict= data_dict,ModelData= L2ModelData, globalAttrsMod= globalAttrsMod,instrNam=wInstr[1])
-            Done(start_time)
 
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
 if wRocket == 0:  # ACES II Integration High
-    rocketFolderPath = Integration_data_folder
-    wflyer = 0
+    rocketFolderPath = DataPaths.Integration_data_folder
 elif wRocket == 1: # ACES II Integration Low
-    rocketFolderPath = Integration_data_folder
-    wflyer = 1
-elif wRocket == 2:  # TRICE II High
-    rocketFolderPath = TRICE_data_folder
-    wflyer = 0
-elif wRocket == 3: # TRICE II Low
-    rocketFolderPath = TRICE_data_folder
-    wflyer = 1
+    rocketFolderPath = DataPaths.Integration_data_folder
 elif wRocket == 4:  # ACES II High
-    rocketFolderPath = ACES_data_folder
-    wflyer = 0
+    rocketFolderPath = DataPaths.ACES_data_folder
 elif wRocket == 5: # ACES II Low
-    rocketFolderPath = ACES_data_folder
-    wflyer = 1
+    rocketFolderPath = DataPaths.ACES_data_folder
 
-if len(glob(f'{rocketFolderPath}L1\{fliers[wflyer]}\*.cdf')) == 0:
-    print(color.RED + 'There are no .cdf files in the specified directory' + color.END)
+if len(glob(f'{rocketFolderPath}L1\{ACESII.fliers[wRocket-4]}\*.cdf')) == 0:
+    print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
     if justPrintFileNames:
-        L1_to_L2(wRocket, 0, rocketFolderPath, justPrintFileNames,wflyer)
+        L1_to_L2_ESA(wRocket, 0, rocketFolderPath, justPrintFileNames)
     elif not wFiles[wRocket-4]:
-        for fileNo in (range(len(glob(f'{rocketFolderPath}L1\{fliers[wflyer]}\*.cdf')))):
-            L1_to_L2(wRocket, fileNo, rocketFolderPath, justPrintFileNames,wflyer)
+        for fileNo in (range(len(glob(f'{rocketFolderPath}L1\{ACESII.fliers[wRocket-4]}\*.cdf')))):
+            L1_to_L2_ESA(wRocket, fileNo, rocketFolderPath, justPrintFileNames)
     else:
         for filesNo in wFiles[wRocket-4]:
-            L1_to_L2(wRocket, filesNo, rocketFolderPath, justPrintFileNames,wflyer)
+            L1_to_L2_ESA(wRocket, filesNo, rocketFolderPath, justPrintFileNames)
