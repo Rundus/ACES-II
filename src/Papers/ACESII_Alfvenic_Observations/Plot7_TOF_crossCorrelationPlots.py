@@ -78,6 +78,9 @@ from scipy.signal import correlate, correlation_lags
 from itertools import combinations
 from src.Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
 import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import spaceToolsLib as stl
+from scipy.optimize import curve_fit
 
 
 
@@ -96,8 +99,8 @@ def fitFunc_polynomial(x,a0, a1, a2):
 
 def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileNames,wDis):
 
-    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wRocket-4]}{modifier}\*eepaa_fullcal*')
-    input_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wRocket-4]}{modifier}\\', '') for ifile in inputFiles]
+    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\*eepaa_fullcal*')
+    input_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\\', '') for ifile in inputFiles]
     input_names_searchable = [ifile.replace('ACES_', '').replace('36359_', '').replace('36364_', '').replace(inputPath_modifier.lower() +'_', '').replace('_v00', '') for ifile in input_names]
 
     if justPrintFileNames:
@@ -106,7 +109,7 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
         return
 
     # --- get the data from the ESA file ---
-    data_dict = loadDictFromFile(inputFiles[0])
+    data_dict = stl.loadDictFromFile(inputFiles[0])
 
     # --- --- --- --- --- --- ----
     # --- Isolate a Dispersion ---
@@ -123,7 +126,7 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
     whenSTEBoccured_time = data_dict['Epoch'][0][int((highCut+lowCut)/2)]
     whenSTEBoccured_Alt = data_dict['Alt'][0][int((highCut + lowCut) / 2)]
 
-    eepaa_dis = data_dict['eepaa'][0][lowCut:highCut+1]
+    eepaa_dis = data_dict['counts'][0][lowCut:highCut+1]
 
     if applyMaskVal:
         # --- Apply the Masking Value to the dataset ---
@@ -155,7 +158,7 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
         cmap = ax[0].pcolormesh(Epoch_dis, Energy, eepaa_dis_onePitch, cmap=mycmap, vmin=cbar_low, vmax=cbar_high)
         ax[0].set_yscale('log')
         ax[0].set_ylim(Energy[-1], Energy[np.abs(Energy - dispersionAttributes.keyDispersionEnergyLimits[wDis - 1][1]).argmin() - 1])
-        ax[1].pcolormesh(Epoch_dis, Energy, np.array(data_dict['eepaa'][0][lowCut:highCut + 1, wPitch, :]).T,cmap=mycmap, vmin=cbar_low, vmax=cbar_high)
+        ax[1].pcolormesh(Epoch_dis, Energy, np.array(data_dict['counts'][0][lowCut:highCut + 1, wPitch, :]).T,cmap=mycmap, vmin=cbar_low, vmax=cbar_high)
         ax[1].set_yscale('log')
         ax[1].set_ylim(Energy[-1], Energy[np.abs(Energy - dispersionAttributes.keyDispersionEnergyLimits[wDis - 1][1]).argmin() - 1])
         cbar = plt.colorbar(cmap, ax=ax.ravel().tolist())
@@ -201,11 +204,11 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
 
             higherEnergyIndex = engyPair[0]
             lowerEnergyIndex = engyPair[1]
-            EnergySlow = q0*Energy[lowerEnergyIndex]
-            EnergyFast = q0*Energy[higherEnergyIndex]
-            velSlow = np.cos(np.radians(Pitch[wPitch]))*np.sqrt(2*EnergySlow/m_e)
+            EnergySlow = stl.q0*Energy[lowerEnergyIndex]
+            EnergyFast = stl.q0*Energy[higherEnergyIndex]
+            velSlow = np.cos(np.radians(Pitch[wPitch]))*np.sqrt(2*EnergySlow/stl.m_e)
             errorVelSlow = np.sqrt(DetectorEnergyResolution) * velSlow
-            velFast = np.cos(np.radians(Pitch[wPitch]))*np.sqrt(2*EnergyFast/m_e)
+            velFast = np.cos(np.radians(Pitch[wPitch]))*np.sqrt(2*EnergyFast/stl.m_e)
             errorVelFast = np.sqrt(DetectorEnergyResolution) * velFast
 
             # check to make sure both datasets have at least one non-zero value
@@ -219,7 +222,7 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
                 # Find the x,y value of the peak in the correlation output
                 indexMax = np.where(corr == np.max(corr))[0][0]
                 delayTime = DetectorTimeResolution*lags[indexMax]
-                velDiff = 1000*(np.sqrt(m_e) / (np.cos(np.radians(Pitch[wPitch]))*(np.sqrt(2)))) * (1/(np.sqrt(EnergySlow)) - 1/(np.sqrt(EnergyFast)))
+                velDiff = 1000*(np.sqrt(stl.m_e) / (np.cos(np.radians(Pitch[wPitch]))*(np.sqrt(2)))) * (1/(np.sqrt(EnergySlow)) - 1/(np.sqrt(EnergyFast)))
 
                 if weightLinearFitByCounts:
                     # find if counts_slow or counts_fast is more at the correlation peak
@@ -237,7 +240,7 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
 
                 # calculate the error in the measurements
                 errorT.append(DetectorTimeResolution)
-                errorV.append(((DetectorEnergyResolution*np.sqrt(m_e)) / ((2**(3/2))*np.cos(np.radians(Pitch[wPitch])))) * np.sqrt(1/EnergySlow + 1/EnergyFast))
+                errorV.append(((DetectorEnergyResolution*np.sqrt(stl.m_e)) / ((2**(3/2))*np.cos(np.radians(Pitch[wPitch])))) * np.sqrt(1/EnergySlow + 1/EnergyFast))
 
                 errZ1 = (DetectorTimeResolution**2) * (1 / (1/velSlow - 1/velFast))
                 errZ2 = (np.square(errorVelSlow))*(delayTime*np.square(velFast)/np.square(velSlow - velFast))**2
@@ -283,7 +286,7 @@ def AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileName
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-rocketFolderPath = ACES_data_folder
+rocketFolderPath = DataPaths.ACES_data_folder
 STEBfitResults = []
 for wDis in tqdm(wDispersions):
     results = AlfvenSignatureCrossCorrelation(wRocket, rocketFolderPath, justPrintFileNames, wDis)
@@ -306,8 +309,8 @@ if not justPrintFileNames:
     counter = 0
 
     # === Plot the example data for S2 and S5 ===
-    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wRocket - 4]}{modifier}\*eepaa_fullcal*')
-    data_dict = loadDictFromFile(inputFiles[0])
+    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket - 4]}{modifier}\*eepaa_fullcal*')
+    data_dict = stl.loadDictFromFile(inputFiles[0])
     Energy = data_dict['Energy'][0]
     Pitch = data_dict['Pitch_Angle'][0]
 
@@ -428,7 +431,7 @@ if not justPrintFileNames:
     cbar.set_label('Counts',rotation=90,fontsize=cbar_fontSize+10,weight='bold')
 
     plt.subplots_adjust(left=0.1, bottom=0.06, right=0.85, top=0.975, wspace=0.05, hspace=0.1)
-    plt.savefig(rf'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot7\Plot7_TOFfunc_base.png', dpi=dpi)
+    plt.savefig(rf'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_Alfven_Observations\PLOTS\Plot7\Plot7_TOFfunc_base.png', dpi=dpi)
 
 
 if generateLatexTable:

@@ -40,7 +40,7 @@ my_cmap.set_extremes(bad=(1,1,1),under=(0,0,0))
 
 # Plot toggles
 plt.rcParams["font.family"] = "Arial"
-Figure_width = 7.5 # in inches
+Figure_width = 8 # in inches
 Figure_height =5.5*2.2# in inches
 Text_FontSize = 20
 Label_FontSize = 14.5
@@ -163,14 +163,15 @@ for wRocket in [4, 5]:
 
     if wRocket == 4:
         # HF EEPAA colorbar
-        cax = fig.add_axes([0.91, 0.774, 0.02, 0.212])
+        cax = fig.add_axes([0.875, 0.774, 0.02, 0.212])
     elif wRocket == 5:
         # LF EEPAA colorbar
-        cax = fig.add_axes([0.91, 0.276, 0.02, 0.211])
+        cax = fig.add_axes([0.875, 0.276, 0.02, 0.211])
 
     cbar = plt.colorbar(cmap, cax=cax)
     cbar.ax.minorticks_on()
     cbar.ax.tick_params(labelsize=cbar_Tick_LabelSize+4)
+    cbar.set_label('[eV/cm$^{2}$-s-sr-eV]', fontsize=Label_FontSize)
 
     # --- Be/Er ---
     ax[2+idxAdjust].plot(magDict['Epoch'][0], magDict['B_e'][0], color='blue', linewidth=Plot_LineWidth)
@@ -204,21 +205,22 @@ for wRocket in [4, 5]:
 
     if wRocket ==4:
         # spectrogram colorbar HF
-        cax = fig.add_axes([0.91, 0.558, 0.02, 0.103])
+        cax = fig.add_axes([0.875, 0.558, 0.02, 0.103])
     elif wRocket == 5:
         # spectrogram colorbar LF
-        cax = fig.add_axes([0.91, 0.06, 0.02, 0.103])
+        cax = fig.add_axes([0.875, 0.06, 0.02, 0.103])
 
     cbar = plt.colorbar(cmap, cax=cax)
     cbar.ax.minorticks_on()
     cbar.ax.tick_params(labelsize=cbar_Tick_LabelSize)
+    cbar.set_label('[nT$^{2}$/Hz]', fontsize=Label_FontSize)
 
 
     # spectrogram Ticks
     yticks = [0, 4, 8, 12]
     ax[3+idxAdjust].set_yticks(yticks)
     ax[3+idxAdjust].set_yticklabels([str(tick) for tick in yticks])
-    xtickTimes = [dt.datetime(2022,11,20,17,24,53)+dt.timedelta(seconds=i*3) for i in range(6)]
+    xtickTimes = [dt.datetime(2022,11,20,17,24,54)+dt.timedelta(seconds=i*3) for i in range(6)]
 
     # xtickTimes = [dt.datetime(2022,11,20,17,24,53),
     #             dt.datetime(2022,11,20,17,24,55,500000),
@@ -248,7 +250,8 @@ for i in range(9):
         ax[i].tick_params(axis='x', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width,labelbottom=False,bottom=False,top=False)
 
 # adjust plot size
-fig.subplots_adjust(left=0.13, bottom=0.06, right=0.89, top=0.985, wspace=None,hspace=0.05)  # remove the space between plots
+fig.subplots_adjust(left=0.13, bottom=0.06, right=0.87, top=0.985, wspace=None,hspace=0.05)  # remove the space between plots
+# fig.subplots_adjust(left=0.13, bottom=0.06, right=0.89, top=0.985, wspace=None,hspace=0.05)  # remove the space between plots
 fig.align_ylabels(ax[:])
 
 # output the figure

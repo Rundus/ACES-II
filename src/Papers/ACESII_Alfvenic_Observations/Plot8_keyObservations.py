@@ -52,7 +52,7 @@ dpi = 100
 dispersiveRegionTargetTime = [dt.datetime(2022,11,20,17,24,55,900000),
                               dt.datetime(2022,11,20,17,25,2,000000)]
 # --- plot COUNTS and ENERGY  toggles ---
-diffNFlux_limit_Low, diffNFlux_limit_High = 5E3, 1E7
+diffNFlux_limit_Low, diffNFlux_limit_High = 5E3, 3E7
 wSTEBtoPlot = [1, 2, 3, 4, 5] # STEB number NOT index. Don't -1
 wPitchs_to_plot = [2, 3, 4, 5] # decide which pitch angles to get the peak energy for
 countsMask = 4
@@ -182,15 +182,15 @@ for idx, ptchVal in enumerate(wPitchs_to_plot):
         peakEnergy.append(peakEval)
 
     # plot the results
-    axPeakE.plot([1,2,3,4,5], peakEnergy, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.',ms=plot_MarkerSize)
+    axPeakE.plot(wSTEBtoPlot, peakEnergy, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.',ms=plot_MarkerSize)
 
 
 axPeakE.set_xmargin(0)
-axPeakE.set_ylabel('Peak Energy\n [eV]',fontsize=labels_FontSize,weight='bold')
-axPeakE.legend(fontsize=legend_FontSize)
+axPeakE.set_ylabel('STEB Peak Energy\n [eV]',fontsize=labels_FontSize,weight='bold')
+axPeakE.legend(fontsize=legend_FontSize, loc='upper left')
 axPeakE.set_ylim(-50, 1200)
 axPeakE.set_xlabel('STEB #',fontsize=labels_FontSize, weight = 'bold')
-axPeakE.grid(alpha=0.5)
+axPeakE.grid(alpha=0.7)
 axPeakE.set_xlim(0.1,5.9)
 axPeakE.tick_params(axis='y', which='major', labelsize=tick_LabelSize, width=tick_Width, length=tick_Length)
 axPeakE.tick_params(axis='y', which='minor', labelsize=tick_LabelSize, width=tick_Width, length=tick_Length / 2)
@@ -202,28 +202,6 @@ axPeakE.tick_params(axis='x', which='minor', labelsize=tick_LabelSize+5, width=t
 #########################################
 # --- Calculate Flux vs energy graphs ---
 #########################################
-
-# # --- Plot DiffNFlux of associated inverted-V curve on S4 and S5---
-# invertedV_times = [dt.datetime(2022,11,20,17,25,00,612000), dt.datetime(2022,11,20,17,25,1,62000)] # S4 and S5
-# whereIDX = [ np.abs(data_dict_eepaa_high['Epoch'][0] - val).argmin() for val in invertedV_times]
-# Nslices = 3
-# invertedV_ptchIdx = [5, 11]
-#
-# # get the averaged diffNFlux over a series of pitch angles
-# for i,idx in enumerate(whereIDX):
-#     dataArray_Slice = data_dict_eepaa_high['Differential_Number_Flux'][0][idx-1:idx + 1 + 1]
-#     dataArray_Slice = np.array(dataArray_Slice)
-#     dataArray_Slice[dataArray_Slice < 0] = 0
-#     dataArray_Slice = np.sum(dataArray_Slice, axis=0) / (Nslices) # average over time
-#
-#     engyLimit = 340 if i == 0 else 1000
-#     engyIdxUse = np.abs(Energy - engyLimit).argmin()
-#
-#     dataArray_Slice = np.sum(dataArray_Slice[invertedV_ptchIdx[0]:invertedV_ptchIdx[1]+1, engyIdxUse:], axis=0) / (invertedV_ptchIdx[1] - invertedV_ptchIdx[0]) # average over pitch angles 30deg to 100 deg
-#     Energies = Energy[engyIdxUse:]
-#     subAxes[i+2].plot(Energies, dataArray_Slice, color='purple', label='Inverted-V\n' +rf'(T={round(rktTime_counts[idx],2)}$\pm 0.05$ s)', marker='.', ms=plot_MarkerSize-7)
-
-
 # --- Calculate Flux vs energy graphs ---
 # peakEnergies = [245.74, 725.16, 245.74, 987.89]
 for t, tme in enumerate(STEBtimes[1:]):
@@ -234,12 +212,14 @@ for t, tme in enumerate(STEBtimes[1:]):
     elif t == 1:
         wDis = 4
         peakEnergy = 725.16
+        peakEnergy = 1000
     elif t == 2:
         wDis = 3
         peakEnergy = 245.74
     elif t == 3:
         wDis = 5
         peakEnergy = 987.89
+        peakEnergy = 1000
 
     wDispersion_key = f's{wDis}'
     lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][0]).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][1]).argmin()
@@ -249,17 +229,19 @@ for t, tme in enumerate(STEBtimes[1:]):
 
     # prepare the data by removing fillvals and applying the mask
     STEBdata = deepcopy(eepaa_dis)
-    STEBdata[STEBdata < 0] = 0  # set anything below 0 = 0
+    # STEBdata[STEBdata < 0] = np.nan  # set anything below 0 = 0
+
+    STEBdata[STEBdata <= 0] = np.nan  # set anything below 0 = 0
     engyIdx = np.abs(Energy - peakEnergy).argmin()
 
     for idx, ptchVal in enumerate(wPitchs_to_plot):
         ptchSlice = STEBdata[:, ptchVal, engyIdx:].T
         Energies = Energy[engyIdx:]
-        fluxSum = [sum(ptchSlice[engy])/len(ptchSlice[engy]) for engy in range(len(Energies))]
+        fluxSum = [np.nanmean(ptchSlice[engy]) for engy in range(len(Energies))]
         subAxes[t].plot(Energies, fluxSum, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.', ms=plot_MarkerSize-7)
 
     props = dict(boxstyle='round', facecolor='white', alpha=1)
-    subAxes[t].text(500, 7E6, s=f'S{wDis}', fontsize=text_FontSize, weight='bold', color='black', bbox=props, ha='center')
+    subAxes[t].text(500, 2E7, s=f'S{wDis}', fontsize=text_FontSize, weight='bold', color='black', bbox=props, ha='center')
     subAxes[t].set_yscale('log')
     subAxes[t].set_ylim(diffNFlux_limit_Low, diffNFlux_limit_High)
     subAxes[t].set_xlim(-10, 1000)
@@ -267,7 +249,8 @@ for t, tme in enumerate(STEBtimes[1:]):
     subAxes[t].tick_params(axis='y', which='minor', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length / 2)
     subAxes[t].tick_params(axis='x', which='major', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length)
     subAxes[t].tick_params(axis='x', which='minor', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length / 2)
-    subAxes[t].grid(alpha=0.4)
+    subAxes[t].grid(alpha=0.7)
+
     # set the labels and such
     if t in [0]:
         # subAxes[t].legend(prop={'size': legend_SubAxes_FontSize},loc='upper right') # OLD
@@ -293,44 +276,53 @@ for t, tme in enumerate(STEBtimes[1:]):
 axID = 4
 lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,0,512000)).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,0,612000)).argmin()
 inV_flux = deepcopy(diffNFlux[lowCut:highCut + 1])
-inV_flux[inV_flux < 0] = 0  # set anything below 0 = 0
-peakEnergy = 500
+# inV_flux[inV_flux < 0] = np.nan  # set anything below 0 = 0
+# peakEnergy = 322 # inverted-V peak enregy
+
+inV_flux[inV_flux <= 0] = np.nan  # set anything below 0 = 0
+peakEnergy = 1000 # inverted-V peak enregy
 for idx, ptchVal in enumerate(wPitchs_to_plot):
     engyIdx = np.abs(Energy - peakEnergy).argmin()
     ptchSlice = inV_flux[:, ptchVal, engyIdx:].T
     Energies = Energy[engyIdx:]
-    fluxSum = [sum(ptchSlice[engy]) / len(ptchSlice[engy]) for engy in range(len(Energies))]
+    # fluxSum = [sum(ptchSlice[engy]) / len(ptchSlice[engy]) for engy in range(len(Energies))]
+    fluxSum = [np.nanmean(ptchSlice[engy]) for engy in range(len(Energies))]
     subAxes[axID].plot(Energies, fluxSum, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.', ms=plot_MarkerSize-7)
 
 props = dict(boxstyle='round', facecolor='white', alpha=1)
-subAxes[axID].text(500, 7E6, s=f'Inverted-V (T=X)', fontsize=text_FontSize-5, weight='bold', color='black', bbox=props, ha='center')
+subAxes[axID].text(500, 2.4E7, s=f'Inverted-V (T={round(rktTime_counts[lowCut+1],1)} $\pm$ 0.05 s)', fontsize=text_FontSize-7, weight='bold', color='black', bbox=props, ha='center')
 subAxes[axID].set_yscale('log')
 subAxes[axID].set_ylim(diffNFlux_limit_Low, diffNFlux_limit_High)
-subAxes[axID].set_xlim(-10, 1000)
+subAxes[axID].set_xlim(-10, 400)
+
 subAxes[axID].tick_params(axis='y', which='major', labelsize=tick_SubplotLabelSize+4, width=tick_Width, length=tick_Length)
 subAxes[axID].tick_params(axis='y', which='minor', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length / 2)
 subAxes[axID].tick_params(axis='x', which='major', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length)
 subAxes[axID].tick_params(axis='x', which='minor', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length / 2)
-subAxes[axID].grid(alpha=0.4)
+subAxes[axID].grid(alpha=0.7)
 subAxes[axID].set_yticklabels([])
 subAxes[axID].set_xticklabels([])
 
-# --- --- --- --- -
-# The S5 Inverted-V
-# --- --- --- --- -
+# --- --- --- --- --- --
+# The Inverted-V near S5
+# --- --- --- --- --- --
 axID = 5
-lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,1,462000)).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,1,662000)).argmin()
+lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,1,362000)).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,1,462000)).argmin()
 inV_flux = deepcopy(diffNFlux[lowCut:highCut + 1])
-inV_flux[inV_flux < 0] = 0  # set anything below 0 = 0
+# inV_flux[inV_flux < 0] = np.nan  # set anything below 0 = 0
+# peakEnergy = 800
 
+inV_flux[inV_flux <= 0] = np.nan  # set anything below 0 = 0
+peakEnergy = 1000
 for idx, ptchVal in enumerate(wPitchs_to_plot):
-    ptchSlice = inV_flux[:, ptchVal, :].T
-
-    fluxSum = [sum(ptchSlice[engy])/len(ptchSlice[engy]) for engy in range(len(Energy))]
-    subAxes[axID].plot(Energy, fluxSum, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.', ms=plot_MarkerSize-7)
+    engyIdx = np.abs(Energy - peakEnergy).argmin()
+    ptchSlice = inV_flux[:, ptchVal, engyIdx:].T
+    Energies = Energy[engyIdx:]
+    fluxSum = [np.nanmean(ptchSlice[engy]) for engy in range(len(Energies))]
+    subAxes[axID].plot(Energies, fluxSum, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.', ms=plot_MarkerSize-7)
 
 props = dict(boxstyle='round', facecolor='white', alpha=1)
-subAxes[axID].text(500, 7E6, s=f'Inverted-V (T=X)', fontsize=text_FontSize-5, weight='bold', color='black', bbox=props, ha='center')
+subAxes[axID].text(500, 2.4E7, s=f'Inverted-V (T={round(rktTime_counts[lowCut+2],1)} $\pm$ 0.05 s)', fontsize=text_FontSize-7, weight='bold', color='black', bbox=props, ha='center')
 subAxes[axID].set_yscale('log')
 subAxes[axID].set_ylim(diffNFlux_limit_Low, diffNFlux_limit_High)
 subAxes[axID].set_xlim(-10, 1000)
@@ -338,13 +330,9 @@ subAxes[axID].tick_params(axis='y', which='major', labelsize=tick_SubplotLabelSi
 subAxes[axID].tick_params(axis='y', which='minor', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length / 2)
 subAxes[axID].tick_params(axis='x', which='major', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length)
 subAxes[axID].tick_params(axis='x', which='minor', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length / 2)
-subAxes[axID].grid(alpha=0.4)
+subAxes[axID].grid(alpha=0.6)
 subAxes[axID].set_yticklabels([])
 subAxes[axID].set_xlabel('Energy [eV]', fontsize=labels_FontSize, weight='bold')
-
-
-
-
 
 
 

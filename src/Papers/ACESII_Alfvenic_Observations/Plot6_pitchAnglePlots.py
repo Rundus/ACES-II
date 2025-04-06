@@ -205,7 +205,7 @@ ax01.set_yscale('log')
 ax01.set_ylabel(rf'{data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_InvertedV[0]]}$^\circ < \alpha <$  {data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_InvertedV[1]]}$^\circ$' +"\nEnergy [eV]",fontsize=Label_FontSize, weight='bold')
 ax01.set_ylim(28, Energy_yLimit)
 
-ax01.set_xlabel('Time Since Launch [s]', fontsize=Label_FontSize, weight='bold',labelpad=Label_Padding)
+ax01.set_xlabel('Seconds Since 17:20:00 UTC [s]', fontsize=Label_FontSize, weight='bold',labelpad=Label_Padding)
 ax01.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
 ax01.tick_params(axis='y', which='minor', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length/2)
 ax01.tick_params(axis='x', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
