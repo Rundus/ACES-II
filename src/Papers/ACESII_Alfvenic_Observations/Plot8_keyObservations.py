@@ -123,20 +123,6 @@ ax_inV2 = fig.add_subplot(gs01[1, 2])
 subAxes = [axS2, axS3, axS4, axS5, ax_inV1, ax_inV2]
 
 
-def generateNoiseLevel(energyData, countNoiseLevel):
-    count_interval = ACESII.ESA_count_interval*1E-6
-    geo_factor = ACESII.ESA_geometric_factor_TRICEII[0][0]
-    deadtime = ACESII.ESA_deadtime[0]
-
-
-    # --- DEFINE THE NOISE LEVEL ---
-    diffNFlux_NoiseCount = np.zeros(shape=(len(energyData)))
-
-    for idx, engy in enumerate(energyData):
-        deltaT = (count_interval) - (countNoiseLevel * deadtime)
-        diffNFlux_NoiseCount[idx] = (countNoiseLevel) / (geo_factor * deltaT * engy)
-
-    return diffNFlux_NoiseCount
 
 # --- --- --- --- --- --- --- --- ---
 # --- PEAK COUNTS AND ENERGY PLOTS ---
