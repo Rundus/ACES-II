@@ -55,7 +55,7 @@ dispersiveRegionTargetTime = [dt.datetime(2022,11,20,17,24,55,900000),
 diffNFlux_limit_Low, diffNFlux_limit_High = 5E3, 3E7
 wSTEBtoPlot = [1, 2, 3, 4, 5] # STEB number NOT index. Don't -1
 wPitchs_to_plot = [2, 3, 4, 5] # decide which pitch angles to get the peak energy for
-countsMask = 4
+countsMask = 5
 fluxMask = 5E7
 Energy_yLimit_Idx = 14 # ONLY consider energies above this index -> energies BELOW ~ 1345 eV
 
@@ -127,6 +127,7 @@ subAxes = [axS2, axS3, axS4, axS5, ax_inV1, ax_inV2]
 # --- --- --- --- --- --- --- --- ---
 # --- PEAK COUNTS AND ENERGY PLOTS ---
 # --- --- --- --- --- --- --- --- ---
+STEB_peak_energies = []
 
 for idx, ptchVal in enumerate(wPitchs_to_plot):
 
@@ -140,15 +141,12 @@ for idx, ptchVal in enumerate(wPitchs_to_plot):
         wDispersion_key = f's{wDis}'
         lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][0]).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][1]).argmin()
         Epoch_dis = deepcopy(stl.dateTimetoTT2000(data_dict_eepaa_high['Epoch'][0][lowCut:highCut + 1], inverse=False))
-
         eepaa_dis_pre = deepcopy(counts[lowCut:highCut + 1])
-        eepaa_dis = deepcopy(np.array(dispersionAttributes.isolationFunctions[wDispersion_key](eepaa_dis_pre, Energy, Epoch_dis)))  # pply the isolation functions found in dispersionAttributes.py
+        eepaa_dis = deepcopy(np.array(dispersionAttributes.isolationFunctions[wDispersion_key](eepaa_dis_pre, Energy, Epoch_dis)))  # apply the isolation functions found in dispersionAttributes.py
 
         # prepare the data by removing fillvals and applying the mask
         STEBdata = deepcopy(eepaa_dis)
-        STEBdata[STEBdata < 0] = 0  # set anything below 0 = 0
-        STEBdata -= countsMask
-        STEBdata[STEBdata < 0] = 0  # set anything below 0 = 0
+        STEBdata[STEBdata < countsMask] = 0  # set anything below 0 = 0
 
         # --- PEAK ENERGY (from COUNTS data) ---
         peakEval = 0
@@ -169,7 +167,10 @@ for idx, ptchVal in enumerate(wPitchs_to_plot):
 
     # plot the results
     axPeakE.plot(wSTEBtoPlot, peakEnergy, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.',ms=plot_MarkerSize)
+    STEB_peak_energies.append(peakEnergy)
 
+
+STEB_peak_energies = np.array(STEB_peak_energies).T
 
 axPeakE.set_xmargin(0)
 axPeakE.set_ylabel('STEB Peak Energy\n [eV]',fontsize=labels_FontSize,weight='bold')
@@ -194,18 +195,16 @@ for t, tme in enumerate(STEBtimes[1:]):
 
     if t == 0:
         wDis = 2
-        peakEnergy = 245.74
+        peakEnergies =STEB_peak_energies[1]
     elif t == 1:
         wDis = 4
-        peakEnergy = 725.16
-        peakEnergy = 1000
+        peakEnergies = STEB_peak_energies[3]
     elif t == 2:
         wDis = 3
-        peakEnergy = 245.74
+        peakEnergies = STEB_peak_energies[2]
     elif t == 3:
         wDis = 5
-        peakEnergy = 987.89
-        peakEnergy = 1000
+        peakEnergies = STEB_peak_energies[4]
 
     wDispersion_key = f's{wDis}'
     lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][0]).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dispersionAttributes.keyDispersionDeltaT[wDis - 1][1]).argmin()
@@ -215,15 +214,21 @@ for t, tme in enumerate(STEBtimes[1:]):
 
     # prepare the data by removing fillvals and applying the mask
     STEBdata = deepcopy(eepaa_dis)
-    # STEBdata[STEBdata < 0] = np.nan  # set anything below 0 = 0
-
-    STEBdata[STEBdata <= 0] = np.nan  # set anything below 0 = 0
-    engyIdx = np.abs(Energy - peakEnergy).argmin()
 
     for idx, ptchVal in enumerate(wPitchs_to_plot):
+
+        STEBdata[STEBdata <= 0] = np.nan  # set anything <= 0 to a nan for the averaging
+        engyIdx = np.abs(Energy - peakEnergies[idx]).argmin()
         ptchSlice = STEBdata[:, ptchVal, engyIdx:].T
         Energies = Energy[engyIdx:]
-        fluxSum = [np.nanmean(ptchSlice[engy]) for engy in range(len(Energies))]
+        fluxSum = np.array([np.nanmean(ptchSlice[engy]) for engy in range(len(Energies))])
+
+        # if t == 1:
+        #     if ptchVal in [2,3,4,5]:
+        #         fluxSum[np.where(Energies>1000)] = 0
+        #     else:
+        #         fluxSum[np.where(Energies > peakEnergy)] = 0
+
         subAxes[t].plot(Energies, fluxSum, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.', ms=plot_MarkerSize-7)
 
     props = dict(boxstyle='round', facecolor='white', alpha=1)
@@ -272,14 +277,15 @@ for idx, ptchVal in enumerate(wPitchs_to_plot):
     ptchSlice = inV_flux[:, ptchVal, engyIdx:].T
     Energies = Energy[engyIdx:]
     # fluxSum = [sum(ptchSlice[engy]) / len(ptchSlice[engy]) for engy in range(len(Energies))]
-    fluxSum = [np.nanmean(ptchSlice[engy]) for engy in range(len(Energies))]
+    fluxSum = np.array([np.nanmean(ptchSlice[engy]) for engy in range(len(Energies))])
+    fluxSum[np.where(Energies>400)] = 0
     subAxes[axID].plot(Energies, fluxSum, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.', ms=plot_MarkerSize-7)
 
 props = dict(boxstyle='round', facecolor='white', alpha=1)
 subAxes[axID].text(500, 2.4E7, s=f'Inverted-V (T={round(rktTime_counts[lowCut+1],1)} $\pm$ 0.05 s)', fontsize=text_FontSize-7, weight='bold', color='black', bbox=props, ha='center')
 subAxes[axID].set_yscale('log')
 subAxes[axID].set_ylim(diffNFlux_limit_Low, diffNFlux_limit_High)
-subAxes[axID].set_xlim(-10, 400)
+subAxes[axID].set_xlim(-10, 1000)
 
 subAxes[axID].tick_params(axis='y', which='major', labelsize=tick_SubplotLabelSize+4, width=tick_Width, length=tick_Length)
 subAxes[axID].tick_params(axis='y', which='minor', labelsize=tick_SubplotLabelSize, width=tick_Width, length=tick_Length / 2)

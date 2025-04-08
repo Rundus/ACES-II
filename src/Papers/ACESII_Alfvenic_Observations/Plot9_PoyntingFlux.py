@@ -18,8 +18,8 @@ start_time = time.time()
 # --- IMPORTS ---
 # --- --- --- ---
 import spaceToolsLib as stl
-
-print(color.UNDERLINE + f'Plot9_keyObservations' + color.END)
+import matplotlib.pyplot as plt
+print(stl.color.UNDERLINE + f'Plot9_keyObservations' + stl.color.END)
 
 #################
 # --- TOGGLES ---
@@ -66,7 +66,7 @@ PoyntingScale = 1E3# convert from W/m^2 to ergs/cm^2
 # --- LOADING THE DATA ---
 # --- --- --- --- --- ---
 ##########################
-prgMsg('Loading Data')
+stl.prgMsg('Loading Data')
 
 #========================
 # --- High Flyer Data ---
@@ -77,26 +77,26 @@ targetVar = dispersiveRegionTargetTime
 
 # Magnetometer Data - High Flyer
 inputFile_B_high = 'C:\Data\ACESII\L2\high\ACESII_36359_l2_RingCore_ENU.cdf'  # get the B data
-data_dict_B_high = loadDictFromFile(inputFile_B_high,targetVar=[targetVar, targetVarName])
+data_dict_B_high = stl.loadDictFromFile(inputFile_B_high,targetVar=[targetVar, targetVarName])
 inputFile_deltaB_high = glob('C:\Data\ACESII\L3\deltaB\high\ACESII_36359_RingCore_Field_Aligned_WL250_stitchedFlight.cdf')[0] # get the deltaB data
-data_dict_deltaB_high = deepcopy(loadDictFromFile(inputFile_deltaB_high,targetVar=[targetVar, targetVarName]))
+data_dict_deltaB_high = deepcopy(stl.loadDictFromFile(inputFile_deltaB_high,targetVar=[targetVar, targetVarName]))
 
 # Langmuir Data - High Flyer
 inputFile_Langmuir_high = 'C:\Data\ACESII\L3\Langmuir\high\ACESII_36359_langmuir_fixed_LowPass_low0.3_high0.3.cdf'
-data_dict_langmuir_high = deepcopy(loadDictFromFile(inputFile_Langmuir_high,targetVar=[targetVar, targetVarName], wKeys_Load=['ni', 'Epoch', 'ILat']))
+data_dict_langmuir_high = deepcopy(stl.loadDictFromFile(inputFile_Langmuir_high,targetVar=[targetVar, targetVarName], wKeys_Load=['ni', 'Epoch', 'ILat']))
 indexVals = [np.abs(data_dict_langmuir_high['Epoch'][0] - tme).argmin() for i, tme in enumerate(data_dict_B_high['Epoch'][0])]
 data_dict_langmuir_high['ni'][0] = deepcopy(data_dict_langmuir_high['ni'][0][indexVals])
 data_dict_langmuir_high['Epoch'][0] = deepcopy(data_dict_langmuir_high['Epoch'][0][indexVals])
 
 # EISCAT Data - High Flyer (# Up-sample the EISCAT data (it's fine since the EISCAT variables are very slowly varying))
 inputFile_EISCAT_high = 'C:\Data\ACESII\science\EISCAT_ACESII_Slice\high\ACESII_36359_EISCAT_Tromso_rktSlice.cdf'
-data_dict_EISCAT_high = deepcopy(loadDictFromFile(inputFile_EISCAT_high, targetVar=[targetVar, targetVarName],wKeys_Load=['Ion_Comp', 'Op_Comp','ILat','Epoch']))
-data_dict_EISCAT_interp_high = InterpolateDataDict(InputDataDict=data_dict_EISCAT_high,InputEpochArray=data_dict_EISCAT_high['Epoch'][0],targetEpochArray=data_dict_B_high['Epoch'][0],wKeys=[])
+data_dict_EISCAT_high = deepcopy(stl.loadDictFromFile(inputFile_EISCAT_high, targetVar=[targetVar, targetVarName],wKeys_Load=['Ion_Comp', 'Op_Comp','ILat','Epoch']))
+data_dict_EISCAT_interp_high = stl.InterpolateDataDict(InputDataDict=data_dict_EISCAT_high,InputEpochArray=data_dict_EISCAT_high['Epoch'][0],targetEpochArray=data_dict_B_high['Epoch'][0],wKeys=[])
 data_dict_EISCAT_high = deepcopy(data_dict_EISCAT_interp_high)
 
 # Electron Energy Flux - High Flyer
 inputFile_EFlux_high = 'C:\Data\ACESII\L3\Energy_Flux\high\ACESII_36359_eepaa_Energy_Flux.cdf'
-data_dict_EFlux_high = deepcopy(loadDictFromFile(inputFile_EFlux_high, targetVar=[targetVar, targetVarName]))
+data_dict_EFlux_high = deepcopy(stl.loadDictFromFile(inputFile_EFlux_high, targetVar=[targetVar, targetVarName]))
 
 #=======================
 # --- Low Flyer Data ---
@@ -104,35 +104,34 @@ data_dict_EFlux_high = deepcopy(loadDictFromFile(inputFile_EFlux_high, targetVar
 
 # Magnetometer Data - Low Flyer
 inputFile_B_low = 'C:\Data\ACESII\L2\low\ACESII_36364_l2_RingCore_ENU.cdf'  # get the B data
-data_dict_B_low = loadDictFromFile(inputFile_B_low,targetVar=[targetVar, targetVarName])
+data_dict_B_low = stl.loadDictFromFile(inputFile_B_low,targetVar=[targetVar, targetVarName])
 inputFile_deltaB_low = glob('C:\Data\ACESII\L3\deltaB\low\ACESII_36364_RingCore_Field_Aligned_WL601.cdf')[0] # get the deltaB data
-data_dict_deltaB_low = deepcopy(loadDictFromFile(inputFile_deltaB_low,targetVar=[targetVar, targetVarName]))
+data_dict_deltaB_low = deepcopy(stl.loadDictFromFile(inputFile_deltaB_low,targetVar=[targetVar, targetVarName]))
 
 # Langmuir Data - Low Flyer
 inputFile_Langmuir_low = 'C:\Data\ACESII\L3\Langmuir\low\ACESII_36364_langmuir_fixed_LowPass_low0.3_high0.3.cdf'
-data_dict_langmuir_low = deepcopy(loadDictFromFile(inputFile_Langmuir_low,targetVar=[targetVar, targetVarName], wKeys_Load=['ni', 'Epoch', 'ILat']))
+data_dict_langmuir_low = deepcopy(stl.loadDictFromFile(inputFile_Langmuir_low,targetVar=[targetVar, targetVarName], wKeys_Load=['ni', 'Epoch', 'ILat']))
 indexVals = [np.abs(data_dict_langmuir_low['Epoch'][0] - tme).argmin() for i, tme in enumerate(data_dict_B_low['Epoch'][0])]
 data_dict_langmuir_low['ni'][0] = deepcopy(data_dict_langmuir_low['ni'][0][indexVals])
 data_dict_langmuir_low['Epoch'][0] = deepcopy(data_dict_langmuir_low['Epoch'][0][indexVals])
 
 # EISCAT Data - Low Flyer (# Up-sample the EISCAT data (it's fine since the EISCAT variables are very slowly varying))
 inputFile_EISCAT_low = 'C:\Data\ACESII\science\EISCAT_ACESII_Slice\low\ACESII_36364_EISCAT_Tromso_rktSlice.cdf'
-data_dict_EISCAT_low = deepcopy(loadDictFromFile(inputFile_EISCAT_low, targetVar=[targetVar, targetVarName],wKeys_Load=['Ion_Comp', 'Op_Comp','ILat','Epoch']))
-data_dict_EISCAT_interp_low = InterpolateDataDict(InputDataDict=data_dict_EISCAT_low,InputEpochArray=data_dict_EISCAT_low['Epoch'][0],targetEpochArray=data_dict_B_low['Epoch'][0],wKeys=[])
+data_dict_EISCAT_low = deepcopy(stl.loadDictFromFile(inputFile_EISCAT_low, targetVar=[targetVar, targetVarName],wKeys_Load=['Ion_Comp', 'Op_Comp','ILat','Epoch']))
+data_dict_EISCAT_interp_low = stl.InterpolateDataDict(InputDataDict=data_dict_EISCAT_low,InputEpochArray=data_dict_EISCAT_low['Epoch'][0],targetEpochArray=data_dict_B_low['Epoch'][0],wKeys=[])
 data_dict_EISCAT_low = deepcopy(data_dict_EISCAT_interp_low)
 
 # Poynting Flux from direct ExB
 inputFile_PoyntingFlux_Low = 'C:/Data/ACESII/science/PoyntingFlux/low/ACESII_36364_PoyntingFlux_Field_Aligned.cdf'
-data_dict_Poynting_low = deepcopy(loadDictFromFile(inputFile_PoyntingFlux_Low, targetVar=[targetVar, targetVarName],wKeys_Load=['S_p','Epoch']))
+data_dict_Poynting_low = deepcopy(stl.loadDictFromFile(inputFile_PoyntingFlux_Low, targetVar=[targetVar, targetVarName],wKeys_Load=['S_p','Epoch']))
 
-Done(start_time)
+stl.Done(start_time)
 
 ##########################
 # --- --- --- --- --- ---
 # --- PREPARE THE DATA ---
 # --- --- --- --- --- ---
 ##########################
-
 
 #===================
 # --- HIGH FLYER ---
@@ -145,12 +144,12 @@ STEBtimes = [dispersionAttributes.keyDispersionDeltaT[idx-1] for idx in wSTEBtoP
 B0 = 1E-9 * data_dict_B_high['Bmag'][0]
 dB_e = data_dict_deltaB_high['B_e'][0] # in nanotesla
 dB_r = data_dict_deltaB_high['B_r'][0]
-ni = (cm_to_m ** 3) * data_dict_langmuir_high['ni'][0]
-rhoCalc_HF = (ni*data_dict_EISCAT_high['Ion_Comp'][0]*((IonMasses[4] + IonMasses[5] + IonMasses[7])/3) + IonMasses[1]*ni*data_dict_EISCAT_high['Op_Comp'][0])
-VA_t_HF = B0 / np.sqrt(u0 * rhoCalc_HF)
+ni = (stl.cm_to_m ** 3) * data_dict_langmuir_high['ni'][0]
+rhoCalc_HF = (ni*data_dict_EISCAT_high['Ion_Comp'][0]*((stl.IonMasses[4] + stl.IonMasses[5] + stl.IonMasses[7])/3) + stl.IonMasses[1]*ni*data_dict_EISCAT_high['Op_Comp'][0])
+VA_t_HF = B0 / np.sqrt(stl.u0 * rhoCalc_HF)
 VA_avg_HF = sum(VA_t_HF)/len(VA_t_HF)
 dBperp_HF = np.array([np.sqrt((dB_e[i]*1E-9)**2 + (dB_r[i]*1E-9)**2) for i in range(len(dB_e))])
-S_est_HF = VA_t_HF*(dBperp_HF**2)/ (u0) # calculate Estimated Poynting Flux
+S_est_HF = VA_t_HF*(dBperp_HF**2)/ (stl.u0) # calculate Estimated Poynting Flux
 
 
 #==================
@@ -165,12 +164,12 @@ rktTime_deltaB_LF = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_deltaB_low['Epoch
 B0 = 1E-9 * data_dict_B_low['Bmag'][0]
 dB_e = data_dict_deltaB_low['B_e'][0] # in nanotesla
 dB_r = data_dict_deltaB_low['B_r'][0]
-ni = (cm_to_m ** 3) * data_dict_langmuir_low['ni'][0]
-rhoCalc_LF = (ni*data_dict_EISCAT_low['Ion_Comp'][0]*((IonMasses[4] + IonMasses[5] + IonMasses[7])/3) + IonMasses[1]*ni*data_dict_EISCAT_low['Op_Comp'][0])
-VA_t_LF = B0 / np.sqrt(u0 * rhoCalc_LF)
+ni = (stl.cm_to_m ** 3) * data_dict_langmuir_low['ni'][0]
+rhoCalc_LF = (ni*data_dict_EISCAT_low['Ion_Comp'][0]*((stl.IonMasses[4] + stl.IonMasses[5] + stl.IonMasses[7])/3) +stl.IonMasses[1]*ni*data_dict_EISCAT_low['Op_Comp'][0])
+VA_t_LF = B0 / np.sqrt(stl.u0 * rhoCalc_LF)
 VA_avg_LF = sum(VA_t_LF)/len(VA_t_LF)
 dBperp = np.array([np.sqrt((dB_e[i]*1E-9)**2 + (dB_r[i]*1E-9)**2) for i in range(len(dB_e))])
-S_est_LF = VA_t_LF*(dBperp**2)/ (u0) # calculate Estimated Poynting Flux
+S_est_LF = VA_t_LF*(dBperp**2)/ (stl.u0) # calculate Estimated Poynting Flux
 
 
 ############################
@@ -179,7 +178,7 @@ S_est_LF = VA_t_LF*(dBperp**2)/ (u0) # calculate Estimated Poynting Flux
 # --- --- --- --- --- --- --
 ############################
 
-prgMsg('Beginning Plot')
+stl.prgMsg('Beginning Plot')
 fig, ax = plt.subplots(nrows=2,sharex=True)
 fig.set_size_inches(figure_width, figure_height)
 
@@ -226,5 +225,5 @@ ax[1].text(dt.datetime(2022,11,20,17,24,56,000000),0.047,'(b)',color='black',fon
 
 
 plt.tight_layout()
-plt.savefig(r'C:\Users\cfelt\Desktop\Research\Feltman2024_ACESII_Alfven_Observations\PLOTS\Plot9\Plot9_PoyntingFlux.png',dpi=dpi)
-Done(start_time)
+plt.savefig(r'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_Alfven_Observations\PLOTS\Plot9\Plot9_PoyntingFlux_base.png',dpi=dpi)
+stl.Done(start_time)
