@@ -32,18 +32,19 @@ useCounts = False
 sliceEpochIndicies = {
     's1':[5934, 5940, 5946],
     's2':[5959, 5966, 5974],
-    's3':[5987 - 3, 5990 - 1, 5995],
+    's3':[5984, 5989, 5995],
     's4':[6003, 6007, 6011],
-    's5':[6014, 6018 + 1, 6021 + 3],
+    's5':[6014, 6019, 6024],
     's10':[6139, 6142, 6145]  # s10 The Big One on the poleward side of the aurora
 }
+
 dispersiveRegionTargetTime = [dt.datetime(2022,11,20,17,24,56,500000),
                               dt.datetime(2022,11,20,17,25,2,000000)]
 
 
 wDispersions = np.array([2, 3, 4, 5])-1 # [s1, s2, s3, s4, etc] <-- Index
-wPitch_Engy_vs_Time_STEBS = [2, 4] # the pitch angle index to plot for the Energy vs time plot
-wPitch_Engy_vs_Time_InvertedV = [5, 11] # the pitch angle index to plot for the Energy vs time plot
+wPitch_Engy_vs_Time_STEBS = [2, 3, 4] # the pitch angle index to plot for the Energy vs time plot
+wPitch_Engy_vs_Time_InvertedV = [5,6,7,8,9,10,11] # the pitch angle index to plot for the Energy vs time plot
 Energy_yLimit = 2000
 
 # plot toggles - Slices pitch angle ------------------
@@ -80,8 +81,8 @@ if useDiffNFlux:
 elif useCounts:
     cbarLow, cbarHigh = 1, 100
 else:
-    # cbarLow, cbarHigh = 3E6, 1E9
     cbarLow, cbarHigh = 5E6, 1E9
+
 
 normVal = 'log'
 
@@ -131,8 +132,7 @@ stl.Done(start_time)
 dispersionTimes = dispersionAttributes.keyDispersionTimes
 
 # the slices in time for each dispersion used
-sliceTimes = {key:[data_dict_eepaa_high['Epoch'][0][val] for val in sliceEpochIndicies[key]] for key,val in sliceEpochIndicies.items()}
-
+sliceTimes = {key:[data_dict_eepaa_high['Epoch'][0][val] for val in sliceEpochIndicies[key]] for key, val in sliceEpochIndicies.items()}
 
 # --- --- --- --- ---
 # --- GET THE DATA ---
@@ -173,15 +173,14 @@ ax01 = fig.add_subplot(gs0[1, :], sharex=ax00)
 
 # Sum and average the STEB pitch bins
 totalDirFlux_engy = np.array(dataArray)
-# totalDirFlux_engy[totalDirFlux_engy<0] = 0 # THIS WAS HERE IN THE 2nd Revision
-totalDirFlux_engy = totalDirFlux_engy[:, wPitch_Engy_vs_Time_STEBS[0]:wPitch_Engy_vs_Time_STEBS[1]+1, :]
-summedData = np.sum(totalDirFlux_engy, axis=1).T/(wPitch_Engy_vs_Time_STEBS[1] - wPitch_Engy_vs_Time_STEBS[0] + 1)
-summedData[summedData<0] = np.nan # do this to make the colorbar look right
-summedData[summedData ==0] = 1 # do this to make the colorbar look right
+totalDirFlux_engy = totalDirFlux_engy[:, wPitch_Engy_vs_Time_STEBS, :]
+totalDirFlux_engy[totalDirFlux_engy<0] = np.nan # do this to make the colorbar look right
+summedData = np.nanmean(totalDirFlux_engy, axis=1).T
+summedData[summedData==0] = 1# do this to make the colorbar look right
 
 eepaaPitchSlice = ax00.pcolormesh(Epoch, Energy, summedData, cmap=my_cmap, norm=normVal, vmin=cbarLow, vmax=cbarHigh)
 ax00.set_yscale('log')
-ax00.set_ylabel(rf'{data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_STEBS[0]]}$^\circ < \alpha <$  {data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_STEBS[1]]}$^\circ$' +"\nEnergy [eV]",fontsize=Label_FontSize, weight='bold')
+ax00.set_ylabel(rf'{data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_STEBS[0]]}$^\circ < \alpha <$  {data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_STEBS[-1]]}$^\circ$' +"\nEnergy [eV]",fontsize=Label_FontSize, weight='bold')
 ax00.set_ylim(28, Energy_yLimit)
 ax00.tick_params(axis='y', which='major', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length)
 ax00.tick_params(axis='y', which='minor', labelsize=Tick_FontSize, width=Tick_Width, length=Tick_Length*0.6)
@@ -192,17 +191,16 @@ ax00.tick_params(axis='x', which='minor', labelsize=Tick_FontSize, width=Tick_Wi
 # --- --- --- --- --- --- --- --- --- --- -
 # --- EEPAA Pitch Slice (50deg to 130deg)---
 # --- --- --- --- --- --- --- --- --- --- -
-
 totalDirFlux_engy = np.array(dataArray)
-totalDirFlux_engy = totalDirFlux_engy[:, wPitch_Engy_vs_Time_InvertedV[0]:wPitch_Engy_vs_Time_InvertedV[1]+1, :]
-summedData = np.sum(totalDirFlux_engy, axis=1).T/(wPitch_Engy_vs_Time_InvertedV[1] - wPitch_Engy_vs_Time_InvertedV[0] + 1)
-summedData[summedData<0] = np.nan # do this to make the colorbar look right
-summedData[summedData ==0] = 1 # do this to make the colorbar look right
+totalDirFlux_engy = totalDirFlux_engy[:, wPitch_Engy_vs_Time_InvertedV, :]
+totalDirFlux_engy[totalDirFlux_engy<0] = np.nan # do this to make the colorbar look right
+summedData = np.nanmean(totalDirFlux_engy, axis=1).T
+summedData[summedData==0] = 1# do this to make the colorbar look right
 
 eepaaPitchSlice = ax01.pcolormesh(Epoch, Energy, summedData, cmap=my_cmap,norm=normVal, vmin=cbarLow, vmax=cbarHigh)
 
 ax01.set_yscale('log')
-ax01.set_ylabel(rf'{data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_InvertedV[0]]}$^\circ < \alpha <$  {data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_InvertedV[1]]}$^\circ$' +"\nEnergy [eV]",fontsize=Label_FontSize, weight='bold')
+ax01.set_ylabel(rf'{data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_InvertedV[0]]}$^\circ < \alpha <$  {data_dict_eepaa_high["Pitch_Angle"][0][wPitch_Engy_vs_Time_InvertedV[-1]]}$^\circ$' +"\nEnergy [eV]",fontsize=Label_FontSize, weight='bold')
 ax01.set_ylim(28, Energy_yLimit)
 
 ax01.set_xlabel('Seconds Since 17:20:00 UTC [s]', fontsize=Label_FontSize, weight='bold',labelpad=Label_Padding)
@@ -229,7 +227,7 @@ vertical_lineStyles = ['dotted','dashdot','dotted','dashdot']
 ######################
 
 # DEFINE THE TOP PLOTS AND BOTTOM PLOTS
-topLabels = [['(c)','S2'],['(d)','S3'],['(e)','S4'],['(f)','S5']]
+topLabels = [['(c)', 'S2'], ['(d)', 'S3'], ['(e)', 'S4'], ['(f)', 'S5']]
 gs01 = gs0[3].subgridspec(3, 4, hspace=0.08,wspace=0.08)
 for rowIdx in range(NoOfSlices):
     for colIdx in range(len(wDispersions)):
@@ -237,9 +235,10 @@ for rowIdx in range(NoOfSlices):
         ax = fig.add_subplot(gs01[rowIdx, colIdx])
 
         # colored textbox
+
         timeTag = round(stl.EpochTo_T0_Rocket(InputEpoch=[sliceTimes[f's{wDispersions[colIdx] + 1}'][rowIdx]], T0=data_dict_eepaa_high['Epoch'][0][0])[0], 2)
         props = dict(boxstyle='round', facecolor='white', alpha=1,lw=4)
-        ax.text(0.5, -1.5, f'$t_{rowIdx}$=' + f'{timeTag}$\pm$0.05 s', fontsize=Text_FontSize, weight='bold', color='black', bbox=props, ha='center')
+        ax.text(0.5, -1.5, f'$T_{rowIdx}$=' + f'{timeTag}$\pm$0.1 s', fontsize=Text_FontSize, weight='bold', color='black', bbox=props, ha='center')
 
         # dataToPlot
         if useDiffNFlux:
@@ -248,11 +247,11 @@ for rowIdx in range(NoOfSlices):
             dataArray_Slice = data_dict_counts_high['eepaa'][0][np.abs(data_dict_counts_high['Epoch'][0] - sliceTimes[f's{wDispersions[colIdx] + 1}'][rowIdx]).argmin()]
         else:
             index = np.abs(data_dict_eepaa_high['Epoch'][0] - sliceTimes[f's{wDispersions[colIdx] + 1}'][rowIdx]).argmin()
-            dataArray_Slice = data_dict_eepaa_high['Differential_Energy_Flux'][0][index-1:index+2]
-            dataArray_Slice = np.array(dataArray_Slice)
-            dataArray_Slice = np.sum(dataArray_Slice, axis=0) / (3)
+            # dataArray_Slice = data_dict_eepaa_high['Differential_Energy_Flux'][0][index-1:index+2]
+            dataArray_Slice = data_dict_eepaa_high['Differential_Energy_Flux'][0][index - 2:index + 3]
             dataArray_Slice[dataArray_Slice == 0] = 1
             dataArray_Slice[dataArray_Slice < 0] = np.nan
+            dataArray_Slice = np.nanmean(dataArray_Slice, axis=0)
 
             # demarcation lines on the spectrogram plot
             sliceTime_TSL = (pycdf.lib.datetime_to_tt2000(sliceTimes[f's{wDispersions[colIdx] + 1}'][rowIdx]) - pycdf.lib.datetime_to_tt2000(data_dict_eepaa_high['Epoch'][0][0]))/1E9
@@ -329,8 +328,8 @@ cbar.set_label(cbarLabel,fontsize=cbar_Fontsize+25,rotation=90,labelpad=-5)
 
 
 # Add (a), (b), (c), etc labels
-ax00.text(296.5, 0.75E3, '(a)',color='white',weight='bold',fontsize=Text_FontSize+12)
-ax01.text(296.5, 0.75E3, '(b)',color='white',weight='bold',fontsize=Text_FontSize+12)
+ax00.text(296.5, 1E3, '(a)',color='white',weight='bold',fontsize=Text_FontSize+12)
+ax01.text(296.5, 1E3, '(b)',color='white',weight='bold',fontsize=Text_FontSize+12)
 plt.subplots_adjust(left=0.1, bottom=0.05, right=0.86, top=0.98, wspace=None, hspace=None)
 plt.savefig(rf'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_Alfven_Observations\PLOTS\Plot6\Plot6_pitchAngle_base.png', dpi=dpi)
 

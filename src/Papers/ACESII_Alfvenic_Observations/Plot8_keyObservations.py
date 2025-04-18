@@ -87,7 +87,7 @@ stl.Done(start_time)
 # --- time ---
 from src.Science.AlfvenSingatureAnalysis.Particles.dispersionAttributes import dispersionAttributes
 STEBtimes = [dispersionAttributes.keyDispersionDeltaT[idx-1] for idx in wSTEBtoPlot]
-LaunchDateTime = pycdf.lib.datetime_to_tt2000(dt.datetime(2022,11,20,17,20,00,000000))
+LaunchDateTime = pycdf.lib.datetime_to_tt2000(dt.datetime(2022,11,20,17,20,00,10596))
 STEBtimes_rkt = [[(pycdf.lib.datetime_to_tt2000(tme[0]) - LaunchDateTime)/1E9, (pycdf.lib.datetime_to_tt2000(tme[1]) - LaunchDateTime)/1E9] for tme in STEBtimes]
 rktTime_counts = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_counts_high['Epoch'][0], T0=LaunchDateTime)
 
@@ -265,24 +265,23 @@ for t, tme in enumerate(STEBtimes[1:]):
 # The S4 Inverted-V
 # --- --- --- --- -
 axID = 4
-lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,0,512000)).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,0,612000)).argmin()
-inV_flux = deepcopy(diffNFlux[lowCut:highCut + 1])
+# lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,0,512000)).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,0,612000)).argmin()
+target_idx = np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 25, 0, 562000)).argmin()
+inV_flux = deepcopy(diffNFlux[target_idx-2:target_idx + 2+1])
 # inV_flux[inV_flux < 0] = np.nan  # set anything below 0 = 0
 # peakEnergy = 322 # inverted-V peak enregy
 
 inV_flux[inV_flux <= 0] = np.nan  # set anything below 0 = 0
-peakEnergy = 1000 # inverted-V peak enregy
+peakEnergy = 340 # inverted-V peak enregy
 for idx, ptchVal in enumerate(wPitchs_to_plot):
     engyIdx = np.abs(Energy - peakEnergy).argmin()
     ptchSlice = inV_flux[:, ptchVal, engyIdx:].T
     Energies = Energy[engyIdx:]
-    # fluxSum = [sum(ptchSlice[engy]) / len(ptchSlice[engy]) for engy in range(len(Energies))]
     fluxSum = np.array([np.nanmean(ptchSlice[engy]) for engy in range(len(Energies))])
-    fluxSum[np.where(Energies>400)] = 0
     subAxes[axID].plot(Energies, fluxSum, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.', ms=plot_MarkerSize-7)
 
 props = dict(boxstyle='round', facecolor='white', alpha=1)
-subAxes[axID].text(500, 2.4E7, s=f'Inverted-V (T={round(rktTime_counts[lowCut+1],1)} $\pm$ 0.05 s)', fontsize=text_FontSize-7, weight='bold', color='black', bbox=props, ha='center')
+subAxes[axID].text(500, 2.4E7, s=f'Inverted-V (T={round(rktTime_counts[target_idx],2)} $\pm$ 0.1 s)', fontsize=text_FontSize-8, weight='bold', color='black', bbox=props, ha='center')
 subAxes[axID].set_yscale('log')
 subAxes[axID].set_ylim(diffNFlux_limit_Low, diffNFlux_limit_High)
 subAxes[axID].set_xlim(-10, 1000)
@@ -299,8 +298,11 @@ subAxes[axID].set_xticklabels([])
 # The Inverted-V near S5
 # --- --- --- --- --- --
 axID = 5
-lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,1,362000)).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,1,462000)).argmin()
-inV_flux = deepcopy(diffNFlux[lowCut:highCut + 1])
+target_idx = np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 25, 1, 412000)).argmin()
+inV_flux = deepcopy(diffNFlux[target_idx-2:target_idx + 2+1])
+
+# lowCut, highCut = np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,1,362000)).argmin(), np.abs(data_dict_eepaa_high['Epoch'][0] - dt.datetime(2022,11,20,17,25,1,462000)).argmin()
+# inV_flux = deepcopy(diffNFlux[lowCut:highCut + 1])
 # inV_flux[inV_flux < 0] = np.nan  # set anything below 0 = 0
 # peakEnergy = 800
 
@@ -314,7 +316,7 @@ for idx, ptchVal in enumerate(wPitchs_to_plot):
     subAxes[axID].plot(Energies, fluxSum, color=plot_Colors[idx], label=rf'$\alpha = {Pitch[ptchVal]}^\circ$', marker='.', ms=plot_MarkerSize-7)
 
 props = dict(boxstyle='round', facecolor='white', alpha=1)
-subAxes[axID].text(500, 2.4E7, s=f'Inverted-V (T={round(rktTime_counts[lowCut+2],1)} $\pm$ 0.05 s)', fontsize=text_FontSize-7, weight='bold', color='black', bbox=props, ha='center')
+subAxes[axID].text(500, 2.4E7, s=f'Inverted-V (T={round(rktTime_counts[target_idx],2)} $\pm$ 0.1 s)', fontsize=text_FontSize-8, weight='bold', color='black', bbox=props, ha='center')
 subAxes[axID].set_yscale('log')
 subAxes[axID].set_ylim(diffNFlux_limit_Low, diffNFlux_limit_High)
 subAxes[axID].set_xlim(-10, 1000)

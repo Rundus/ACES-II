@@ -11,7 +11,7 @@ __date__ = "2022-08-22"
 __version__ = "1.0.0"
 import spaceToolsLib as stl
 from src.my_imports import *
-plt.rcParams["font.family"] = "Arial"
+
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -20,11 +20,13 @@ start_time = time.time()
 # --- IMPORTS ---
 # --- --- --- ---
 import matplotlib.patches as patches
-print(color.UNDERLINE + f'Plot2_Conjugacy' + color.END)
+import matplotlib.pyplot as plt
+print(stl.color.UNDERLINE + f'Plot2_Conjugacy' + stl.color.END)
 
 # --- --- --- ---
 # --- TOGGLES ---
 # --- --- --- ---
+plt.rcParams["font.family"] = "Arial"
 dpi = 200
 Escale = 1000 # what to scale the deltaE field by
 Conjugacy_targetILat = [71.31, 72.75]
@@ -58,22 +60,21 @@ Legend_FontSize = 13
 # --- --- --- --- --- ---
 # --- LOAD IN THE DATA ---
 # --- --- --- --- --- ---
-prgMsg('Loading Data')
+stl.prgMsg('Loading Data')
 
 targetILat = Conjugacy_targetILat
 targetVar = [targetILat,'ILat']
 
-rocketAttrs, b, c = ACES_mission_dicts()
 
 # delta B
 inputMagFiles_high = glob('C:\Data\ACESII\L3\deltaB\high\*Field_Aligned*')[0]
-data_dict_mag_high = loadDictFromFile(inputFilePath=inputMagFiles_high, targetVar=targetVar, wKeys_Reduce=['B_e', 'B_r', 'B_p', 'ILat', 'Epoch', 'Alt'])
+data_dict_mag_high = stl.loadDictFromFile(inputFilePath=inputMagFiles_high, targetVar=targetVar, wKeys_Reduce=['B_e', 'B_r', 'B_p', 'ILat', 'Epoch', 'Alt'])
 inputMagFiles_low = glob('C:\Data\ACESII\L3\deltaB\low\*Field_Aligned*')[0]
-data_dict_mag_low = loadDictFromFile(inputFilePath=inputMagFiles_low, targetVar=targetVar, wKeys_Reduce=['B_e', 'B_r', 'B_p', 'ILat', 'Epoch', 'Alt'])
+data_dict_mag_low = stl.loadDictFromFile(inputFilePath=inputMagFiles_low, targetVar=targetVar, wKeys_Reduce=['B_e', 'B_r', 'B_p', 'ILat', 'Epoch', 'Alt'])
 
 # delta E
 inputEFIFiles_low = glob('C:\Data\ACESII\L3\deltaE\low\*Field_Aligned*')[0]
-data_dict_Efield_low = loadDictFromFile(inputFilePath=inputEFIFiles_low, targetVar=targetVar, wKeys_Reduce=['E_e', 'E_r', 'E_p', 'ILat', 'Epoch', 'Alt'])
+data_dict_Efield_low = stl.loadDictFromFile(inputFilePath=inputEFIFiles_low, targetVar=targetVar, wKeys_Reduce=['E_e', 'E_r', 'E_p', 'ILat', 'Epoch', 'Alt'])
 
 data_dict_Efield_low['E_e'][0] = Escale*data_dict_Efield_low['E_e'][0]
 data_dict_Efield_low['E_p'][0] = Escale*data_dict_Efield_low['E_p'][0]
@@ -81,17 +82,17 @@ data_dict_Efield_low['E_r'][0] = Escale*data_dict_Efield_low['E_r'][0]
 
 # EEPAA Particle Data
 inputEEPAA_low = glob('C:\Data\ACESII\L2\low\*eepaa_fullCal*')[0]
-data_dict_eepaa_low = loadDictFromFile(inputFilePath=inputEEPAA_low, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
+data_dict_eepaa_low = stl.loadDictFromFile(inputFilePath=inputEEPAA_low, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
 inputEEPAA_high = glob('C:\Data\ACESII\L2\high\*eepaa_fullCal*')[0]
-data_dict_eepaa_high = loadDictFromFile(inputFilePath=inputEEPAA_high, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
+data_dict_eepaa_high = stl.loadDictFromFile(inputFilePath=inputEEPAA_high, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
 
 
 # LP Particle Data
-inputLP_low = glob('C:\Data\ACESII\L3\Langmuir\low\*langmuir_fixed*')[1]
-data_dict_LP_low = loadDictFromFile(inputFilePath=inputLP_low, targetVar=targetVar, wKeys_Reduce=['ni', 'ILat', 'Epoch'])
-inputLP_high = glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed*')[1]
-data_dict_LP_high = loadDictFromFile(inputFilePath=inputLP_high, targetVar=targetVar, wKeys_Reduce=['ni', 'ILat', 'Epoch'])
-Done(start_time)
+inputLP_low = glob('C:\Data\ACESII\L3\Langmuir\low\*langmuir_fixed*')[0]
+data_dict_LP_low = stl.loadDictFromFile(inputFilePath=inputLP_low, targetVar=targetVar, wKeys_Reduce=['ni', 'ILat', 'Epoch'])
+inputLP_high = glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed*')[0]
+data_dict_LP_high = stl.loadDictFromFile(inputFilePath=inputLP_high, targetVar=targetVar, wKeys_Reduce=['ni', 'ILat', 'Epoch'])
+stl.Done(start_time)
 
 
 ############################
@@ -100,8 +101,9 @@ Done(start_time)
 # --- --- --- --- --- --- --
 ############################
 
+
 # --- Calculate Omni-Directional Flux ---
-prgMsg('Calculating OmniFlux')
+stl.prgMsg('Calculating OmniFlux')
 
 omniDirFlux_low = np.zeros(shape=(len(data_dict_eepaa_low['Differential_Energy_Flux'][0]), len(data_dict_eepaa_low['Energy'][0])))
 for tme in range(len(data_dict_eepaa_low['Epoch'][0])):
@@ -131,7 +133,7 @@ for tme in range(len(data_dict_eepaa_high['Epoch'][0])):
         omniDirFlux_high[tme][engy] = sumVal / len(range(2, 18 + 1))
 
 
-Done(start_time)
+stl.Done(start_time)
 
 fig, ax = plt.subplots(8, height_ratios=[1.5, 1, 0.5, 0.5, 1.5, 1, 1, 0.5],sharex=False)
 fig.set_figwidth(Figure_width)
@@ -160,7 +162,14 @@ for line in leg.get_lines():
 # --- LP High---
 axNo +=1
 colorChoice = 'black'
-ax[axNo].plot(data_dict_LP_high['ILat'][0], data_dict_LP_high['ni'][0]/1E5, color=colorChoice, linewidth=Plot_LineWidth+1)
+ax[axNo].plot(data_dict_LP_high['ILat'][0], stl.butter_filter(data= data_dict_LP_high['ni'][0]/1E5,
+                                                              lowcutoff=0.3,
+                                                              highcutoff=0.3,
+                                                              fs=100,
+                                                              filtertype='LowPass',
+                                                              order=4
+                                                              ),
+                                                              color=colorChoice, linewidth=Plot_LineWidth+1)
 ax[axNo].set_ylabel('[10$^{5}$ cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize-3, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize - 6, length=Tick_Length-2, width=Tick_Width)
@@ -277,7 +286,7 @@ rect = patches.Rectangle((ILat_extent_LF[0], -1*9.25), ILat_extent_LF[1] - ILat_
 ax[6].add_patch(rect)
 
 fig.subplots_adjust(left=0.12, bottom=0.06, right=0.9, top=0.98,hspace=0)  # remove the space between plots
-plt.savefig(r'C:\Users\cfelt\Desktop\rockets\ACES-II\Papers\ACESII_Alfven_Observations\PLOTS\Plot2\Plot2_ConjugacyStack.png', dpi=dpi)
+plt.savefig(r'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_Alfven_Observations\PLOTS\Plot2\Plot2_Conjugacy_base.png', dpi=dpi)
 
 
 

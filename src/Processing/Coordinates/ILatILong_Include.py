@@ -21,9 +21,9 @@ start_time = time.time()
 # --- TOGGLES ---
 # --- --- --- ---
 justPrintFileNames = False
-wRocket = 5
-# inputPath_modifier = 'L3\Langmuir' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
-inputPath_modifier = r'attitude' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
+wRocket = 4
+inputPath_modifier = 'L3\Langmuir' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
+# inputPath_modifier = r'attitude' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
 
 wFiles = [0]
 refAlt = 150 # represents 150 km reference altitude that everything is tied to
@@ -44,12 +44,11 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
     # --- ACES II Flight/Integration Data ---
     wflyer = wRocket-4
-    rocketAttrs, b, c = ACES_mission_dicts()
 
     # --- GET THE INPUT FILE ---
-    inputFilesAttitude = glob(f'{rocketFolderPath}attitude\{fliers[wflyer]}\*.cdf')[0]
-    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\*.cdf')
-    input_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\\', '') for ifile in inputFiles]
+    inputFilesAttitude = glob(f'{rocketFolderPath}attitude\{ACESII.fliers[wflyer]}\*.cdf')[0]
+    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wflyer]}\*.cdf')
+    input_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wflyer]}\\', '') for ifile in inputFiles]
     input_names_searchable = [ifile.replace(inputPath_modifier.lower()+'_', '') for ifile in input_names]
 
     if justPrintFileNames:
@@ -61,18 +60,18 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
         # --- --- --- --- --- --- --- -
         # --- GET THE ATTITUDE DATA ---
         # --- --- --- --- --- --- --- -
-        prgMsg(f'Loading Attitude Data')
-        data_dict_attitude = loadDictFromFile(inputFilePath=inputFilesAttitude)
+        stl.prgMsg(f'Loading Attitude Data')
+        data_dict_attitude = stl.loadDictFromFile(inputFilePath=inputFilesAttitude)
         Lat = data_dict_attitude['Lat'][0]
         Long = data_dict_attitude['Long'][0]
         Alt = data_dict_attitude['Alt'][0]/1000
         EpochAttitude = data_dict_attitude['Epoch'][0]
-        Done(start_time)
+        stl.Done(start_time)
 
         # --- --- --- --- --- --- -
         # --- CREATE ILAT ILONG ---
         # --- --- --- --- --- --- -
-        prgMsg('Calculating ILatILong')
+        stl.prgMsg('Calculating ILatILong')
         B_CHAOS = stl.CHAOS(lat=Lat,
                         long=Long,
                         alt=Alt,
@@ -92,17 +91,17 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
             ILat[i] = Nl/stl.lat_to_meter
             ILong[i] = stl.meter_to_long(long_km=El,lat_km=Nl)
-        Done(start_time)
-        if plotILatILong:
-            fig, ax = plt.subplots()
-            ax.plot(Long, Lat, color='blue')
-            ax.plot(ILong,ILat, color='red')
-            plt.show()
-            Done(start_time)
+        stl.Done(start_time)
+        # if plotILatILong:
+        #     fig, ax = plt.subplots()
+        #     ax.plot(Long, Lat, stl.color='blue')
+        #     ax.plot(ILong,ILat, stl.color='red')
+        #     plt.show()
+        #     stl.Done(start_time)
         # --- --- --- --- --- --- ----
         # --- UPDATE ATTITUDE FILE ---
         # --- --- --- --- --- --- ----
-        prgMsg('Updating Attitude Files')
+        stl.prgMsg('Updating Attitude Files')
         attitudeKeys = [key for key in data_dict_attitude.keys()]
         if 'ILat' and 'ILong' and 'ILat_km' and "ILong_km" in attitudeKeys:
             data_dict_attitude['ILat'][0] = ILat
@@ -111,7 +110,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
             data_dict_attitude = {**data_dict_attitude, **{'ILat':
                                              [ILat, {'LABLAXIS': f'ILat_{int(refAlt)}km',
                                                           'DEPEND_0': 'Epoch',
-                                                          'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
+                                                          'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2',
                                                           'UNITS': 'deg',
                                                           'VALIDMIN': ILat.min(), 'VALIDMAX': ILat.max(),
                                                           'VAR_TYPE': 'support_data',
@@ -120,7 +119,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
             data_dict_attitude = {**data_dict_attitude, **{'ILong':
                                                                [ILong, {'LABLAXIS': f'ILong_{int(refAlt)}km',
                                                                        'DEPEND_0': 'Epoch',
-                                                                       'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                       'FILLVAL': ACESII.epoch_fillVal,
                                                                        'FORMAT': 'E12.2',
                                                                        'UNITS': 'deg',
                                                                        'VALIDMIN': ILong.min(), 'VALIDMAX': ILong.max(),
@@ -130,7 +129,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
             data_dict_attitude = {**data_dict_attitude, **{'ILat_km': [Ilat_km, {'LABLAXIS': f'ILat_{int(refAlt)}km',
                                                                        'DEPEND_0': 'Epoch',
-                                                                       'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                       'FILLVAL': ACESII.epoch_fillVal,
                                                                        'FORMAT': 'E12.2',
                                                                        'UNITS': 'km',
                                                                        'VALIDMIN': Ilat_km.min(), 'VALIDMAX': Ilat_km.max(),
@@ -139,7 +138,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
             Ilong_km = np.array([stl.long_to_meter(data_dict_attitude['ILong'][0][i], data_dict_attitude['ILat'][0][i]) for i in range(len(data_dict_attitude['Epoch'][0]))])
             data_dict_attitude = {**data_dict_attitude, **{'ILong_km': [Ilong_km, {'LABLAXIS': f'ILong_{int(refAlt)}km',
                                                                                  'DEPEND_0': 'Epoch',
-                                                                                 'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                                 'FILLVAL': ACESII.epoch_fillVal,
                                                                                  'FORMAT': 'E12.2',
                                                                                  'UNITS': 'km',
                                                                                  'VALIDMIN': Ilong_km.min(),
@@ -147,16 +146,16 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
                                                                                  'VAR_TYPE': 'support_data',
                                                                                  'SCALETYP': 'linear'}]}}
 
-        outputCDFdata(outputPath=inputFilesAttitude, data_dict=data_dict_attitude, instrNam='attitude')
-        Done(start_time)
+        stl.outputCDFdata(outputPath=inputFilesAttitude, data_dict=data_dict_attitude, instrNam='attitude')
+        stl.Done(start_time)
 
     if footPrintDiffernece:
         # load the data
         inputFilesAttitude_high = glob(f'{rocketFolderPath}attitude\high\*.cdf')[0]
         inputFilesAttitude_low = glob(f'{rocketFolderPath}attitude\low\*.cdf')[0]
 
-        data_dict_attitude_high,globalAttrsHigh = loadDictFromFile(inputFilePath=inputFilesAttitude_high, getGlobalAttrs=True)
-        data_dict_attitude_low,globalAttrsLow = loadDictFromFile(inputFilePath=inputFilesAttitude_low, getGlobalAttrs=True)
+        data_dict_attitude_high,globalAttrsHigh = stl.loadDictFromFile(inputFilePath=inputFilesAttitude_high, getGlobalAttrs=True)
+        data_dict_attitude_low,globalAttrsLow = stl.loadDictFromFile(inputFilePath=inputFilesAttitude_low, getGlobalAttrs=True)
 
         # determine what index the low flyer data starts w.r.t. the high flyer
         startIndex = np.abs(data_dict_attitude_high['Epoch'][0] - data_dict_attitude_low['Epoch'][0][0]).argmin()
@@ -216,7 +215,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
         data_dict_attitude_high = {**data_dict_attitude_high, **{'footPrint_ILat_km_Diff': [footPrint_Latkm_Difference, {'LABLAXIS': f'footPrint_ILat_km_Diff',
                                                     'DEPEND_0': 'Epoch',
-                                                    'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                    'FILLVAL': ACESII.epoch_fillVal,
                                                     'FORMAT': 'E12.2',
                                                     'UNITS': 'km',
                                                     'VALIDMIN': footPrint_Latkm_Difference.min(), 'VALIDMAX': footPrint_Latkm_Difference.max(),
@@ -225,7 +224,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
         data_dict_attitude_high = {**data_dict_attitude_high, **{'footPrint_ILong_km_Diff': [footPrint_Longkm_Difference, {'LABLAXIS': f'footPrint_ILong_km_Diff',
                                                                     'DEPEND_0': 'Epoch',
-                                                                    'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                    'FILLVAL': ACESII.epoch_fillVal,
                                                                     'FORMAT': 'E12.2',
                                                                     'UNITS': 'km',
                                                                     'VALIDMIN': footPrint_Longkm_Difference.min(),
@@ -235,7 +234,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
         data_dict_attitude_high = {**data_dict_attitude_high, **{'footPrint_total_km_Diff': [footPrint_totalkm_Difference, {'LABLAXIS': f'footPrint_total_km_Diff',
                                                                       'DEPEND_0': 'Epoch',
-                                                                      'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                      'FILLVAL': ACESII.epoch_fillVal,
                                                                       'FORMAT': 'E12.2',
                                                                       'UNITS': 'km',
                                                                       'VALIDMIN': footPrint_totalkm_Difference.min(),
@@ -245,7 +244,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
         data_dict_attitude_high = {**data_dict_attitude_high, **{'footPrint_lattitude_time_Difference': [footPrint_timeLat_Difference, {'LABLAXIS': f'footPrint_lattitude_time_Difference',
                                                                      'DEPEND_0': 'ILat',
-                                                                     'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                     'FILLVAL': ACESII.epoch_fillVal,
                                                                      'FORMAT': 'E12.2',
                                                                      'UNITS': 'Seconds',
                                                                      'VALIDMIN': footPrint_timeLat_Difference.min(),
@@ -255,7 +254,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
         data_dict_attitude_high = {**data_dict_attitude_high, **{'footPrint_longitude_time_Difference': [footPrint_timeLong_Difference,
                                                     {'LABLAXIS': f'footPrint_longitude_time_Difference',
                                                      'DEPEND_0': 'ILong',
-                                                     'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                     'FILLVAL': ACESII.epoch_fillVal,
                                                      'FORMAT': 'E12.2',
                                                      'UNITS': 'Seconds',
                                                      'VALIDMIN': footPrint_timeLong_Difference.min(),
@@ -265,7 +264,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
 
         outputPath = inputFilesAttitude_high
-        outputCDFdata(outputPath = outputPath, data_dict=data_dict_attitude_high, globalAttrsMod=globalAttrsHigh)
+        stl.outputCDFdata(outputPath = outputPath, data_dict=data_dict_attitude_high, globalAttrsMod=globalAttrsHigh)
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -276,10 +275,10 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
         # --- --- --- --- --- --
         # --- LOAD THE FILES ---
         # --- --- --- --- --- --
-        prgMsg(f'Loading data from {input_names_searchable[wFile]}')
-        data_dict, globalAttrs = loadDictFromFile(inputFilePath=inputFiles[wFile], getGlobalAttrs=True)
+        stl.prgMsg(f'Loading data from {input_names_searchable[wFile]}')
+        data_dict, globalAttrs = stl.loadDictFromFile(inputFilePath=inputFiles[wFile], getGlobalAttrs=True)
 
-        data_dict_attitude = loadDictFromFile(inputFilePath=inputFilesAttitude)
+        data_dict_attitude = stl.loadDictFromFile(inputFilePath=inputFilesAttitude)
 
         try:
             dataEpoch = data_dict['Epoch'][0]
@@ -288,12 +287,12 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
         ILat = data_dict_attitude['ILat'][0]
         ILong = data_dict_attitude['ILong'][0]
-        Done(start_time)
+        stl.Done(start_time)
 
         if len(dataEpoch) > len(data_dict_attitude['Epoch'][0]):
             # --- interpolate ILat/ILong onto dataset time base ---
-            prgMsg('Interpolating ILat/ILong')
-            data_dict_attitudeInterp = InterpolateDataDict(InputDataDict=data_dict_attitude,
+            stl.prgMsg('Interpolating ILat/ILong')
+            data_dict_attitudeInterp = stl.InterpolateDataDict(InputDataDict=data_dict_attitude,
                                                            InputEpochArray=data_dict_attitude['Epoch'][0],
                                                            wKeys= ['ILat', 'ILong', 'Alt'],
                                                            targetEpochArray=dataEpoch)
@@ -302,26 +301,26 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
             data_dict_attitudeInterp['Alt'][0] = data_dict_attitudeInterp['Alt'][0]/1000
 
         elif len(dataEpoch) < len(data_dict_attitude['Epoch'][0]):
-            prgMsg('DownSampling Ilat/ILong')
+            stl.prgMsg('DownSampling Ilat/ILong')
             # downsample ILatILong to fit data
             downSampleIndicies = np.array([np.abs(data_dict_attitude['Epoch'][0] - dataEpoch[i]).argmin() for i in range(len(dataEpoch))])
             newILat = np.array(ILat[downSampleIndicies])
             newILong = np.array(ILong[downSampleIndicies])
-            Done(start_time)
+            stl.Done(start_time)
         else:
             newILat = np.array(ILat)
             newILong = np.array(ILong)
             data_dict_attitudeInterp = deepcopy(data_dict_attitude)
 
-        Done(start_time)
+        stl.Done(start_time)
 
-        prgMsg('Creating output file')
+        stl.prgMsg('Creating output file')
 
         data_dict = {**data_dict, **{'Alt':deepcopy(data_dict_attitudeInterp['Alt'])}}
 
         data_dict = {**data_dict, **{'ILat': [newILat, {'LABLAXIS': f'ILat_{int(refAlt)}km',
                                                                    'DEPEND_0': 'Epoch',
-                                                                   'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                   'FILLVAL': ACESII.epoch_fillVal,
                                                                    'FORMAT': 'E12.2',
                                                                    'UNITS': 'deg',
                                                                    'VALIDMIN': newILat.min(), 'VALIDMAX': newILat.max(),
@@ -330,7 +329,7 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
         data_dict = {**data_dict, **{'ILong': [newILong, {'LABLAXIS': f'ILong_{int(refAlt)}km',
                                                                     'DEPEND_0': 'Epoch',
-                                                                    'FILLVAL': rocketAttrs.epoch_fillVal,
+                                                                    'FILLVAL': ACESII.epoch_fillVal,
                                                                     'FORMAT': 'E12.2',
                                                                     'UNITS': 'deg',
                                                                     'VALIDMIN': newILong.min(),
@@ -343,11 +342,11 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 
         outputPath = inputFiles[wFile]
         try:
-            outputCDFdata(outputPath, data_dict, globalAttrsMod=globalAttrs, instrNam=globalAttrs['Descriptor'])
+            stl.outputCDFdata(outputPath, data_dict, globalAttrsMod=globalAttrs, instrNam=globalAttrs['Descriptor'])
         except:
-            outputCDFdata(outputPath, data_dict, globalAttrsMod=globalAttrs)
+            stl.outputCDFdata(outputPath, data_dict, globalAttrsMod=globalAttrs)
 
-        Done(start_time)
+        stl.Done(start_time)
 
 
 
@@ -356,15 +355,15 @@ def ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, wFile):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-rocketFolderPath = ACES_data_folder
+rocketFolderPath = DataPaths.ACES_data_folder
 
-if len(glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wRocket-4]}\*.cdf')) == 0:
-    print(color.RED + 'There are no .cdf files in the specified directory' + color.END)
+if len(glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')) == 0:
+    print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
     if generateILatILong or justPrintFileNames:
         ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, 0)
     elif wFiles == []:
-        for file in range(len(glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wRocket-4]}\*.cdf'))):
+        for file in range(len(glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf'))):
             ILatILong_Include(wRocket, rocketFolderPath, justPrintFileNames, file)
     else:
         for file in wFiles:

@@ -160,7 +160,7 @@ for tmeRangeIdx in range(2):
     # reduce the spectrogram to only the fit region
     lowIdx, highIdx = np.abs(data_dict_diffNFlux['Epoch'][0] - Epoch[0]).argmin(), np.abs(data_dict_diffNFlux['Epoch'][0] - Epoch[-1]).argmin()
     cmap = axSpec.pcolormesh(data_dict_diffNFlux['Epoch'][0][lowIdx:highIdx+1], data_dict_diffNFlux['Energy'][0], diffFlux_avg[lowIdx:highIdx+1].T, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log') # plot spectrogram
-    titleVal = f'Dispersive Region Inverted-V\n ({Epoch[0].strftime("%H:%M:%S")} to {Epoch[-1].strftime("%H:%M:%S")} UTC)' if tmeRangeIdx == 0 else f'Primary Inverted-V\n ({Epoch[0].strftime("%H:%M:%S")} to {Epoch[-1].strftime("%H:%M:%S")} UTC)'
+    titleVal = f'Dispersive Region after S5\n ({Epoch[0].strftime("%H:%M:%S")} to {Epoch[-1].strftime("%H:%M:%S")} UTC)' if tmeRangeIdx == 0 else f'Primary Inverted-V\n ({Epoch[0].strftime("%H:%M:%S")} to {Epoch[-1].strftime("%H:%M:%S")} UTC)'
     axSpec.set_title(titleVal, fontsize=Title_FontSize + 10, weight='bold')
 
     # for i in range(len(wPitchsToFit)):
@@ -424,7 +424,7 @@ distDispersive = data_dict_dist['Distribution_Function'][0][targetidx][ptchChoic
 distDispersive_vel = [np.sqrt(2*stl.q0*engyVal/stl.m_e) for engyVal in data_dict_dist['Energy'][0]]
 distDispersive_engy = [engyVal for engyVal in data_dict_dist['Energy'][0]]
 axDist.set_title('Model Comparison',fontsize=Title_FontSize,weight='bold')
-axDist.scatter(distDispersive_engy, distDispersive,color='black',label=f'Inverted-V (T = {data_dict_dist["Epoch"][0][targetidx].strftime("%H:%M:%S.%f")} UTC)')
+axDist.scatter(distDispersive_engy, distDispersive,color='black',label=f'Inverted-V (T = {targetTime_since_T0} s)')
 axDist.set_ylim(1E-17, 1E-12)
 axDist.set_yscale('log')
 axDist.set_xlim(25, 1E3)

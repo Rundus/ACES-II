@@ -82,7 +82,7 @@ inputFile_deltaB_high = glob('C:\Data\ACESII\L3\deltaB\high\ACESII_36359_RingCor
 data_dict_deltaB_high = deepcopy(stl.loadDictFromFile(inputFile_deltaB_high,targetVar=[targetVar, targetVarName]))
 
 # Langmuir Data - High Flyer
-inputFile_Langmuir_high = 'C:\Data\ACESII\L3\Langmuir\high\ACESII_36359_langmuir_fixed_LowPass_low0.3_high0.3.cdf'
+inputFile_Langmuir_high = 'C:\Data\ACESII\L3\Langmuir\high\ACESII_36359_l3_langmuir_fixed.cdf'
 data_dict_langmuir_high = deepcopy(stl.loadDictFromFile(inputFile_Langmuir_high,targetVar=[targetVar, targetVarName], wKeys_Load=['ni', 'Epoch', 'ILat']))
 indexVals = [np.abs(data_dict_langmuir_high['Epoch'][0] - tme).argmin() for i, tme in enumerate(data_dict_B_high['Epoch'][0])]
 data_dict_langmuir_high['ni'][0] = deepcopy(data_dict_langmuir_high['ni'][0][indexVals])
@@ -109,7 +109,7 @@ inputFile_deltaB_low = glob('C:\Data\ACESII\L3\deltaB\low\ACESII_36364_RingCore_
 data_dict_deltaB_low = deepcopy(stl.loadDictFromFile(inputFile_deltaB_low,targetVar=[targetVar, targetVarName]))
 
 # Langmuir Data - Low Flyer
-inputFile_Langmuir_low = 'C:\Data\ACESII\L3\Langmuir\low\ACESII_36364_langmuir_fixed_LowPass_low0.3_high0.3.cdf'
+inputFile_Langmuir_low = 'C:\Data\ACESII\L3\Langmuir\low\ACESII_36364_langmuir_fixed.cdf'
 data_dict_langmuir_low = deepcopy(stl.loadDictFromFile(inputFile_Langmuir_low,targetVar=[targetVar, targetVarName], wKeys_Load=['ni', 'Epoch', 'ILat']))
 indexVals = [np.abs(data_dict_langmuir_low['Epoch'][0] - tme).argmin() for i, tme in enumerate(data_dict_B_low['Epoch'][0])]
 data_dict_langmuir_low['ni'][0] = deepcopy(data_dict_langmuir_low['ni'][0][indexVals])
