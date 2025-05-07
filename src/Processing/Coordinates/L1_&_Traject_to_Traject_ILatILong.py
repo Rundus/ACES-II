@@ -172,7 +172,7 @@ def Trajectory_to_ESA_ILatILong(wInstr, rocketFolderPath):
         # --- I-LAT I-LONG PROJECTION ---
         #################################
 
-        prgMsg('Projecting B-Fields')
+        prgMsg('Projecting B-EFI')
 
         lat_to_meter = 111.319488 # 1 deg latitude to kilometers on Earth
         def long_to_meter(lat):

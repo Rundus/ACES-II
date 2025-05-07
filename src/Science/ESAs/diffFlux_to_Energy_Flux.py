@@ -18,7 +18,7 @@ start_time = time.time()
 # --- TOGGLES ---
 # --- --- --- ---
 justPrintFileNames = False
-wRocket = 4
+wRocket = 5
 wFiles = [[0], [0]]
 modifier = ''
 inputPath_modifier = 'L2' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
@@ -118,15 +118,15 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
 
         # omni directional
         prepared = np.transpose(diffNFlux[tme]*2*np.pi*np.sin(np.radians(alpha_grid.T)))
-        JE_N = np.array([simpson(y=prepared[idx], x=Pitch) for idx, engy in enumerate(Energy)]) # J_N(E) diffNFlux without pitch
+        JE_N = np.array([simpson(y=prepared[idx], x=np.radians(Pitch)) for idx, engy in enumerate(Energy)]) # J_N(E) diffNFlux without pitch
 
         # parallel
-        prepared = np.transpose(diffNFlux[tme]*2*np.pi* np.sin(np.radians(alpha_grid.T))*np.cos(np.radians(alpha_grid.T)))
-        JE_N_Parallel = np.array([simpson(y=prepared[idx][0:10], x=Pitch[0:10]) for idx, engy in enumerate(Energy)])
+        prepared = np.transpose(diffNFlux[tme]*2*np.pi*np.sin(np.radians(alpha_grid.T))*np.cos(np.radians(alpha_grid.T)))
+        JE_N_Parallel = np.array([simpson(y=prepared[idx][0:10], x=np.radians(Pitch[0:10])) for idx, engy in enumerate(Energy)])
 
         # anti-parallel
         prepared = np.transpose(diffNFlux[tme]*2*np.pi* np.sin(np.radians(alpha_grid.T)) * np.cos(np.radians(alpha_grid.T)))
-        JE_N_antiParallel = np.array([simpson(y=prepared[idx][10:20], x=Pitch[10:20]) for idx, engy in enumerate(Energy)])
+        JE_N_antiParallel = np.array([simpson(y=prepared[idx][10:], x=np.radians(Pitch[10:])) for idx, engy in enumerate(Energy)])
 
         # --- partially integrate over energy. ---
         # Description: To get in units of [cm^-2 s^-1], we assume j(E) doesn't change over the DeltaE interval between samples.

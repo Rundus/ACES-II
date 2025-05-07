@@ -95,7 +95,7 @@ data_dict_EISCAT_interp_high = stl.InterpolateDataDict(InputDataDict=data_dict_E
 data_dict_EISCAT_high = deepcopy(data_dict_EISCAT_interp_high)
 
 # Electron Energy Flux - High Flyer
-inputFile_EFlux_high = 'C:\Data\ACESII\L3\Energy_Flux\high\ACESII_36359_eepaa_Energy_Flux.cdf'
+inputFile_EFlux_high = 'C:\Data\ACESII\L3\Energy_Flux\high\ACESII_36359_l3_eepaa_flux.cdf'
 data_dict_EFlux_high = deepcopy(stl.loadDictFromFile(inputFile_EFlux_high, targetVar=[targetVar, targetVarName]))
 
 #=======================
@@ -109,7 +109,7 @@ inputFile_deltaB_low = glob('C:\Data\ACESII\L3\deltaB\low\ACESII_36364_RingCore_
 data_dict_deltaB_low = deepcopy(stl.loadDictFromFile(inputFile_deltaB_low,targetVar=[targetVar, targetVarName]))
 
 # Langmuir Data - Low Flyer
-inputFile_Langmuir_low = 'C:\Data\ACESII\L3\Langmuir\low\ACESII_36364_langmuir_fixed.cdf'
+inputFile_Langmuir_low = 'C:\Data\ACESII\L3\Langmuir\low\ACESII_36364_l3_langmuir_fixed.cdf'
 data_dict_langmuir_low = deepcopy(stl.loadDictFromFile(inputFile_Langmuir_low,targetVar=[targetVar, targetVarName], wKeys_Load=['ni', 'Epoch', 'ILat']))
 indexVals = [np.abs(data_dict_langmuir_low['Epoch'][0] - tme).argmin() for i, tme in enumerate(data_dict_B_low['Epoch'][0])]
 data_dict_langmuir_low['ni'][0] = deepcopy(data_dict_langmuir_low['ni'][0][indexVals])
@@ -145,7 +145,8 @@ B0 = 1E-9 * data_dict_B_high['Bmag'][0]
 dB_e = data_dict_deltaB_high['B_e'][0] # in nanotesla
 dB_r = data_dict_deltaB_high['B_r'][0]
 ni = (stl.cm_to_m ** 3) * data_dict_langmuir_high['ni'][0]
-rhoCalc_HF = (ni*data_dict_EISCAT_high['Ion_Comp'][0]*((stl.IonMasses[4] + stl.IonMasses[5] + stl.IonMasses[7])/3) + stl.IonMasses[1]*ni*data_dict_EISCAT_high['Op_Comp'][0])
+
+rhoCalc_HF = (ni*data_dict_EISCAT_high['Ion_Comp'][0]*((stl.ion_dict['O2+'] + stl.ion_dict['NO+'] + stl.ion_dict['N2+'])/3) + stl.ion_dict['O+']*ni*data_dict_EISCAT_high['Op_Comp'][0])
 VA_t_HF = B0 / np.sqrt(stl.u0 * rhoCalc_HF)
 VA_avg_HF = sum(VA_t_HF)/len(VA_t_HF)
 dBperp_HF = np.array([np.sqrt((dB_e[i]*1E-9)**2 + (dB_r[i]*1E-9)**2) for i in range(len(dB_e))])
@@ -165,7 +166,7 @@ B0 = 1E-9 * data_dict_B_low['Bmag'][0]
 dB_e = data_dict_deltaB_low['B_e'][0] # in nanotesla
 dB_r = data_dict_deltaB_low['B_r'][0]
 ni = (stl.cm_to_m ** 3) * data_dict_langmuir_low['ni'][0]
-rhoCalc_LF = (ni*data_dict_EISCAT_low['Ion_Comp'][0]*((stl.IonMasses[4] + stl.IonMasses[5] + stl.IonMasses[7])/3) +stl.IonMasses[1]*ni*data_dict_EISCAT_low['Op_Comp'][0])
+rhoCalc_LF = (ni*data_dict_EISCAT_low['Ion_Comp'][0]*((stl.ion_dict['O2+'] + stl.ion_dict['NO+'] + stl.ion_dict['N2+'])/3) + stl.ion_dict['O+']*ni*data_dict_EISCAT_low['Op_Comp'][0])
 VA_t_LF = B0 / np.sqrt(stl.u0 * rhoCalc_LF)
 VA_avg_LF = sum(VA_t_LF)/len(VA_t_LF)
 dBperp = np.array([np.sqrt((dB_e[i]*1E-9)**2 + (dB_r[i]*1E-9)**2) for i in range(len(dB_e))])
@@ -185,7 +186,7 @@ fig.set_size_inches(figure_width, figure_height)
 fig.suptitle('Dispersive Region Energy Flux', weight='bold',fontsize=title_FontSize)
 
 # --- High Flyer - Electron Flux ---
-ax[0].plot(data_dict_EFlux_high['Epoch'][0],data_dict_EFlux_high['Energy_Flux_Downward'][0], linewidth=plot_LineWidth,zorder=2,label=r'Parallel $e^{-}$ Flux',color='maroon')
+ax[0].plot(data_dict_EFlux_high['Epoch'][0], (1/stl.erg_to_eV)*data_dict_EFlux_high['Phi_E_Parallel'][0], linewidth=plot_LineWidth,zorder=2,label=r'Parallel $e^{-}$ Flux',color='maroon')
 for k, tme in enumerate(STEBtimes):
     lowIdx = np.abs(data_dict_EFlux_high['Epoch'][0] - tme[0]).argmin()
     highIdx = np.abs(data_dict_EFlux_high['Epoch'][0] - tme[1]).argmin()
