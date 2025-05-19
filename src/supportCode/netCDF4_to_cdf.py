@@ -1,6 +1,6 @@
 # --- newCDF4_to_cdf.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: converts from netCDF4 to .cdf
+# DESCRIPTION: converts EISCAT data from netCDF4 to .cdf
 
 
 
@@ -10,7 +10,7 @@ __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
-from ACESII_code.myImports import *
+from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -19,7 +19,7 @@ start_time = time.time()
 # --- TOGGLES ---
 # --- --- --- ---
 justPrintFileNames = False
-wFiles = []
+wFiles = [0]
 inputPath_modifier = r'\science\EISCAT\tromso\UHF'
 outputPath_modifier = r'\science\EISCAT\tromso\UHF' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 fixEpoch = True
@@ -32,7 +32,7 @@ outputData = True
 import netCDF4
 
 
-def newCDF4_to_cdf(rocketFolderPath, justPrintFileNames,wFile):
+def netCDF4_to_cdf(rocketFolderPath, justPrintFileNames, wFile):
 
     inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\*.nc')
     input_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\\', '') for ifile in inputFiles]
@@ -50,9 +50,9 @@ def newCDF4_to_cdf(rocketFolderPath, justPrintFileNames,wFile):
     # --- --- --- --- --- -
 
     # --- get the data from the netCDF4file ---
-    prgMsg(f'Loading data from {inputPath_modifier} Files')
+    stl.prgMsg(f'Loading data from {inputPath_modifier} Files')
     cdf4File = netCDF4.Dataset(inputFiles[wFile],"r", format="NETCDF4")
-    Done(start_time)
+    stl.Done(start_time)
 
     # --- Global Attributes ---
     globalAttrs = cdf4File.__dict__
@@ -106,12 +106,12 @@ def newCDF4_to_cdf(rocketFolderPath, justPrintFileNames,wFile):
     # --- --- --- --- --- --- ---
 
     if outputData:
-        prgMsg('Creating output file')
+        stl.prgMsg('Creating output file')
 
         outputPath = f'{rocketFolderPath}{outputPath_modifier}\{input_names_searchable[wFile].replace(".nc",".cdf")}'
-        outputCDFdata(outputPath, data_dict,globalAttrsMod=globalAttrs, )
+        stl.outputCDFdata(outputPath, data_dict,globalAttrsMod=globalAttrs, )
 
-        Done(start_time)
+        stl.Done(start_time)
 
 
 
@@ -120,15 +120,13 @@ def newCDF4_to_cdf(rocketFolderPath, justPrintFileNames,wFile):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-rocketFolderPath = ACES_data_folder
 
-
-if len(glob(f'{rocketFolderPath}{inputPath_modifier}\*.nc')) == 0:
-    print(color.RED + 'There are no .cdf files in the specified directory' + color.END)
+if len(glob(f'{DataPaths.ACES_data_folder}{inputPath_modifier}\*.nc')) == 0:
+    print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
     if wFiles == []:
-        for fileNo in  range(len(glob(f'{rocketFolderPath}{inputPath_modifier}\*.nc'))):
-            newCDF4_to_cdf(rocketFolderPath, justPrintFileNames, fileNo)
+        for fileNo in  range(len(glob(f'{DataPaths.ACES_data_folder}{inputPath_modifier}\*.nc'))):
+            netCDF4_to_cdf(DataPaths.ACES_data_folder, justPrintFileNames, fileNo)
     else:
         for fileNo in wFiles:
-            newCDF4_to_cdf(rocketFolderPath, justPrintFileNames, fileNo)
+            netCDF4_to_cdf(DataPaths.ACES_data_folder, justPrintFileNames, fileNo)

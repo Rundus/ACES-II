@@ -54,8 +54,7 @@ AltLat_LegendSize = 55
 altLat_LabelPadding = 45
 # ---------------BigAllSky-----------------
 BigAllSkyPlot = False
-# lonW = 10
-# lonE = 23.5
+
 lonW = 5
 lonE = 25
 latS = 67

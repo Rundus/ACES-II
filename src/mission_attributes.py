@@ -82,7 +82,7 @@ class ACESII:
         [0.000174 for i in range(21)],
         [0.000174/100 for i in range(21)], # LEESA geofactor was ~EEPAA/100
         [0.000174 for i in range(7)]]
-    ESA_geometric_factor_TRACERS_ACE = [
+    ESA_geometric_factor_TRACERS_ACE = [ # SHOULD be multiplied by 2.
         [8.63E-5 for i in range(21)],  # CONFIRMED: in units of cm^2 str^1
         [8.63E-5 / 100 for i in range(21)],  # LEESA geofactor was ~EEPAA/100
         [8.63E-5 for i in range(7)]]

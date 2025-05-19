@@ -55,7 +55,7 @@ from glob import glob
 from spacepy import coordinates as coord
 coord.DEFAULTS.set_values(use_irbem=False, itol=5)  # maximum separation, in seconds, for which the coordinate transformations will not be recalculated. To force all transformations to use an exact transform for the time, set ``itol`` to zero.
 from spacepy.time import Ticktock #used to determine the time I'm choosing the reference geomagentic field
-
+from scipy.interpolate import CubicSpline
 
 
 def ENU_to_Field_Aligned(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
@@ -110,14 +110,17 @@ def ENU_to_Field_Aligned(wRocket, wFile, rocketFolderPath, justPrintFileNames, w
         L_shell = np.array([geomagAlt[i]/((np.cos(np.radians(geomagLat[i])))**2) for i in range(len(data_dict_attitude['Epoch'][0]))])
         stl.Done(start_time)
 
-
-        # downsample to EEPAA timeframe
+        # Interpolate onto the EEPAA timeframe
+        stl.prgMsg('Interpolating on EEPAA timebase')
         data_dict_eepaa = stl.loadDictFromFile(f'C:\Data\ACESII\L2\{DataPaths.fliers[wflyer]}\ACESII_{rocketID}_l2_eepaa_fullCal.cdf')
-        L_shell_indices = np.array([np.abs(Epoch - pycdf.lib.datetime_to_tt2000(val)).argmin() for val in data_dict_eepaa['Epoch'][0]])
-        L_shell = L_shell[L_shell_indices]
-        L_shell = np.array([val[0] for val in L_shell])
-
-
+        Epoch_eepaa_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_eepaa['Epoch'][0]])
+        Epoch_attitude_tt2000 = data_dict_attitude['Epoch'][0]
+        cs = CubicSpline(x=Epoch_attitude_tt2000, y=L_shell)
+        L_shell = np.array([cs(val)[0] for val in Epoch_eepaa_tt2000])
+        stl.Done(start_time)
+        # L_shell_indices = np.array([np.abs(Epoch - pycdf.lib.datetime_to_tt2000(val)).argmin() for val in data_dict_eepaa['Epoch'][0]])
+        # L_shell = L_shell[L_shell_indices]
+        # L_shell = np.array([val[0] for val in L_shell])
 
         # --- --- --- --- --- --- ---
         # --- WRITE OUT THE DATA ---
