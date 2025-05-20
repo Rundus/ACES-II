@@ -36,8 +36,6 @@ outputData = True
 from scipy.interpolate import CubicSpline
 import spaceToolsLib as stl
 
-
-
 def traj_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
 
     # --- FILE I/O ---

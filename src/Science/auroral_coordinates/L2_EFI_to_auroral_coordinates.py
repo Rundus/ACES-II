@@ -39,7 +39,7 @@ input_file_path = 'C:\Data\ACESII\L2\low'
 outputData = True
 
 # --- Plots ---
-plot_pre_rotated_data = False
+plot_detrend = False
 plot_best_fit_rotation = True
 plot_interactive_slider = False
 
@@ -103,68 +103,57 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
     yData_fit = data_dict['E_e'][0][low_idx:high_idx]
     def fitfunc_detrend(x, a, b):
         return a * x + b
+
+    # get the detrended fit
     params_detrend, cov = curve_fit(f=fitfunc_detrend,
                             xdata=xData_fit,
                             ydata=yData_fit
                             )
 
-    E_east_detrend = yData_fit- fitfunc_detrend(xData_fit,*params_detrend)
+    if plot_detrend:
+        fig, ax = plt.subplots()
+        ax.plot(xData_fit,yData_fit, color='tab:blue')
+        ax.plot(xData_fit, fitfunc_detrend(xData_fit,*params_detrend), color='tab:red')
+        plt.show()
 
+    #######################################
+    # --- [2] Create the E-Field Vector ---
+    #######################################
 
-    #######################
-    ### ROTATE THE DATA ###
-    #######################
-
-    #########################
-    # --- DOWNSAMPLE DATA ---
-    #########################
     # Reduce data only to the Auroral regions
-    low_idx, high_idx = np.abs(data_dict['Epoch'][0] - dt.datetime(2022,11,20,17,24,50)).argmin(),np.abs(data_dict['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 26,10)).argmin()
-    # low_idx, high_idx = np.abs(data_dict['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 25, 15)).argmin(), np.abs(data_dict['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 26, 45)).argmin()
+    low_idx, high_idx = np.abs(data_dict['Epoch'][0] - dt.datetime(2022,11,20,17,24,48)).argmin(),np.abs(data_dict['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 26,25)).argmin()
 
     for key, val in data_dict.items():
         data_dict[key][0] = data_dict[key][0][low_idx:high_idx]
 
-    ###################################
-    # --- CENTER THE EAST COMPONENT ---
-    ###################################
+    # calculate detrend E-East
+    xData_fit = np.array([(pycdf.lib.datetime_to_tt2000(val) - pycdf.lib.datetime_to_tt2000(data_dict['Epoch'][0][0])) / 1E9 for val in data_dict['Epoch'][0]])
+    E_East_detrend = deepcopy(data_dict['E_e'][0] - fitfunc_detrend(xData_fit,*params_detrend))
 
 
-    ########################
-    # --- ROTATE E-Field ---
-    ########################
+    # Form the E-Field vector
+    E_Field = np.array([E_East_detrend, data_dict['E_p'][0], data_dict['E_r'][0]]).T
+
+    ################################
+    # --- [3] Fit Detrend E-East ---
+    ################################
+
+    def fitfunc(x, a, b):
+        return a * x + b
+
+    params, cov = curve_fit(f=fitfunc,
+                                    xdata=xData_fit,
+                                    ydata=E_East_detrend
+                                    )
+    # yData_fit = fitfunc(xData_fit,*params)
+    yData_fit = fitfunc(xData_fit, *[0,0.01])
 
 
-    # [1] Polynomial Fit the East component in order to produce as smooth of a non-varying field as possible
-    def fitfunc(x,a,b,c):
-        return a*np.power(x,2) + b*x + c
-    def fitfunc(x,a,b):
-        return a*x + b
+    #########################################
+    # --- [4] Rotate E-East until Minimum ---
+    #########################################
 
-    xData_fit = np.array([(pycdf.lib.datetime_to_tt2000(val) - pycdf.lib.datetime_to_tt2000(data_dict['Epoch'][0][0]))/1E9 for val in data_dict['Epoch'][0]])
-    yData_fit = data_dict['E_e'][0]
-
-    params = [0, -0.115]
-    E_E_fit = fitfunc(xData_fit, *params)
-
-    # [2] Sav-gol filter the East component in order to produce as smooth of a non-varying field as possible
-    E_E_savgol = savgol_filter(x=data_dict['E_e'][0],
-                                  window_length=500,
-                                  polyorder=3)
-
-    if plot_pre_rotated_data:
-        fig, ax = plt.subplots(2)
-        ax[0].plot(data_dict['Epoch'][0],data_dict['E_e'][0], color='tab:blue')
-        ax[0].plot(data_dict['Epoch'][0], E_E_fit, color='tab:red')
-        ax[1].plot(data_dict['Epoch'][0], data_dict['E_r'][0], color='tab:blue')
-        ax[1].plot(data_dict['Epoch'][0], E_E_savgol, color='tab:red')
-        plt.show()
-
-    # [3] Form the E-Field vector
-    # E_Field = np.array([data_dict['E_e'][0], data_dict['E_p'][0],data_dict['E_r'][0]]).T
-    E_Field = np.array([yData_fit - fitfunc_detrend(xData_fit,*params_detrend), data_dict['E_p'][0], data_dict['E_r'][0]]).T
-
-    # [4] define set of rotations and calculate deviation from fitted line
+    # define set of rotations and calculate deviation from fitted line
     stl.prgMsg('Rotating Fields')
     N = 100
     angles = np.linspace(-15, 3, N)
@@ -173,13 +162,14 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
     for idx, ang in tqdm(enumerate(angles)):
         rotated = np.array([np.matmul(stl.Ry(ang), vec) for vec in E_Field])
         E_e_rotated = rotated[:,0]
-        test_statistic = np.sum(np.power(E_e_rotated-E_E_fit,2))
+        test_statistic = np.sum(np.power(E_e_rotated- yData_fit,2))
         rotation_statistics[idx][0] = ang
         rotation_statistics[idx][1] = test_statistic
     stl.Done(start_time)
 
     lowest_angle = rotation_statistics[:, 0][rotation_statistics[:, 1].argmin()]
-    yData_rotated = np.array([np.matmul(stl.Ry(lowest_angle), vec) for vec in E_Field])
+    yData_rotated_detrend = np.array([np.matmul(stl.Ry(lowest_angle), vec) for vec in E_Field])
+    yData_rotated = np.array([np.matmul(stl.Ry(lowest_angle), vec) for vec in np.array([data_dict['E_e'][0], data_dict['E_p'][0], data_dict['E_r'][0]]).T])
 
     if plot_interactive_slider:
         from matplotlib.widgets import Slider
@@ -212,6 +202,7 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
 
         rotation_slider.on_changed(update)
         plt.show()
+
     if plot_best_fit_rotation:
         # Plot the rotating test statistics AND the rotated E-Field data at the lowest angle
         fig, ax = plt.subplots(nrows=2,ncols=2)
@@ -230,10 +221,10 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
         ax[1, 1].axvline(0)
         ax[1, 1].axhline(0)
 
-        # ax[0, 0].plot(data_dict['Epoch'][0], data_dict['E_e'][0], color='tab:blue', label='Non-rotated E_e')
-        ax[0, 0].plot(data_dict['Epoch'][0], E_E_savgol, color='tab:blue', label='Non-rotated E_e')
-        ax[0, 0].plot(data_dict['Epoch'][0], yData_rotated[:,0], color='tab:purple', label=f'Rotated E_e ({lowest_angle} deg)')
-        ax[0, 0].plot(data_dict['Epoch'][0], E_E_fit, color='tab:red', label='E_e_fit', linewidth= 3)
+        ax[0, 0].plot(data_dict['Epoch'][0], yData_fit, color='tab:red', label='fit E_e')
+        ax[0, 0].plot(data_dict['Epoch'][0], E_East_detrend, color='tab:blue', label='Non-rotated E_e')
+        ax[0, 0].plot(data_dict['Epoch'][0], yData_rotated_detrend[:, 0], color='tab:purple', label=f'Rotated E_e ({lowest_angle} deg)')
+        ax[0, 0].set_title('Detrend Rotation Minimization')
         ax[0, 0].legend()
 
         ax[0,1].plot(data_dict['Epoch'][0], data_dict['E_r'][0], color='tab:blue', label='Non-rotated E_r')

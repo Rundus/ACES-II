@@ -66,6 +66,7 @@ def Plot_allsky_auroral_coordinates_check():
     data_dict_allSky5577 = stl.loadDictFromFile(glob(r'C:\Data\ACESII\all_sky\skibotn\5577\\*.cdf')[0])
     data_dict_allSky6300 = stl.loadDictFromFile(glob(r'C:\Data\ACESII\all_sky\skibotn\6300\\*.cdf')[0])
     data_dicts_attitude = [stl.loadDictFromFile(glob(f'C:\Data\ACESII\\attitude\\{DataPaths.fliers[0]}\\*.cdf*')[0]),stl.loadDictFromFile(glob(f'C:\Data\ACESII\\attitude\\{DataPaths.fliers[1]}\\*.cdf*')[0])]
+    data_dict_auroral = stl.loadDictFromFile(glob(r'C:\Data\ACESII\science\auroral_coordinates\low\\ACESII_36364_E_Field_Auroral_Coordinates.cdf')[0])
     geoAlt = [data_dicts_attitude[0]['Alt'][0], data_dicts_attitude[1]['Alt'][0]]
     geoLat = [data_dicts_attitude[0]['Lat'][0], data_dicts_attitude[1]['Lat'][0]]
     geoLong = [data_dicts_attitude[0]['Long'][0], data_dicts_attitude[1]['Long'][0]]
@@ -223,7 +224,8 @@ def Plot_allsky_auroral_coordinates_check():
         # q2 = axBigAllSky.quiver(X, Y, U, V, color='black', transform=projTransform, scale=5,angles=geographic_angles[1])
 
         # make a fake rotation to test the orthognality of the projection on small distances
-        auroral_angles = [-9,-9+90]
+        auroral_Angle = data_dict_auroral['rotation_Angle'][0]
+        auroral_angles = [-auroral_Angle,-auroral_Angle+90]
         east_new = np.matmul(stl.Rz(45),[1,0,0])
         X3 = origin_enter[0]
         Y3 = origin_enter[1]
@@ -233,7 +235,8 @@ def Plot_allsky_auroral_coordinates_check():
         Y = np.array([Y3])
         U = np.array([U3])
         V = np.array([V3])
-        axBigAllSky.quiver(X, Y, U, V, color='red', transform=projTransform, scale=6, angles=auroral_angles[0])
+        axBigAllSky.quiver(X, Y, U, V, color='red', transform=projTransform, scale=6, angles=auroral_angles[0], label=f'{auroral_Angle} deg')
+        axBigAllSky.legend()
 
         # make a fake rotation to test the orthognality of the projection on small distances
         north_new = np.matmul(stl.Rz(45), [0, 1, 0])
