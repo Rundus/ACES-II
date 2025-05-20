@@ -1,4 +1,4 @@
-# --- traj_ECEF_to_ENU_to_Field_Aligned.py ---
+# --- updated_traj_ECEF_to_ENU_to_Field_Aligned.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Input the ACES-II trajectory GPS data and convert it to ENU and Field-aligned coordinates
 

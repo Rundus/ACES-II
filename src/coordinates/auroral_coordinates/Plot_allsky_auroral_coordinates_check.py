@@ -1,4 +1,4 @@
-# --- L2_EFI_to_auroral_coordinates.py ---
+# --- auroral_coordinates_angle_determination.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION:
 # [1] Develop an algorthim to center the E-East around 0 mV/m

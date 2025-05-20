@@ -123,7 +123,7 @@ def ACESIIplotting():
     # --- MAKE THE PLOT ---
     #######################
 
-    from plottingStyles import ILATvsILONG
+    from src.Science.trajectory.plotting.plottingStyles import ILATvsILONG
 
     fig = plt.figure(figsize=ILATvsILONG.figureSize)
     ax1 = fig.add_subplot(111)

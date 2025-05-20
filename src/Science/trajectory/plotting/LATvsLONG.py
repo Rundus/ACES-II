@@ -119,7 +119,7 @@ def ACESIIplotting():
     #######################
     # --- MAKE THE PLOT ---
     #######################
-    from plottingStyles import LATvsLONG
+    from src.Science.trajectory.plotting.plottingStyles import LATvsLONG
 
     prgMsg('Plotting Lattitude vs Longitude')
 

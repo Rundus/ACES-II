@@ -1,4 +1,4 @@
-# --- L2_EFI_to_auroral_coordinates.py ---
+# --- auroral_coordinates_angle_determination.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION:
 # [1] Develop an algorthim to center the E-East around 0 mV/m
@@ -146,7 +146,7 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
                                     ydata=E_East_detrend
                                     )
     # yData_fit = fitfunc(xData_fit,*params)
-    yData_fit = fitfunc(xData_fit, *[0,0.01])
+    yData_fit = fitfunc(xData_fit, *[0 ,0.01])
 
 
     #########################################
@@ -271,7 +271,7 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
 
 
         stl.prgMsg('Creating output file')
-        fileoutName_fixed = f'ACESII_{rocketID}_E_Field_Auroral_Coordinates.cdf'
+        fileoutName_fixed = f'ACESII_{rocketID}_auroral_coordinates_angle.cdf'
         outputPath = fr'C:\Data\ACESII\science\auroral_coordinates\low\{fileoutName_fixed}'
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)

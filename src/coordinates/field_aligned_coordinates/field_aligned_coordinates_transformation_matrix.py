@@ -1,9 +1,7 @@
-# --- ENU_to_Field_Aligned.py ---
+# --- field_aligned_coordinates_transformation_matrix.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: input a integration_tad_files or EFI file and use the respective attitude solution to convert
-# to field aligned coordinates. Additionally, use the data from the attitude solution to
-# determine the geomagnetic coordinates of the deltaB/deltaE data on the mag epoch
-# and store them in the output file
+# DESCRIPTION: input rocket ephemeris data and use it to develop the
+# ENU to FAC coordinate transformation
 
 
 
@@ -56,7 +54,7 @@ from spacepy import coordinates as coord
 coord.DEFAULTS.set_values(use_irbem=False, itol=5)  # maximum separation, in seconds, for which the coordinate transformations will not be recalculated. To force all transformations to use an exact transform for the time, set ``itol`` to zero.
 from spacepy.time import Ticktock #used to determine the time I'm choosing the reference geomagentic field
 
-def ENU_to_Field_Aligned(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
+def field_aligned_coordinates_transformation_matrix(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
 
     # --- ACES II Flight/Integration Data ---
     rocketAttrs, b, c = ACES_mission_dicts()
@@ -262,12 +260,9 @@ def ENU_to_Field_Aligned(wRocket, wFile, rocketFolderPath, justPrintFileNames, w
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-if wRocket == 4:  # ACES II High
-    rocketFolderPath = ACES_data_folder
-    wflyer = 0
-elif wRocket == 5: # ACES II Low
-    rocketFolderPath = ACES_data_folder
-    wflyer = 1
+rocketFolderPath = ACES_data_folder
+wflyer = 0 if wRocket == 4 else 1
+
 
 if len(glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\*.cdf')) == 0:
     print(color.RED + 'There are no .cdf files in the specified directory' + color.END)

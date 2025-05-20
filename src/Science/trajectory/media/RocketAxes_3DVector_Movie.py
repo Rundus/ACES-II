@@ -2,7 +2,6 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION: Turn the .cdf files of the TRICE attitude data into cdf files
 import numpy as np
-import pyIGRF
 
 # --- --- --- --- ---
 from ACESII_code.myImports import *
@@ -21,7 +20,7 @@ unSpinRocket = True # toggle to "reverse spin" the rocket to see how effective t
 # --- --- --- ---
 import pyIGRF
 from matplotlib import pyplot as plt, animation
-from ACESII_code.class_var_func import color, DCM, RotationAboutAxes
+from ACESII_code.class_var_func import color, RotationAboutAxes
 
 print(color.BOLD + color.CYAN + 'RocketAxes_3DVector_Movie.py' + color.END + color.END)
 
@@ -38,7 +37,7 @@ def ACESIIplotting():
 
     prgMsg('Preparing Data')
 
-    from plottingStyles import AttitudeMovie
+    from src.Science.trajectory.plotting.plottingStyles import AttitudeMovie
     def sphere2cart(r, theta, phi):
         return [
             r * np.sin(np.radians(theta)) * np.cos(np.radians(phi)),
