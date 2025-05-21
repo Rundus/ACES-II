@@ -1,4 +1,4 @@
-# --- missionAttributes.py ---
+# --- missionAttributes_OUTDATED.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Place to store the attributes specific to certain rockets
 

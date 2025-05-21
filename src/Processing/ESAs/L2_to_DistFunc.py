@@ -55,7 +55,7 @@ import numpy as np
 from warnings import filterwarnings # USED TO IGNORE WARNING ABOUT "UserWarning: Invalid dataL1 type for dataL1.... Skip warnings.warn('Invalid dataL1 type for dataL1.... Skip')" on Epoch High dataL1.
 filterwarnings("ignore")
 from tqdm import tqdm
-from src.missionAttributes import ACES_mission_dicts
+from src.missionAttributes_OUTDATED import ACES_mission_dicts
 from src.data_paths import Integration_data_folder, ACES_data_folder, TRICE_data_folder, fliers
 from src.archive.class_var_func import L2_ACES_Quick
 from spaceToolsLib import color,prgMsg,cm_to_m,q0,IonMasses,m_e

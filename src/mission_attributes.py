@@ -13,7 +13,7 @@ class ACESII:
     # --- General Mission Info---
     mission_name = 'ACESII'
     payload_IDs = ['36359', '36364']
-    fliers = ['high','low']
+    fliers = ['high', 'low']
     instrument_names_full = ['EEPAA>Electron Energy Pitch Angle Analyzer',
                              'LEESA>Low Energy Electrostatic Analyzer',
                              'IEPAA>Ion Energy Pitch Angle Analyzer',

@@ -84,7 +84,7 @@ def L1_to_L2_langmuir_fixed(wflyer, justPrintFileNames):
     #################################
     # --- Fixed Probe Calibration ---
     #################################
-    # description: Loads in the fixed calibrated data (provided by scott, found in missionAttributes.py).
+    # description: Loads in the fixed calibrated data (provided by scott, found in missionAttributes_OUTDATED.py).
 
     def calFunction_fixed(x, A, B):
         y = A*x + B
