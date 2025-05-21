@@ -1,4 +1,4 @@
-# --- ECEF_to_field_aligned_coordinates.py ---
+# --- ECEF_to_field_aligned_coordinates_transformation_matrix.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: input the ENU_to_Field_aligned transformation matrix file and
 # output the FAC transformation matrix
