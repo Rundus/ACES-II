@@ -24,7 +24,6 @@ wRow = 2 # row corresponding to where all the names of the variables are
 # --- import ---
 # --- --- --- ---
 import numpy as np
-from os import remove,path
 from csv import reader
 from copy import deepcopy
 from scipy.interpolate import CubicSpline
@@ -38,7 +37,7 @@ from spacepy.time import Ticktock #used to determine the time I'm choosing the r
 def csv_to_cdf_trajectories(wRocket):
 
 
-    print(f'Converting csv file\n')
+    stl.prgMsg('Loading Data')
 
     # --- get the path of the input file ---
     input_file = glob(rf'{DataPaths.ACES_data_folder}\\trajectories\\{ACESII.fliers[wRocket-4]}\\*Flight_trajectory_GPSdata.csv*')[0]
@@ -174,14 +173,17 @@ def csv_to_cdf_trajectories(wRocket):
     Epoch_attitude_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_attitude['Epoch'][0]])
     Epoch_traj_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_output['Epoch'][0]])
     for key in data_dict_output.keys():
-        cs = CubicSpline(Epoch_traj_tt2000,data_dict_output['key'][0])
-        data_dict_output[key][0] = deepcopy(cs(Epoch_attitude_tt2000))
+        if key != 'Epoch':
+            cs = CubicSpline(Epoch_traj_tt2000,data_dict_output[key][0])
+            data_dict_output[key][0] = deepcopy(cs(Epoch_attitude_tt2000))
+        else:
+            data_dict_output[key][0] = deepcopy(data_dict_attitude['Epoch'][0])
     stl.Done(start_time)
 
     if outputData:
         stl.prgMsg('outputting data')
-        fileoutName = 'ACESII_36364_Flight_trajectory_GPSdata.cdf'
-        outputPath = rf'{DataPaths.rocketFolderPath}\trajectories\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
+        fileoutName = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_Flight_trajectory_GPSdata.cdf'
+        outputPath = rf'{DataPaths.ACES_data_folder}\trajectories\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output, instrNam='ephemeris')
         stl.Done(start_time)
 
