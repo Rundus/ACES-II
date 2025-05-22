@@ -1,6 +1,6 @@
 # --- traj_to_auroral_coordinates.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: input the payload trajectory files and convert the ECEF velocities, positions into auroral coordinates
+# DESCRIPTION: input the payload trajectory files and convert the ECEF velocities, positions into auroral coordinates (T,N,p)
 # as well as determine the gradient in the distances
 
 # --- bookkeeping ---
@@ -23,7 +23,7 @@ justPrintFileNames = False
 # --- Select the Rocket ---
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = [4,5]
 
 # select which files to convert
 # [] --> all files
@@ -57,6 +57,8 @@ def traj_to_auroral_coordinates(wRocket):
         'N_POS': [np.zeros(shape=np.shape(data_dict_traj['ECEFXPOS'][0])), data_dict_traj['ECEFXPOS'][1]],
         'P_POS': [np.zeros(shape=np.shape(data_dict_traj['ECEFYPOS'][0])), data_dict_traj['ECEFYPOS'][1]],
         'T_POS': [np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), data_dict_traj['ECEFZPOS'][1]],
+        'T_POS_GRAD':[np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), data_dict_traj['ECEFZPOS'][1]],
+        'N_POS_GRAD': [np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), data_dict_traj['ECEFZPOS'][1]],
         'N_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFXVEL'][0])), data_dict_traj['ECEFXVEL'][1]],
         'P_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFYVEL'][0])), data_dict_traj['ECEFYVEL'][1]],
         'T_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFZVEL'][0])), data_dict_traj['ECEFZVEL'][1]],
@@ -80,33 +82,51 @@ def traj_to_auroral_coordinates(wRocket):
         return x, y, z
 
     launch_ECEF = np.array(gps_to_ecef_pyproj(ACESII.launch_lat_long[0], ACESII.launch_lat_long[1], alt=0))
-    position_vector_ECEF = (rkt_pos_ECEF- launch_ECEF)/1000
+    position_vector_ECEF = (rkt_pos_ECEF- launch_ECEF)
 
     # determine the in situ position vector and rotate it into auroral coordinates
     rkt_pos_auroral = np.array([np.matmul(data_dict_ECEF_auroral_transform['ECEF_to_auroral'][0][i], vec) for i,vec in enumerate(position_vector_ECEF)])
     data_dict_output['N_POS'][0] = rkt_pos_auroral[:, 0]
-    data_dict_output['P_POS'][0] = rkt_pos_auroral[:, 1]
-    data_dict_output['T_POS'][0] = rkt_pos_auroral[:, 2]
-
+    data_dict_output['T_POS'][0] = rkt_pos_auroral[:, 1]
+    data_dict_output['P_POS'][0] = rkt_pos_auroral[:, 2]
 
     # update the attributes
     data_dict_output['N_POS'][1]['LABLAXIS'] = 'Normal Position from Launch'
+    data_dict_output['N_POS'][1]['UNITS'] = 'm'
     data_dict_output['T_POS'][1]['LABLAXIS'] = 'Tangent Position from Launch'
+    data_dict_output['T_POS'][1]['UNITS'] = 'm'
     data_dict_output['P_POS'][1]['LABLAXIS'] = 'Field Aligned Position from Launch'
+    data_dict_output['P_POS'][1]['UNITS'] = 'm'
 
 
     # form the ECEF velocity vector
     rkt_vel_ECEF = np.array([data_dict_traj['ECEFXVEL'][0], data_dict_traj['ECEFYVEL'][0], data_dict_traj['ECEFZVEL'][0]]).T
     rkt_vel_auroral = np.array([np.matmul(data_dict_ECEF_auroral_transform['ECEF_to_auroral'][0][i], vec) for i,vec in enumerate(rkt_vel_ECEF)])
     data_dict_output['N_VEL'][0] = rkt_vel_auroral[:, 0]
-    data_dict_output['P_VEL'][0] = rkt_vel_auroral[:, 1]
-    data_dict_output['T_VEL'][0] = rkt_vel_auroral[:, 2]
+    data_dict_output['T_VEL'][0] = rkt_vel_auroral[:, 1]
+    data_dict_output['P_VEL'][0] = rkt_vel_auroral[:, 2]
 
     # update the attributes
     data_dict_output['N_VEL'][1]['LABLAXIS'] = 'Normal Velocity'
-    data_dict_output['P_VEL'][1]['LABLAXIS'] = 'Tangent Velocity'
-    data_dict_output['T_VEL'][1]['LABLAXIS'] = 'Field Aligned Velocity'
+    data_dict_output['P_VEL'][1]['LABLAXIS'] = 'Field Aligned Velocity'
+    data_dict_output['T_VEL'][1]['LABLAXIS'] = 'Tangent Velocity'
     stl.Done(start_time)
+
+    #######################################################
+    # --- Calculate the Position Gradient from Velocity ---
+    #######################################################
+
+    # --- get the Epoch in seconds from Launch ---
+    Launch_time = pycdf.lib.tt2000_to_datetime(ACESII.launch_T0_TT2000[wRocket-4])
+    seconds_from_T0 = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_output['Epoch'][0], T0=Launch_time)
+    deltaT = np.array([0] + [seconds_from_T0[i+1] - seconds_from_T0[i] for i in range(len(seconds_from_T0)-1)])
+    data_dict_output['T_POS_GRAD'][0] = deepcopy(deltaT)*deepcopy(data_dict_output['T_VEL'][0])
+    data_dict_output['T_POS_GRAD'][1]['UNITS'] = 'm'
+    data_dict_output['N_POS_GRAD'][1]['LABLAXIS'] = 'Normal Position Gradient'
+
+    data_dict_output['N_POS_GRAD'][0] = deepcopy(deltaT) * deepcopy(data_dict_output['N_VEL'][0])
+    data_dict_output['N_POS_GRAD'][1]['UNITS'] = 'm'
+    data_dict_output['T_POS_GRAD'][1]['LABLAXIS'] = 'Tangent Position Gradient'
 
 
     # --- --- --- --- --- --- ---
@@ -120,6 +140,7 @@ def traj_to_auroral_coordinates(wRocket):
         outputPath = f'{DataPaths.ACES_data_folder}\\trajectories\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)
+        print('\n')
 
 
 
@@ -127,4 +148,5 @@ def traj_to_auroral_coordinates(wRocket):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-traj_to_auroral_coordinates(wRocket)
+for val in wRocket:
+    traj_to_auroral_coordinates(val)

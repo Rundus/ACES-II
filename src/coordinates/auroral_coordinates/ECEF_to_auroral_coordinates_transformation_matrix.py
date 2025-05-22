@@ -3,6 +3,8 @@
 # DESCRIPTION: input the FAC transformation matrix and apply the
 # east-north rotation angle indicated Plot_allsky_auroral_Coordinates_check
 
+# OUTPUT:
+# [X_ECEF, Y_ECEF, Z_ECEF] *transform_matrix = [N, T, p]
 
 # --- bookkeeping ---
 # !/usr/bin/env python
@@ -22,7 +24,7 @@ start_time = time.time()
 # --- Select the Rocket ---
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = [4,5]
+wRocket = [4, 5]
 outputData = True
 outputPath_modifier = 'coordinates' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
@@ -31,7 +33,6 @@ outputPath_modifier = 'coordinates' # e.g. 'L2' or 'Langmuir'. It's the name of 
 # --- --- --- ---
 
 def FAC_to_auroral_coordiantes(wRocket):
-
 
     rocketID = ACESII.payload_IDs[wRocket-4]
 
@@ -66,7 +67,7 @@ def FAC_to_auroral_coordiantes(wRocket):
     # --- ROTATE THE FAC MATRIX ---
     ###############################
 
-    FAC_to_auroral_transformation = np.array([np.matmul(stl.Ry(data_dict_auroral_angle['rotation_Angle'][0]),data_dict_transform['ECEF_to_FAC'][0][i]) for i in range(len(data_dict_transform['Epoch'][0]))])
+    FAC_to_auroral_transformation = np.array([np.matmul(stl.Rz(data_dict_auroral_angle['rotation_Angle'][0]),data_dict_transform['ECEF_to_FAC'][0][i]) for i in range(len(data_dict_transform['Epoch'][0]))])
 
     # store the outputs
     data_dict_output['a11'][0] = FAC_to_auroral_transformation[:, 0, 0]

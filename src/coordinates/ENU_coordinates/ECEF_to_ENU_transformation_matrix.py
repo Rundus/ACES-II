@@ -2,6 +2,8 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION: Input the ACES-II trajectory GPS data and convert it to ENU and Field-aligned coordinates
 
+# OUTPUT:
+# [X_ECEF, Y_ECEF, Z_ECEF] *transform_matrix = [E, N, U]
 
 # --- bookkeeping ---
 # !/usr/bin/env python

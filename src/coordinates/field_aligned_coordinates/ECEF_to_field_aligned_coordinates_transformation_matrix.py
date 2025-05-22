@@ -3,6 +3,9 @@
 # DESCRIPTION: input the ENU_to_Field_aligned transformation matrix file and
 # output the FAC transformation matrix
 
+# OUTPUT:
+# [X_ECEF, Y_ECEF, Z_ECEF] *transform_matrix = [r, e, p]
+
 
 
 # --- bookkeeping ---
@@ -23,7 +26,7 @@ start_time = time.time()
 # --- Select the Rocket ---
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 5
+wRocket = [4, 5]
 outputData = True
 outputPath_modifier = 'coordinates' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
@@ -104,7 +107,7 @@ def ECEF_to_Field_Aligned(wRocket):
     rHat = np.array([np.cross(eHat[i], pHat[i]) for i in range(len(data_dict_transform['Epoch'][0]))])
 
     # form the transformation matrix FROM GEO TO FIELD ALIGNED
-    ECEF_to_FAC_transformation = np.array([[eHat[i], pHat[i], rHat[i]] for i in range(len(data_dict_transform['Epoch'][0]))])
+    ECEF_to_FAC_transformation = np.array([[rHat[i],eHat[i], pHat[i]] for i in range(len(data_dict_transform['Epoch'][0]))])
     stl.Done(start_time)
 
     # store the outputs
@@ -148,11 +151,8 @@ def ECEF_to_Field_Aligned(wRocket):
 
 
 
-
-
-
-
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-ECEF_to_Field_Aligned(wRocket)
+for val in wRocket:
+    ECEF_to_Field_Aligned(val)
