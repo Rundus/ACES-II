@@ -83,7 +83,7 @@ def mSSA_grouping_and_fileOutput(wRocket, rocketFolderPath, justPrintFileNames):
     varName = compNames[0].replace(coordSet[0], '')
 
     wInstr = ''
-    for vari in ['RingCore', 'PoyntingFlux', 'mBeEr', 'BrEe', 'E_Field']:
+    for vari in ['RingCore', 'PoyntingFlux', 'mBeEr', 'BrEe', 'EFI']:
         if vari in inputFiles[plot_wSSAComponetFile]:
             wInstr = vari
             break

@@ -114,7 +114,7 @@ def CurrentSystem_Diagram(rocketFolderPath):
     prgMsg('Loading and Reducing Electric Field Data')
 
     # get the EFI input files LOW
-    inputFile_elec_low = glob(r'C:\Data\ACESII\L2\low\*E_Field*')[0]
+    inputFile_elec_low = glob(r'C:\Data\ACESII\L2\low\*EFI*')[0]
     data_dict_elec_low = loadDictFromFile(inputFile_elec_low, {})
     data_dict_elec_low = reduceData(targetTimes, data_dict_elec_low)
     E_Field = 1000*np.array([ [data_dict_elec_low['E_East'][0][i],data_dict_elec_low['E_North'][0][i],data_dict_elec_low['E_Up'][0][i]] for i in range(len(data_dict_elec_low['Epoch'][0]))])
@@ -230,8 +230,8 @@ def CurrentSystem_Diagram(rocketFolderPath):
         # E - LOW
         # E_filtered = []
         # for i in range(3):
-        #     E_filtered.append(butter_filter(E_Field[:, i], lowcutoff=lowCut_toggle, highcutoff=highcut_toggle, filtertype=filttype_toggle, order=order_toggle, fs=4000))
-        # E_Field = np.array([[E_filtered[0][i], E_filtered[1][i], E_filtered[2][i]] for i in range(len(E_Field))])
+        #     E_filtered.append(butter_filter(EFI[:, i], lowcutoff=lowCut_toggle, highcutoff=highcut_toggle, filtertype=filttype_toggle, order=order_toggle, fs=4000))
+        # EFI = np.array([[E_filtered[0][i], E_filtered[1][i], E_filtered[2][i]] for i in range(len(EFI))])
 
         Done(start_time)
 
@@ -303,7 +303,7 @@ def CurrentSystem_Diagram(rocketFolderPath):
     gs = GridSpec(6, 2,width_ratios=[1,0.01])
 
 
-    # E_Field Components
+    # EFI Components
     axE = fig.add_subplot(gs[4:6, 0])
     Epoch = data_dict_elec_low['Epoch'][0]
     compsEfield = ['E_East (adjusted)','E_North (adjusted)', 'E_Up (adjusted)'] if E_Field_adjust else ['E_East','E_North', 'E_Up']

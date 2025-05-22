@@ -77,7 +77,7 @@ def mSSA_to_calcComponents(wRocket, rocketFolderPath, justPrintFileNames,wFile):
     pathModifier = 'SSAcomponents' + f'_{varName}'
 
     wInstr = ''
-    for vari in ['RingCore','PoyntingFlux','mBeEr','BrEe','E_Field']:
+    for vari in ['RingCore','PoyntingFlux','mBeEr','BrEe','EFI']:
         if vari in inputFiles[wFile]:
             wInstr = vari
             break
