@@ -19,9 +19,6 @@ start_time = time.time()
 # --- --- --- ---
 from scipy.interpolate import CubicSpline
 
-# Just print the names of files
-justPrintFileNames = False
-
 # --- Select the Rocket ---
 # 4 -> ACES-II High Flier
 # 5 -> ACES-II Low Flier
@@ -36,31 +33,75 @@ Plot_correction_term = False
 # --- --- --- ---
 # none
 
-def L2_to_L2_EFI_FAC_coordinates(wRocket, justPrintFileNames):
-
-    inputFiles_elec = glob(f'{DataPaths.ACES_data_folder}\\L1\\{ACESII.fliers[wRocket-4]}\*E_Field_ENU_no_corrections*')
-    inputFiles_mag = glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\*RingCore_ENU.cdf*')
-    input_names = [ifile.replace(f'{DataPaths.ACES_data_folder}\\L1\\{ACESII.fliers[wRocket-4]}\\', '') for ifile in inputFiles_elec]
-
-    if justPrintFileNames:
-        for i, file in enumerate(inputFiles_elec):
-            print('[{:.0f}] {:80s}'.format(i, input_names[i], round(getsize(file) / (10 ** 6))))
-        return
+def L2_to_L2_EFI_FAC_coordinates(wRocket):
 
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
-    data_dict_EFI =
-    data_dict_transform = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_FAC.cdf*')[0])
+    data_dict_EFI = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*E_Field_ENU_fullCal.cdf*')[0])
+    data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_ENU.cdf*')[0])
+    data_dict_transform_FAC = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_FAC.cdf*')[0])
     stl.Done(start_time)
 
-    ##############################################
-    # --- Correct the Rocket Convection Effect ---
-    ##############################################
+    # --- prepare the output ---
+    data_dict_output = {
+        'E_r' : [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_East'][1]],
+        'E_e': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_North'][1]],
+        'E_p': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_Up'][1]],
+        'E_mag':data_dict_EFI['E_mag'],
+        'Epoch':data_dict_EFI['Epoch']
+    }
 
+    ###########################################
+    # --- Interpolate trasnformation matrix ---
+    ###########################################
 
-    # Convert payload velocity to ENU
+    Epoch_EFI_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_EFI['Epoch'][0]])
+    Epoch_ENU_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_ENU['Epoch'][0]])
+    Epoch_FAC_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_FAC['Epoch'][0]])
 
+    # interpolate ENU_to_ECEF matrix onto EFI timebase
+    interp_keys = ['a11','a12','a13','a21','a22','a23','a31','a32','a33']
+    for key in interp_keys:
+        cs = CubicSpline(Epoch_ENU_tt2000, data_dict_transform_ENU[key][0])
+        data_dict_transform_ENU[key][0] = deepcopy(cs(Epoch_EFI_tt2000))
 
+    ECEF_to_ENU_matrix = np.array([
+        [[data_dict_transform_ENU['a11'][0][i], data_dict_transform_ENU['a12'][0][i], data_dict_transform_ENU['a13'][0][i]],
+        [data_dict_transform_ENU['a21'][0][i], data_dict_transform_ENU['a22'][0][i], data_dict_transform_ENU['a23'][0][i]],
+        [data_dict_transform_ENU['a31'][0][i], data_dict_transform_ENU['a32'][0][i], data_dict_transform_ENU['a33'][0][i]]]
+        for i in range(len(data_dict_EFI['Epoch'][0]))
+    ])
+
+    # interpolate ENU_to_ECEF matrix onto EFI timebase
+    interp_keys = ['a11', 'a12', 'a13', 'a21', 'a22', 'a23', 'a31', 'a32', 'a33']
+    for key in interp_keys:
+        cs = CubicSpline(Epoch_FAC_tt2000, data_dict_transform_FAC[key][0])
+        data_dict_transform_FAC[key][0] = deepcopy(cs(Epoch_EFI_tt2000))
+
+    ECEF_to_FAC_matrix = np.array([
+        [[data_dict_transform_FAC['a11'][0][i], data_dict_transform_FAC['a12'][0][i], data_dict_transform_FAC['a13'][0][i]],
+         [data_dict_transform_FAC['a21'][0][i], data_dict_transform_FAC['a22'][0][i], data_dict_transform_FAC['a23'][0][i]],
+         [data_dict_transform_FAC['a31'][0][i], data_dict_transform_FAC['a32'][0][i], data_dict_transform_FAC['a33'][0][i]]]
+        for i in range(len(data_dict_EFI['Epoch'][0]))
+    ])
+
+    ###################################
+    # --- Transform the Coordinates ---
+    ###################################
+
+    # form the EFI ENU vector
+    EFI_ENU = np.array([data_dict_EFI['E_East'][0],data_dict_EFI['E_North'][0],data_dict_EFI['E_Up'][0]]).T
+    EFI_ECEF = np.array([np.matmul(ECEF_to_ENU_matrix[i].T, vec) for i, vec in enumerate(EFI_ENU)])
+    EFI_FAC = np.array([np.matmul(ECEF_to_FAC_matrix[i], vec) for i, vec in enumerate(EFI_ECEF)])
+
+    data_dict_output['E_r'][0] = EFI_FAC[:, 0]
+    data_dict_output['E_r'][1]['LABLAXIS'] = 'North-like Component'
+
+    data_dict_output['E_e'][0] = EFI_FAC[:, 1]
+    data_dict_output['E_r'][1]['LABLAXIS'] = 'East-like Component'
+
+    data_dict_output['E_p'][0] = EFI_FAC[:, 2]
+    data_dict_output['E_r'][1]['LABLAXIS'] = 'Field-Aligned Component'
 
 
     # --- --- --- --- --- --- ---
@@ -70,9 +111,9 @@ def L2_to_L2_EFI_FAC_coordinates(wRocket, justPrintFileNames):
     if outputData:
         stl.prgMsg('Creating output file')
 
-        fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l2_E_Field_ENU_fullCal.cdf'
+        fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l2_E_Field_FAC_fullCal.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
-        stl.outputCDFdata(outputPath, data_dict_output, globalAttrsMod=GlobalAttrs, instrNam='EFI')
+        stl.outputCDFdata(outputPath, data_dict_output, instrNam='EFI')
         stl.Done(start_time)
 
 
@@ -84,4 +125,4 @@ def L2_to_L2_EFI_FAC_coordinates(wRocket, justPrintFileNames):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-L2_to_L2_EFI_FAC_coordinates(wRocket, justPrintFileNames)
+L2_to_L2_EFI_FAC_coordinates(wRocket)

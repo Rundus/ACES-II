@@ -23,7 +23,7 @@ justPrintFileNames = False
 # --- Select the Rocket ---
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = [4,5]
+wRocket = [4, 5]
 
 # select which files to convert
 # [] --> all files
@@ -49,20 +49,22 @@ def traj_to_auroral_coordinates(wRocket):
     # --- get the data from the tmCDF file ---
     stl.prgMsg(f'Loading data')
     data_dict_traj = stl.loadDictFromFile(inputFiles)
-    data_dict_ECEF_auroral_transform = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\{ACESII.fliers[wRocket-4]}\*ECEF_to_auroral*')[0])
+    data_dict_ECEF_auroral_transform = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket-4]}\*ECEF_to_auroral*')[0])
+    data_dict_LShell = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\Lshell\\{ACESII.fliers[wRocket-4]}\*Lshell.cdf*')[0])
     stl.Done(start_time)
 
     # --- prepare output ---
     data_dict_output = {
-        'N_POS': [np.zeros(shape=np.shape(data_dict_traj['ECEFXPOS'][0])), data_dict_traj['ECEFXPOS'][1]],
-        'P_POS': [np.zeros(shape=np.shape(data_dict_traj['ECEFYPOS'][0])), data_dict_traj['ECEFYPOS'][1]],
-        'T_POS': [np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), data_dict_traj['ECEFZPOS'][1]],
-        'T_POS_GRAD':[np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), data_dict_traj['ECEFZPOS'][1]],
-        'N_POS_GRAD': [np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), data_dict_traj['ECEFZPOS'][1]],
-        'N_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFXVEL'][0])), data_dict_traj['ECEFXVEL'][1]],
-        'P_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFYVEL'][0])), data_dict_traj['ECEFYVEL'][1]],
-        'T_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFZVEL'][0])), data_dict_traj['ECEFZVEL'][1]],
-        'Epoch':deepcopy(data_dict_traj['Epoch'])
+        'N_POS': [np.zeros(shape=np.shape(data_dict_traj['ECEFXPOS'][0])), deepcopy(data_dict_traj['ECEFXPOS'][1])],
+        'P_POS': [np.zeros(shape=np.shape(data_dict_traj['ECEFYPOS'][0])), deepcopy(data_dict_traj['ECEFYPOS'][1])],
+        'T_POS': [np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), deepcopy(data_dict_traj['ECEFZPOS'][1])],
+        'T_POS_GRAD': [np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), deepcopy(data_dict_traj['ECEFZPOS'][1])],
+        'N_POS_GRAD': [np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), deepcopy(data_dict_traj['ECEFZPOS'][1])],
+        'P_POS_GRAD': [np.zeros(shape=np.shape(data_dict_traj['ECEFZPOS'][0])), deepcopy(data_dict_traj['ECEFZPOS'][1])],
+        'N_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFXVEL'][0])), deepcopy(data_dict_traj['ECEFXVEL'][1])],
+        'P_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFYVEL'][0])), deepcopy(data_dict_traj['ECEFYVEL'][1])],
+        'T_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFZVEL'][0])), deepcopy(data_dict_traj['ECEFZVEL'][1])],
+        'Epoch': deepcopy(data_dict_traj['Epoch'])
     }
 
     #############################################
@@ -81,7 +83,18 @@ def traj_to_auroral_coordinates(wRocket):
 
         return x, y, z
 
-    launch_ECEF = np.array(gps_to_ecef_pyproj(ACESII.launch_lat_long[0], ACESII.launch_lat_long[1], alt=0))
+
+    # DEFINE THE X0 POINT for the position vector
+    # Description: Use the L-Shell value right before the High Flyer reached the
+    # Aurora as the initial "position" for the auroral coordinates on both flyers.
+    L_shell_initial = 8.4
+    L_shell_idx = np.abs(data_dict_LShell['L-Shell'][0] - L_shell_initial).argmin()
+    Lat_initial = data_dict_LShell['Lat'][0][L_shell_idx]
+    Long_initial = data_dict_LShell['Long'][0][L_shell_idx]
+    Alt_initial = data_dict_LShell['Alt'][0][L_shell_idx]
+    print(Alt_initial)
+
+    launch_ECEF = np.array(gps_to_ecef_pyproj(lat=Lat_initial,lon=Long_initial, alt=Alt_initial))
     position_vector_ECEF = (rkt_pos_ECEF- launch_ECEF)
 
     # determine the in situ position vector and rotate it into auroral coordinates
@@ -122,11 +135,15 @@ def traj_to_auroral_coordinates(wRocket):
     deltaT = np.array([0] + [seconds_from_T0[i+1] - seconds_from_T0[i] for i in range(len(seconds_from_T0)-1)])
     data_dict_output['T_POS_GRAD'][0] = deepcopy(deltaT)*deepcopy(data_dict_output['T_VEL'][0])
     data_dict_output['T_POS_GRAD'][1]['UNITS'] = 'm'
-    data_dict_output['N_POS_GRAD'][1]['LABLAXIS'] = 'Normal Position Gradient'
+    data_dict_output['T_POS_GRAD'][1]['LABLAXIS'] = 'Tangent Position Gradient'
 
     data_dict_output['N_POS_GRAD'][0] = deepcopy(deltaT) * deepcopy(data_dict_output['N_VEL'][0])
     data_dict_output['N_POS_GRAD'][1]['UNITS'] = 'm'
-    data_dict_output['T_POS_GRAD'][1]['LABLAXIS'] = 'Tangent Position Gradient'
+    data_dict_output['N_POS_GRAD'][1]['LABLAXIS'] = 'Normal Position Gradient'
+
+    data_dict_output['P_POS_GRAD'][0] = deepcopy(deltaT) * deepcopy(data_dict_output['P_VEL'][0])
+    data_dict_output['P_POS_GRAD'][1]['UNITS'] = 'm'
+    data_dict_output['P_POS_GRAD'][1]['LABLAXIS'] = 'Field-Aligned Position Gradient'
 
 
     # --- --- --- --- --- --- ---

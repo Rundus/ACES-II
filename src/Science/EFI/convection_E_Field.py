@@ -37,7 +37,7 @@ def convection_E_Field():
     # --- get the data from the file ---
     stl.prgMsg(f'Loading data')
     data_dict_mag = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_l2_RingCore_Field_Aligned.cdf')
-    data_dict_EFI = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_l2_E_Field_Field_Aligned')
+    data_dict_EFI = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_l2_E_Field_FAC_fullCal.cdf')
     stl.Done(start_time)
 
     # --- prepare the output ---

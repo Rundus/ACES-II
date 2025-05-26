@@ -17,9 +17,9 @@ start_time = time.time()
 
 # --- --- --- ---
 # --- TOGGLES ---
-# ---------------------------
+# ---------------
 outputData = True
-# ---------------------------
+# ---------------
 
 # --- --- --- ---
 # --- IMPORTS ---
@@ -27,7 +27,7 @@ outputData = True
 # none
 
 
-def convection_E_Field():
+def L2_EFI_to_integratedPotential():
 
     # --- --- --- --- --- -
     # --- LOAD THE DATA ---
@@ -35,42 +35,97 @@ def convection_E_Field():
 
     # --- get the data from the file ---
     stl.prgMsg(f'Loading data')
-    data_dict_mag = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_l2_RingCore_Field_Aligned.cdf')
-    data_dict_EFI = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_l2_E_Field_Field_Aligned')
+    data_dict_EFI = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_l2_E_Field_auroral_fullCal.cdf')
+    data_dict_traj = stl.loadDictFromFile(r'C:\Data\ACESII\trajectories\low\ACESII_36364_GPS_trajectory_auroral.cdf')
+    data_dict_LShell = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\low\ACESII_36364_Lshell.cdf')
     stl.Done(start_time)
 
     # --- prepare the output ---
-    data_dict_output = {}
-    for key, val in data_dict_EFI.items():
-        if key not in ['Alt_geom','Lat_geom','Long_geom']:
-            data_dict_output = {**data_dict_output,
-                                f'{key}':val}
-
-    # --- --- --- --- --- --- --- --- --- ---
-    # --- CALCULATE Convection Velocities ---
-    # --- --- --- --- --- --- --- --- --- ---
-
-    # [1] Interpolate the magnetic field strength onto EFI timebase
-    T0 = pycdf.lib.datetime_to_tt2000(dt.datetime(2022,11,20,17,20))/1E9
-    Epoch_seconds_MAG = np.array([pycdf.lib.datetime_to_tt2000(val)/1E9 - T0 for val in data_dict_mag['Epoch'][0]])
-    Epoch_seconds_EFI = np.array([pycdf.lib.datetime_to_tt2000(val)/1E9 - T0 for val in data_dict_EFI['Epoch'][0]])
-    cs = CubicSpline(Epoch_seconds_MAG, data_dict_mag['Bmag'][0])
-    Bmag_EFI_timebase = (1E-9)*cs(Epoch_seconds_EFI)
-
-    # [2] Calculate the convection velocities
-    Vr = data_dict_EFI['E_e'][0] /Bmag_EFI_timebase
-    Ve = -1*data_dict_EFI['E_r'][0] / Bmag_EFI_timebase
-
     data_dict_output = {
-        **data_dict_output,
-        **{'Vr':[Vr,{'DEPEND_0': 'Epoch', 'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2',
-                        'UNITS': 'm/s', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'data', 'SCALETYP': 'linear',
-                        'LABLAXIS': 'Vr convection Velocity'} ],
-           'Ve':[Ve,{'DEPEND_0': 'Epoch', 'FILLVAL': ACESII.epoch_fillVal, 'FORMAT': 'E12.2',
-                        'UNITS': 'm/s', 'VALIDMIN': None, 'VALIDMAX': None, 'VAR_TYPE': 'data', 'SCALETYP': 'linear',
-                        'LABLAXIS': 'Ve convection Velocity'}]
-           }
-        }
+        'Potential': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), {}],
+        'Epoch': deepcopy(data_dict_EFI['Epoch']),
+        'L-Shell':[np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_LShell['L-Shell'][1])]
+    }
+
+    # --- --- --- --- --- --- --- --- --- --- --- --- --- --- -
+    # ---Interpolate Trajectory information on EFI timebase ---
+    # --- --- --- --- --- --- --- --- --- --- --- --- --- --- -
+    # interpolate L-Shell onto EFI timebase
+    stl.prgMsg('Interpolating Gradient')
+    from scipy.interpolate import CubicSpline
+    T0 = dt.datetime(2022, 11, 20, 17, 20)
+    time_EFI = stl.EpochTo_T0_Rocket(data_dict_EFI['Epoch'][0], T0=T0)
+    time_traj = stl.EpochTo_T0_Rocket(data_dict_traj['Epoch'][0], T0=T0)
+
+    for key in data_dict_traj.keys():
+        if key != 'Epoch':
+            cs = CubicSpline(x=time_traj, y=data_dict_traj[key][0])
+            data_dict_traj[key][0] = cs(time_EFI)
+
+
+
+    # --- --- --- --- --- --- --- --- --- --- --- --- -
+    # --- Reduce data to Region JUST outside Aurora ---
+    # --- --- --- --- --- --- --- --- --- --- --- --- -
+
+    # pick the initial integration point (i.e. Vref = 0)
+    Vref_idx = np.abs(data_dict_traj['N_POS'][0] - 0).argmin()
+
+    for key in data_dict_EFI.keys():
+        data_dict_EFI[key][0] = deepcopy(data_dict_EFI[key][0][Vref_idx:])
+
+    for key in data_dict_traj.keys():
+        data_dict_traj[key][0] = deepcopy(data_dict_traj[key][0][Vref_idx:])
+
+    for key in data_dict_output.keys():
+        data_dict_output[key][0] = deepcopy(data_dict_output[key][0][Vref_idx:])
+
+    # --- --- --- --- --- --- --- --- --- --- --- --- ---
+    # --- Line Integrate the E-Field to get potential ---
+    # --- --- --- --- --- --- --- --- --- --- --- --- ---
+    stl.prgMsg('Calculating Line Integral')
+
+    # form the E-Field vector - set the z-component to zero since we dont actually know what this was
+    E_Field = np.array([data_dict_EFI['E_N'][0],data_dict_EFI['E_T'][0], np.zeros(shape=(len(data_dict_EFI['Epoch'][0])))]).T
+
+    # form the gradient vector
+    Grad_vec = np.array([data_dict_traj['N_POS_GRAD'][0], data_dict_traj['T_POS_GRAD'][0], data_dict_traj['P_POS_GRAD'][0]]).T
+
+    # Form the position vector
+    Pos_vec = np.array([data_dict_traj['N_POS'][0], data_dict_traj['T_POS'][0], data_dict_traj['P_POS'][0]]).T
+
+    # line integrate the result
+    from scipy.integrate import simpson
+
+    for i in tqdm(range(len(data_dict_EFI['Epoch'][0]))):
+
+        # N-direction
+        N_vals = simpson(x=Pos_vec[:, 0][:i+1], y=E_Field[:, 0][:i+1])
+
+        # T-direction
+        T_vals = simpson(x=Pos_vec[:, 1][:i + 1], y=E_Field[:, 1][:i + 1])
+
+        # P-direction
+        P_vals = simpson(x=Pos_vec[:, 2][:i + 1], y=E_Field[:, 2][:i + 1])
+
+        # total
+        data_dict_output['Potential'][0][i] = -1*(N_vals + T_vals + P_vals)
+
+
+    data_dict_output['Potential'][1]['UNITS'] = 'V'
+    data_dict_output['Potential'][1]['LABLAXIS'] = 'Volts'
+    data_dict_output['Potential'][1]['VAR_TYPE'] = 'data'
+    data_dict_output['Potential'][1]['DEPEND_0'] = 'Epoch'
+
+    # interpolate L-Shell onto EFI timebase
+    stl.prgMsg('Interpolating LShell')
+    from scipy.interpolate import CubicSpline
+    time_EFI = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_EFI['Epoch'][0]])
+    time_LShell = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_LShell['Epoch'][0]])
+    cs = CubicSpline(x=time_LShell, y=data_dict_LShell['L-Shell'][0])
+    Lshell_EFI = cs(time_EFI)
+    data_dict_output['L-Shell'][0] = Lshell_EFI
+    stl.Done(start_time)
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -78,13 +133,12 @@ def convection_E_Field():
 
     if outputData:
         stl.prgMsg('Creating output file')
-        fileoutName = f'ACESII_{ACESII.payload_IDs[1]}_E_Field_convection_velocity.cdf'
-        outputPath = rf'C:\Data\ACESII\science\convection_velocities_E_Field\low\{fileoutName}'
+        fileoutName = f'ACESII_{ACESII.payload_IDs[1]}_integrated_potential.cdf'
+        outputPath = rf'C:\Data\ACESII\science\integrated_potential\low\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)
 
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-rocketFolderPath = DataPaths.ACES_data_folder
-convection_E_Field()
+L2_EFI_to_integratedPotential()
