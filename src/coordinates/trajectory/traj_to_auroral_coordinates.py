@@ -87,12 +87,11 @@ def traj_to_auroral_coordinates(wRocket):
     # DEFINE THE X0 POINT for the position vector
     # Description: Use the L-Shell value right before the High Flyer reached the
     # Aurora as the initial "position" for the auroral coordinates on both flyers.
-    L_shell_initial = 8.4
+    L_shell_initial = 7.8836 # same value as that used in the ionospheric simulation
     L_shell_idx = np.abs(data_dict_LShell['L-Shell'][0] - L_shell_initial).argmin()
     Lat_initial = data_dict_LShell['Lat'][0][L_shell_idx]
     Long_initial = data_dict_LShell['Long'][0][L_shell_idx]
     Alt_initial = data_dict_LShell['Alt'][0][L_shell_idx]
-    print(Alt_initial)
 
     launch_ECEF = np.array(gps_to_ecef_pyproj(lat=Lat_initial,lon=Long_initial, alt=Alt_initial))
     position_vector_ECEF = (rkt_pos_ECEF- launch_ECEF)
