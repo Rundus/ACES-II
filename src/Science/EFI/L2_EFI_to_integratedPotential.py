@@ -44,7 +44,10 @@ def L2_EFI_to_integratedPotential():
     data_dict_output = {
         'Potential': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), {}],
         'Epoch': deepcopy(data_dict_EFI['Epoch']),
-        'L-Shell':[np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_LShell['L-Shell'][1])]
+        'L-Shell':[np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_LShell['L-Shell'][1])],
+        'Lat':[np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_LShell['Lat'][1])],
+        'Long': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_LShell['Long'][1])],
+        'Alt': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_LShell['Alt'][1])],
     }
 
     # --- --- --- --- --- --- --- --- --- --- --- --- --- --- -
@@ -63,22 +66,25 @@ def L2_EFI_to_integratedPotential():
             data_dict_traj[key][0] = cs(time_EFI)
 
 
+    # # --- --- --- --- --- --- --- --- --- --- --- --- -
+    # # --- Reduce data to Region JUST outside Aurora ---
+    # # --- --- --- --- --- --- --- --- --- --- --- --- -
+    #
+    # # pick the initial integration point (i.e. Vref = 0)
+    # Vref_idx = np.abs(data_dict_traj['N_POS'][0] - 0).argmin()
+    #
+    # for key in data_dict_EFI.keys():
+    #     data_dict_EFI[key][0] = deepcopy(data_dict_EFI[key][0][Vref_idx:])
+    #
+    # for key in data_dict_traj.keys():
+    #     data_dict_traj[key][0] = deepcopy(data_dict_traj[key][0][Vref_idx:])
+    #
+    # for key in data_dict_output.keys():
+    #     data_dict_output[key][0] = deepcopy(data_dict_output[key][0][Vref_idx:])
+    #
+    # for key in ['Lat', 'Long', 'Alt']:
+    #     data_dict_output[key] = deepcopy(data_dict_traj[key])
 
-    # --- --- --- --- --- --- --- --- --- --- --- --- -
-    # --- Reduce data to Region JUST outside Aurora ---
-    # --- --- --- --- --- --- --- --- --- --- --- --- -
-
-    # pick the initial integration point (i.e. Vref = 0)
-    Vref_idx = np.abs(data_dict_traj['N_POS'][0] - 0).argmin()
-
-    for key in data_dict_EFI.keys():
-        data_dict_EFI[key][0] = deepcopy(data_dict_EFI[key][0][Vref_idx:])
-
-    for key in data_dict_traj.keys():
-        data_dict_traj[key][0] = deepcopy(data_dict_traj[key][0][Vref_idx:])
-
-    for key in data_dict_output.keys():
-        data_dict_output[key][0] = deepcopy(data_dict_output[key][0][Vref_idx:])
 
     # --- --- --- --- --- --- --- --- --- --- --- --- ---
     # --- Line Integrate the E-Field to get potential ---

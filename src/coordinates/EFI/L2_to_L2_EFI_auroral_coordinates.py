@@ -46,6 +46,7 @@ def L2_to_L2_EFI_auroral_coordinates(wRocket):
     data_dict_EFI = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*E_Field_ENU_fullCal.cdf*')[0])
     data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_ENU.cdf*')[0])
     data_dict_transform_auroral = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_auroral.cdf*')[0])
+    data_dict_LShell = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\Lshell\\{ACESII.fliers[wRocket - 4]}\\*Lshell.cdf*')[0])
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -112,11 +113,17 @@ def L2_to_L2_EFI_auroral_coordinates(wRocket):
     # --- --- --- --- --- --- --- --- --- --- --
     # --- REDUCE DATA TO ONLY RELEVANT PARTS ---
     # --- --- --- --- --- --- --- --- --- --- --
-    target_time = dt.datetime(2022,11,20,17,24,00)
-    idx = np.abs(data_dict_output['Epoch'][0] - target_time).argmin()
 
-    for key in data_dict_output.keys():
-        data_dict_output[key][0] = deepcopy(data_dict_output[key][0][idx:])
+    # # find the nearest epoch to this LShell
+    # target_LShell = 8.4
+    # target_time_idx = np.abs(data_dict_LShell['L-Shell'][0] - target_LShell).argmin()
+    # target_time = data_dict_LShell['Epoch'][0][target_time_idx]
+    #
+    # idx = np.abs(data_dict_output['Epoch'][0] - target_time).argmin()
+    #
+    # for key in data_dict_output.keys():
+    #     data_dict_output[key][0] = deepcopy(data_dict_output[key][0][idx:])
+
 
     # --- --- --- --- --- --- --- --- ---
     # --- OPTIONALLY Remove AC Trends ---

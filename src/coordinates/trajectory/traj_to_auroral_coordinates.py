@@ -64,7 +64,10 @@ def traj_to_auroral_coordinates(wRocket):
         'N_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFXVEL'][0])), deepcopy(data_dict_traj['ECEFXVEL'][1])],
         'P_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFYVEL'][0])), deepcopy(data_dict_traj['ECEFYVEL'][1])],
         'T_VEL': [np.zeros(shape=np.shape(data_dict_traj['ECEFZVEL'][0])), deepcopy(data_dict_traj['ECEFZVEL'][1])],
-        'Epoch': deepcopy(data_dict_traj['Epoch'])
+        'Epoch': deepcopy(data_dict_traj['Epoch']),
+        'Alt': deepcopy(data_dict_traj['Alt']),
+        'Lat': deepcopy(data_dict_traj['Lat']),
+        'Long': deepcopy(data_dict_traj['Long']),
     }
 
     #############################################

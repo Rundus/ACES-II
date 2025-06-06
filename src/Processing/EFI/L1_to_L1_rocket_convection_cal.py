@@ -1,4 +1,4 @@
-# --- L1_to_L2_rocket_convection_cal.py ---
+# --- L1_to_L1_rocket_convection_cal.py ---
 # Description: Create an L2 calibrated EFI dataset
 # [1] Interpolate the EFI data onto the RingCore timebase. There's a temporal correction to the E-Field data that Roger provided that must
 # be added before interpolation
@@ -150,8 +150,8 @@ def L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames):
     if outputData:
         stl.prgMsg('Creating output file')
 
-        fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l2_E_Field_ENU_fullCal.cdf'
-        outputPath = f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
+        fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l1_E_Field_ENU_no_rkt_convec.cdf'
+        outputPath = f'{DataPaths.ACES_data_folder}\\calibration\\EFI_rkt_convection_calibration\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output, globalAttrsMod=GlobalAttrs, instrNam='EFI')
         stl.Done(start_time)
 
