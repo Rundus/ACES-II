@@ -1,4 +1,4 @@
-# --- L2_to_L2_EFI_FAC_coordinates.py ---
+# --- L2_to_L2_EFI_auroral_to_FAC_coordinates.py ---
 # Description: convert EFI ENU coordinates to FAC and output as L2 data
 
 
@@ -33,21 +33,21 @@ Plot_correction_term = False
 # --- --- --- ---
 # none
 
-def L2_to_L2_EFI_FAC_coordinates(wRocket):
+def L2_to_L2_EFI_auroral_to_FAC_coordinates(wRocket):
 
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
-    data_dict_EFI = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*E_Field_ENU_fullCal.cdf*')[0])
-    data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_ENU.cdf*')[0])
-    data_dict_transform_FAC = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_FAC.cdf*')[0])
+    data_dict_EFI = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*E_Field_auroral_fullCal.cdf*')[0])
+    data_dict_transform_auroral = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_auroral.cdf*')[0])
+    data_dict_transform_FAC = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_FAC.cdf*')[0])
     stl.Done(start_time)
 
     # --- prepare the output ---
     data_dict_output = {
-        'E_r' : [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_East'][1]],
-        'E_e': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_North'][1]],
-        'E_p': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_Up'][1]],
-        'E_mag':data_dict_EFI['E_mag'],
+        'E_r' : [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_T'][1]],
+        'E_e': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_N'][1]],
+        'E_p': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_p'][1]],
+        'E_mag':data_dict_EFI['Emag'],
         'Epoch':data_dict_EFI['Epoch']
     }
 
@@ -56,23 +56,23 @@ def L2_to_L2_EFI_FAC_coordinates(wRocket):
     ###########################################
 
     Epoch_EFI_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_EFI['Epoch'][0]])
-    Epoch_ENU_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_ENU['Epoch'][0]])
+    Epoch_ENU_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_auroral['Epoch'][0]])
     Epoch_FAC_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_FAC['Epoch'][0]])
 
     # interpolate ENU_to_ECEF matrix onto EFI timebase
     interp_keys = ['a11','a12','a13','a21','a22','a23','a31','a32','a33']
     for key in interp_keys:
-        cs = CubicSpline(Epoch_ENU_tt2000, data_dict_transform_ENU[key][0])
-        data_dict_transform_ENU[key][0] = deepcopy(cs(Epoch_EFI_tt2000))
+        cs = CubicSpline(Epoch_ENU_tt2000, data_dict_transform_auroral[key][0])
+        data_dict_transform_auroral[key][0] = deepcopy(cs(Epoch_EFI_tt2000))
 
     ECEF_to_ENU_matrix = np.array([
-        [[data_dict_transform_ENU['a11'][0][i], data_dict_transform_ENU['a12'][0][i], data_dict_transform_ENU['a13'][0][i]],
-        [data_dict_transform_ENU['a21'][0][i], data_dict_transform_ENU['a22'][0][i], data_dict_transform_ENU['a23'][0][i]],
-        [data_dict_transform_ENU['a31'][0][i], data_dict_transform_ENU['a32'][0][i], data_dict_transform_ENU['a33'][0][i]]]
+        [[data_dict_transform_auroral['a11'][0][i], data_dict_transform_auroral['a12'][0][i], data_dict_transform_auroral['a13'][0][i]],
+        [data_dict_transform_auroral['a21'][0][i], data_dict_transform_auroral['a22'][0][i], data_dict_transform_auroral['a23'][0][i]],
+        [data_dict_transform_auroral['a31'][0][i], data_dict_transform_auroral['a32'][0][i], data_dict_transform_auroral['a33'][0][i]]]
         for i in range(len(data_dict_EFI['Epoch'][0]))
     ])
 
-    # interpolate ENU_to_ECEF matrix onto EFI timebase
+    # interpolate auroral_to_ECEF matrix onto EFI timebase
     interp_keys = ['a11', 'a12', 'a13', 'a21', 'a22', 'a23', 'a31', 'a32', 'a33']
     for key in interp_keys:
         cs = CubicSpline(Epoch_FAC_tt2000, data_dict_transform_FAC[key][0])
@@ -90,8 +90,8 @@ def L2_to_L2_EFI_FAC_coordinates(wRocket):
     ###################################
 
     # form the EFI ENU vector
-    EFI_ENU = np.array([data_dict_EFI['E_East'][0],data_dict_EFI['E_North'][0],data_dict_EFI['E_Up'][0]]).T
-    EFI_ECEF = np.array([np.matmul(ECEF_to_ENU_matrix[i].T, vec) for i, vec in enumerate(EFI_ENU)])
+    EFI_auroral = np.array([data_dict_EFI['E_N'][0],data_dict_EFI['E_T'][0],data_dict_EFI['E_p'][0]]).T
+    EFI_ECEF = np.array([np.matmul(ECEF_to_ENU_matrix[i].T, vec) for i, vec in enumerate(EFI_auroral)])
     EFI_FAC = np.array([np.matmul(ECEF_to_FAC_matrix[i], vec) for i, vec in enumerate(EFI_ECEF)])
 
     data_dict_output['E_r'][0] = EFI_FAC[:, 0]
@@ -125,4 +125,4 @@ def L2_to_L2_EFI_FAC_coordinates(wRocket):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-L2_to_L2_EFI_FAC_coordinates(wRocket)
+L2_to_L2_EFI_auroral_to_FAC_coordinates(wRocket)

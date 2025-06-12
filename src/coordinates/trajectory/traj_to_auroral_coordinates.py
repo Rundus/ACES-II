@@ -45,7 +45,6 @@ def traj_to_auroral_coordinates(wRocket):
             print('[{:.0f}] {:80s}{:5.1f} MB'.format(i, inputFiles[i].replace(f'{DataPaths.ACES_data_folder}\{ACESII.fliers[wRocket-4]}',''), round(getsize(file) / (10 ** 6), 1)))
         return
 
-
     # --- get the data from the tmCDF file ---
     stl.prgMsg(f'Loading data')
     data_dict_traj = stl.loadDictFromFile(inputFiles)
@@ -90,14 +89,18 @@ def traj_to_auroral_coordinates(wRocket):
     # DEFINE THE X0 POINT for the position vector
     # Description: Use the L-Shell value right before the High Flyer reached the
     # Aurora as the initial "position" for the auroral coordinates on both flyers.
-    L_shell_initial = 7.8836 # same value as that used in the ionospheric simulation
+    # Define an altitude, get the L-Shell on the launch-side then use that L-Shell for both flyers
+    Alt_thresh = 350*stl.m_to_km  # MAKE SURE THIS IS THE SAME AS THE SIMULATION
+    data_dict_high_LShell = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\high\ACESII_36359_Lshell.cdf')
+    ref_idx = np.where(data_dict_high_LShell['Alt'][0]>=Alt_thresh)[0]
+    L_shell_initial = data_dict_high_LShell['L-Shell'][0][ref_idx[0]] # get the First L_Shell value
     L_shell_idx = np.abs(data_dict_LShell['L-Shell'][0] - L_shell_initial).argmin()
     Lat_initial = data_dict_LShell['Lat'][0][L_shell_idx]
     Long_initial = data_dict_LShell['Long'][0][L_shell_idx]
     Alt_initial = data_dict_LShell['Alt'][0][L_shell_idx]
 
-    launch_ECEF = np.array(gps_to_ecef_pyproj(lat=Lat_initial,lon=Long_initial, alt=Alt_initial))
-    position_vector_ECEF = (rkt_pos_ECEF- launch_ECEF)
+    reference_position_ECEF = np.array(gps_to_ecef_pyproj(lat=Lat_initial,lon=Long_initial, alt=Alt_initial))
+    position_vector_ECEF = (rkt_pos_ECEF- reference_position_ECEF)
 
     # determine the in situ position vector and rotate it into auroral coordinates
     rkt_pos_auroral = np.array([np.matmul(data_dict_ECEF_auroral_transform['ECEF_to_auroral'][0][i], vec) for i,vec in enumerate(position_vector_ECEF)])
@@ -106,11 +109,11 @@ def traj_to_auroral_coordinates(wRocket):
     data_dict_output['P_POS'][0] = rkt_pos_auroral[:, 2]
 
     # update the attributes
-    data_dict_output['N_POS'][1]['LABLAXIS'] = 'Normal Position from Launch'
+    data_dict_output['N_POS'][1]['LABLAXIS'] = 'Normal Position from ref position'
     data_dict_output['N_POS'][1]['UNITS'] = 'm'
-    data_dict_output['T_POS'][1]['LABLAXIS'] = 'Tangent Position from Launch'
+    data_dict_output['T_POS'][1]['LABLAXIS'] = 'Tangent Position from ref position'
     data_dict_output['T_POS'][1]['UNITS'] = 'm'
-    data_dict_output['P_POS'][1]['LABLAXIS'] = 'Field Aligned Position from Launch'
+    data_dict_output['P_POS'][1]['LABLAXIS'] = 'Field Aligned Position from ref position'
     data_dict_output['P_POS'][1]['UNITS'] = 'm'
 
 

@@ -1,9 +1,6 @@
 # --- L1_to_L1_rocket_convection_cal.py ---
-# Description: Create an L2 calibrated EFI dataset
-# [1] Interpolate the EFI data onto the RingCore timebase. There's a temporal correction to the E-Field data that Roger provided that must
-# be added before interpolation
-# [2] Use the CHAOS Bgeo model to subtract the convection electric field from the rocket
-# [3] Process the data up to L2
+# Description: Calculate the rocket convection terms to the EFI dataset
+# THEN rotate everything into auroral coordinates
 
 
 
@@ -12,6 +9,9 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
+
+import numpy as np
+
 from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
@@ -40,7 +40,7 @@ Plot_correction_term = False
 # --- --- --- ---
 # none
 
-def L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames):
+def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
 
     inputFiles_elec = glob(f'{DataPaths.ACES_data_folder}\\L1\\{ACESII.fliers[wRocket-4]}\*E_Field_ENU_no_corrections*')
     inputFiles_mag = glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\*RingCore_ENU.cdf*')
@@ -54,7 +54,7 @@ def L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames):
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
     data_dict_mag = stl.loadDictFromFile(inputFiles_mag[0])
-    data_dict_output, GlobalAttrs = stl.loadDictFromFile(inputFiles_elec[0], getGlobalAttrs=True)
+    data_dict_EFI, GlobalAttrs = stl.loadDictFromFile(inputFiles_elec[0], getGlobalAttrs=True)
     data_dict_traj = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\trajectories\\{ACESII.fliers[wRocket-4]}\\*_ECEF.cdf*')[0])
     stl.Done(start_time)
 
@@ -63,36 +63,37 @@ def L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames):
     ########################################
     stl.prgMsg('Adding In Rogers timebase correction')
     timeCorrection = (0.1157 * 1E9) # in ns
-    data_dict_output['Epoch'][0] = deepcopy(np.array([pycdf.lib.tt2000_to_datetime(int(pycdf.lib.datetime_to_tt2000(tme) + timeCorrection)) for tme in data_dict_output['Epoch'][0]]))
+    data_dict_EFI['Epoch'][0] = deepcopy(np.array([pycdf.lib.tt2000_to_datetime(int(pycdf.lib.datetime_to_tt2000(tme) + timeCorrection)) for tme in data_dict_EFI['Epoch'][0]]))
     stl.Done(start_time)
 
     #########################################################
     # --- interpolate E-Field data onto RingCore TimeBase ---
     #########################################################
     stl.prgMsg('Interpolating E-Field Data')
-    Epoch_EFI_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_output['Epoch'][0]])
+    Epoch_EFI_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_EFI['Epoch'][0]])
     Epoch_mag_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_mag['Epoch'][0]])
 
-    for key in data_dict_output.keys():
+    for key in data_dict_EFI.keys():
         if key != 'Epoch':
-            cs = CubicSpline(Epoch_EFI_tt2000,data_dict_output[key][0])
-            data_dict_output[key][0] = deepcopy(cs(Epoch_mag_tt2000))
+            cs = CubicSpline(Epoch_EFI_tt2000,data_dict_EFI[key][0])
+            data_dict_EFI[key][0] = deepcopy(cs(Epoch_mag_tt2000))
 
-    data_dict_output['Epoch'][0] = deepcopy(data_dict_mag['Epoch'][0])
+    data_dict_EFI['Epoch'][0] = deepcopy(data_dict_mag['Epoch'][0])
     stl.Done(start_time)
 
 
-    ##############################################
-    # --- Correct the Rocket Convection Effect ---
-    ##############################################
+    ################################################
+    # --- Calculate the Rocket Convection Effect ---
+    ################################################
     stl.prgMsg('Correcting Rocket Convection Effect')
 
     # Get the payload velocity vector
     rkt_VEL_ECEF = np.array([data_dict_traj['ECEFXVEL'][0], data_dict_traj['ECEFYVEL'][0], data_dict_traj['ECEFZVEL'][0]]).T
 
     # Convert payload velocity to ENU
-    data_dict_transform = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\{ACESII.fliers[wRocket-4]}\\*ECEF_to_ENU.cdf*')[0])
-    rkt_VEL_ENU = np.array([np.matmul(data_dict_transform['ECEF_to_ENU'][0][i],vec) for i,vec in enumerate(rkt_VEL_ECEF)])
+    data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket-4]}\\*ECEF_to_ENU.cdf*')[0])
+
+    rkt_VEL_ENU = np.array([np.matmul(data_dict_transform_ENU['ECEF_to_ENU'][0][i],vec) for i,vec in enumerate(rkt_VEL_ECEF)])
 
     # Get the CHAOS geomagnetic field
     B_model = 1E-9*stl.CHAOS(lat=data_dict_traj['Lat'][0],
@@ -100,7 +101,7 @@ def L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames):
                         alt=data_dict_traj['Alt'][0],
                         times=data_dict_traj['Epoch'][0])  # CHAOS in ENU coordinates
 
-    # Calculate the -vxB electric field
+    # Calculate the vxB electric field in ENU
     vxB_term = np.array([np.cross(vec,B_model[i]) for i, vec in enumerate(rkt_VEL_ENU)])
 
     # plot the calibration term
@@ -108,14 +109,14 @@ def L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(3)
 
-        ax[0].plot(data_dict_output['Epoch'][0], data_dict_output['E_East'][0],color='blue')
-        ax[0].plot(data_dict_transform['Epoch'][0], vxB_term[:,0], color='red')
+        ax[0].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_East'][0],color='blue')
+        ax[0].plot(data_dict_transform_ENU['Epoch'][0], vxB_term[:,0], color='red')
 
-        ax[1].plot(data_dict_output['Epoch'][0], data_dict_output['E_North'][0], color='blue')
-        ax[1].plot(data_dict_transform['Epoch'][0], vxB_term[:,1], color='red')
+        ax[1].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_North'][0], color='blue')
+        ax[1].plot(data_dict_transform_ENU['Epoch'][0], vxB_term[:,1], color='red')
 
-        ax[2].plot(data_dict_output['Epoch'][0], data_dict_output['E_Up'][0], color='blue')
-        ax[2].plot(data_dict_transform['Epoch'][0], vxB_term[:,2], color='red')
+        ax[2].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_Up'][0], color='blue')
+        ax[2].plot(data_dict_transform_ENU['Epoch'][0], vxB_term[:,2], color='red')
 
         for i in range(3):
             ax[i].set_ylim(-0.12,0.12)
@@ -138,10 +139,67 @@ def L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames):
     cs = CubicSpline(Epoch_traj_tt2000, vxB_term[:, 2])
     vxB_U = cs(Epoch_mag_tt2000)
 
-    # apply the -vxB correction and output the data
-    data_dict_output['E_East'][0] = deepcopy( data_dict_output['E_East'][0]- vxB_E)
-    data_dict_output['E_North'][0] = deepcopy(data_dict_output['E_North'][0] - vxB_N)
-    data_dict_output['E_Up'][0] = deepcopy(data_dict_output['E_Up'][0] - vxB_U)
+    # form the new, downsampled vectors
+    vxB_ENU = np.array([vxB_E,vxB_N,vxB_U]).T
+
+    # --- prepare the E-Field ---
+    E_Field_ENU = np.array([deepcopy(data_dict_EFI['E_East'][0]), data_dict_EFI['E_North'][0], data_dict_EFI['E_Up'][0]]).T
+
+    ########################################
+    # --- Convert to auroral coordiantes ---
+    ########################################
+    stl.prgMsg('Transforming Coordinates')
+    data_dict_transform_auroral = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_auroral.cdf*')[0])
+
+    # Interpolate the transformation matrices onto the magnetometer timebase
+    ENU_to_ECEF_transform = np.zeros(shape=(len(vxB_ENU), 3, 3))
+    Epoch_tt2000_ENU_to_ECEF_trans = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_ENU['Epoch'][0]])
+    for i in range(3):
+        for j in range(3):
+            cs = CubicSpline(Epoch_tt2000_ENU_to_ECEF_trans,data_dict_transform_ENU[f'a{i+1}{j+1}'][0])
+            ENU_to_ECEF_transform[:,i,j] = cs(Epoch_mag_tt2000)
+
+    ENU_to_ECEF_transform = np.array([val.T for val in ENU_to_ECEF_transform])
+
+    # Interpolate the transformation matrices onto the magnetometer timebase
+    ECEF_to_auroral_transform = np.zeros(shape=(len(vxB_ENU), 3, 3))
+    Epoch_tt2000_ECEF_to_auroral_trans = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_auroral['Epoch'][0]])
+    for i in range(3):
+        for j in range(3):
+            cs = CubicSpline(Epoch_tt2000_ECEF_to_auroral_trans, data_dict_transform_auroral[f'a{i+1}{j+1}'][0])
+            ECEF_to_auroral_transform[:, i, j] = cs(Epoch_mag_tt2000)
+
+    vxB_ECEF = np.array([np.matmul(ENU_to_ECEF_transform[i], vec) for i, vec in enumerate(vxB_ENU)])
+    vxB_auroral = np.array([np.matmul(ECEF_to_auroral_transform[i], vec) for i, vec in enumerate(vxB_ECEF)])
+
+    E_Field_ECEF = np.array([np.matmul(ENU_to_ECEF_transform[i], vec) for i, vec in enumerate(E_Field_ENU)])
+    E_Field_auroral = np.array([np.matmul(ECEF_to_auroral_transform[i], vec) for i, vec in enumerate(E_Field_ECEF)])
+
+    stl.Done(start_time)
+
+
+    data_dict_output = {'vxB_N':[vxB_auroral[:,0], {'LABLAXIS': 'vxB_N', 'DEPEND_0': 'Epoch',
+                                                                'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': ACESII.epoch_fillVal,
+                                                                'FORMAT': 'E12.2', 'UNITS': 'V/m',
+                                                                'VAR_TYPE': 'data',
+                                                                'SCALETYP': 'linear'}],
+                           'vxB_T': [vxB_auroral[:,1],{'LABLAXIS': 'vxB_T', 'DEPEND_0': 'Epoch',
+                                                                'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': ACESII.epoch_fillVal,
+                                                                'FORMAT': 'E12.2', 'UNITS': 'V/m',
+                                                                'VAR_TYPE': 'data',
+                                                                'SCALETYP': 'linear'}],
+                           'vxB_p': [vxB_auroral[:,2],{'LABLAXIS': 'vxB_p', 'DEPEND_0': 'Epoch',
+                                                                'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': ACESII.epoch_fillVal,
+                                                                'FORMAT': 'E12.2', 'UNITS': 'V/m',
+                                                                'VAR_TYPE': 'data',
+                                                                'SCALETYP': 'linear'}],
+                            'Epoch': deepcopy(data_dict_EFI['Epoch']),
+
+                            'E_N_raw': [E_Field_auroral[:,0],deepcopy(data_dict_EFI['E_East'][1])],
+                            'E_T_raw': [E_Field_auroral[:,1],deepcopy(data_dict_EFI['E_North'][1])],
+                            'E_p_raw': [E_Field_auroral[:,2],deepcopy(data_dict_EFI['E_Up'][1])],
+                           }
+
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -150,7 +208,7 @@ def L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames):
     if outputData:
         stl.prgMsg('Creating output file')
 
-        fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l1_E_Field_ENU_no_rkt_convec.cdf'
+        fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l1_E_Field_ENU_rkt_convection.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}\\calibration\\EFI_rkt_convection_calibration\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output, globalAttrsMod=GlobalAttrs, instrNam='EFI')
         stl.Done(start_time)
@@ -164,4 +222,4 @@ def L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-L1_to_L2_rocket_convection_cal(wRocket, justPrintFileNames)
+L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames)
