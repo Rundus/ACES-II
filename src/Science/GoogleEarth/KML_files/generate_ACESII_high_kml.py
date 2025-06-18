@@ -22,7 +22,7 @@ kml = simplekml.Kml()
 ls = kml.newlinestring(name='ACESII_High_Flyer_Trajectory',
                   coords=coordinates)
 ls.altitudemode = simplekml.AltitudeMode.relativetoground
-ls.style.linestyle.width = 5
+ls.style.linestyle.width = 10
 ls.style.linestyle.color= simplekml.Color.red
 
 kml.save(r'C:\Users\cfelt\Desktop\projects\GoogleEarth\ACESII\ACESII_High_Flyer.kml')

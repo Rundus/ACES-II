@@ -8,6 +8,8 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
+
+import numpy as np
 import spaceToolsLib as stl
 from src.my_imports import *
 
@@ -18,8 +20,8 @@ start_time = time.time()
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-import matplotlib.patches as patches
 import matplotlib.pyplot as plt
+from scipy.interpolate import CubicSpline
 print(stl.color.UNDERLINE + f'Plot1_data_stackplot' + stl.color.END)
 
 # --- --- --- ---
@@ -28,27 +30,32 @@ print(stl.color.UNDERLINE + f'Plot1_data_stackplot' + stl.color.END)
 plt.rcParams["font.family"] = "Arial"
 dpi = 800
 Escale = 1000 # what to scale the deltaE field by
+# LP_scale = 1E5
+LP_scale = 1
+E_limits = [-125, 265]
 
 # --- Cbar ---
-# cbarMin, cbarMax = 5E6, 3E9
-cbarMin, cbarMax = 1E6, 1E9
+cbarMin, cbarMax = 1E8, 1E11
 cbar_TickLabelSize = 14
+# LP_limit = [0,2.75]
+LP_limit = [1E4,3E5]
 my_cmap = stl.apl_rainbow_black0_cmap()
 my_cmap.set_bad(color=(0,0,0))
 
 
 # --- Plot toggles ---
-Figure_width = 10 # in inches
+Figure_width = 13 # in inches
 Figure_height =15# in inches
 Text_FontSize = 20
 Label_FontSize = 20
-Tick_FontSize = 15
+Tick_FontSize = 20
 Tick_Length = 5
 Tick_Width = 2
-Plot_LineWidth = 0.8
+Plot_LineWidth = 1.5
 Label_Padding = 15
 Tick_Padding = 10
-Legend_FontSize = 13
+Legend_FontSize = 20
+cbar_FontSize = 25
 
 
 
@@ -60,28 +67,121 @@ stl.prgMsg('Loading Data')
 # DC B-Field
 # TODO: Get the Mag data from Kenton
 
-# delta E
-inputEFIFiles_low = glob('C:\Data\ACESII\L3\deltaE\low\*Field_Aligned*')[0]
-data_dict_Efield_low = stl.loadDictFromFile(inputFilePath=inputEFIFiles_low, targetVar=targetVar, wKeys_Reduce=['E_e', 'E_r', 'E_p', 'ILat', 'Epoch', 'Alt'])
-
-data_dict_Efield_low['E_e'][0] = Escale*data_dict_Efield_low['E_e'][0]
-data_dict_Efield_low['E_p'][0] = Escale*data_dict_Efield_low['E_p'][0]
-data_dict_Efield_low['E_r'][0] = Escale*data_dict_Efield_low['E_r'][0]
+# E-Field Data
+data_dict_Efield_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_E_Field_auroral_fullCal.cdf')
 
 # EEPAA Particle Data
-inputEEPAA_low = glob('C:\Data\ACESII\L2\low\*eepaa_fullCal*')[0]
-data_dict_eepaa_low = stl.loadDictFromFile(inputFilePath=inputEEPAA_low, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
-inputEEPAA_high = glob('C:\Data\ACESII\L2\high\*eepaa_fullCal*')[0]
-data_dict_eepaa_high = stl.loadDictFromFile(inputFilePath=inputEEPAA_high, targetVar=targetVar, wKeys_Reduce=['Differential_Energy_Flux', 'ILat', 'Epoch', 'Alt'])
+data_dict_flux_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Energy_Flux\low\ACESII_36364_l3_eepaa_flux.cdf')[0])
+data_dict_flux_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Energy_Flux\high\ACESII_36359_l3_eepaa_flux.cdf')[0])
 
+# L-Shell Data
+data_dict_Lshell_low = stl.loadDictFromFile(glob('C:\Data\ACESII\coordinates\Lshell\low\ACESII_36364_Lshell.cdf')[0])
+data_dict_Lshell_high = stl.loadDictFromFile(glob('C:\Data\ACESII\coordinates\Lshell\high\ACESII_36359_Lshell.cdf')[0])
 
-# LP Particle Data
-inputLP_low = glob('C:\Data\ACESII\L3\Langmuir\low\*langmuir_fixed*')[0]
-data_dict_LP_low = stl.loadDictFromFile(inputFilePath=inputLP_low, targetVar=targetVar, wKeys_Reduce=['ni', 'ILat', 'Epoch'])
-inputLP_high = glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed*')[0]
-data_dict_LP_high = stl.loadDictFromFile(inputFilePath=inputLP_high, targetVar=targetVar, wKeys_Reduce=['ni', 'ILat', 'Epoch'])
+# Langmuir Probe Density Data
+data_dict_LP_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\low\*langmuir_fixed*')[0])
+data_dict_LP_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed*')[0])
 stl.Done(start_time)
 
+
+##########################
+# --- --- --- --- --- ---
+# --- PREPARE THE DATA ---
+# --- --- --- --- --- ---
+##########################
+stl.prgMsg('Down-sampling Data')
+# [1] --- Downsample data to only the specified L-Shell range ---
+
+# Get the simulation range from the spatial environment data
+data_dict_sim_spatial = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\spatial_environment\spatial_environment.cdf')
+simLShell_min = deepcopy(data_dict_sim_spatial['simLShell'][0][0])
+simLShell_max = deepcopy(data_dict_sim_spatial['simLShell'][0][-1])
+
+# HIGH FLYER: reduce the EEPAA data
+low_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_min).argmin()
+high_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_max).argmin()
+for key in data_dict_flux_high.keys():
+    if key in ['Epoch','varPhi_E_Parallel']:
+        data_dict_flux_high[key][0] = data_dict_flux_high[key][0][low_idx:high_idx+1]
+
+# HIGH FLYER: reduce the Langmuir Probe Data
+time_target_low = data_dict_Lshell_high['Epoch'][0][low_idx]
+time_target_high = data_dict_Lshell_high['Epoch'][0][high_idx]
+low_idx = np.abs(data_dict_LP_high['Epoch'][0] - time_target_low).argmin()
+high_idx = np.abs(data_dict_LP_high['Epoch'][0] - time_target_high).argmin()
+for key in data_dict_LP_high.keys():
+    if key in ['Epoch', 'ni']:
+        data_dict_LP_high[key][0] = data_dict_LP_high[key][0][low_idx:high_idx+1]
+
+# HIGH FLYER: remove some bad indices from the LP High Data
+temp = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_LP_high['Epoch'][0]])
+bad_idxs = np.where(temp < 0)
+for key in data_dict_LP_high.keys():
+    if key in ['Epoch','ni']:
+        data_dict_LP_high[key][0] = np.delete(data_dict_LP_high[key][0],bad_idxs)
+
+# HIGH FLYER: reduce the L-Shell data
+low_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_min).argmin()
+high_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_max).argmin()
+for key in data_dict_Lshell_high.keys():
+    if key in ['Epoch', 'L-Shell','Alt']:
+        data_dict_Lshell_high[key][0] = data_dict_Lshell_high[key][0][low_idx:high_idx+1]
+
+# HIGH FLYER: interpolate L-Shell into LP data
+Epoch_LP_high_T0 = stl.EpochTo_T0_Rocket(data_dict_LP_high['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
+Epoch_LShell_high_T0 = stl.EpochTo_T0_Rocket(data_dict_Lshell_high['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
+cs = CubicSpline(Epoch_LShell_high_T0,data_dict_Lshell_high['L-Shell'][0])
+data_dict_LP_high = {**data_dict_LP_high,
+                     **{'L-Shell':[cs(Epoch_LP_high_T0),{}]}}
+
+
+
+
+
+# LOW FLYER: reduce the EEPAA data
+low_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_min).argmin()
+high_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_max).argmin()
+for key in data_dict_flux_low.keys():
+    if key in ['Epoch','varPhi_E_Parallel']:
+        data_dict_flux_low[key][0] = data_dict_flux_low[key][0][low_idx:high_idx+1]
+
+# LOW FLYER: reduce the Langmuir Probe Data
+time_target_low = data_dict_Lshell_low['Epoch'][0][low_idx]
+time_target_high = data_dict_Lshell_low['Epoch'][0][high_idx]
+low_idx = np.abs(data_dict_LP_low['Epoch'][0] - time_target_low).argmin()
+high_idx = np.abs(data_dict_LP_low['Epoch'][0] - time_target_high).argmin()
+for key in data_dict_LP_low.keys():
+    if key in ['Epoch', 'ni']:
+        data_dict_LP_low[key][0] = data_dict_LP_low[key][0][low_idx:high_idx+1]
+
+# LOW FLYER: reduce the EFI Data
+low_idx = np.abs(data_dict_Efield_low['Epoch'][0] - time_target_low).argmin()
+high_idx = np.abs(data_dict_Efield_low['Epoch'][0] - time_target_high).argmin()
+for key in data_dict_Efield_low.keys():
+    if key in ['Epoch', 'E_N','E_T','E_p']:
+        data_dict_Efield_low[key][0] = data_dict_Efield_low[key][0][low_idx:high_idx+1]
+
+# LOW FLYER: reduce the L-Shell data
+low_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_min).argmin()
+high_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_max).argmin()
+for key in data_dict_Lshell_low.keys():
+    if key in ['Epoch', 'L-Shell','Alt']:
+        data_dict_Lshell_low[key][0] = data_dict_Lshell_low[key][0][low_idx:high_idx+1]
+stl.Done(start_time)
+
+# LOW FLYER: interpolate L-Shell into LP data
+Epoch_LP_low_T0 = stl.EpochTo_T0_Rocket(data_dict_LP_low['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
+Epoch_LShell_low_T0 = stl.EpochTo_T0_Rocket(data_dict_Lshell_low['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
+cs = CubicSpline(Epoch_LShell_low_T0,data_dict_Lshell_low['L-Shell'][0])
+data_dict_LP_low = {**data_dict_LP_low,
+                     **{'L-Shell':[cs(Epoch_LP_low_T0),{}]}}
+
+# LOW FLYER: interpolate L-Shell into LP data
+Epoch_EFI_low_T0 = stl.EpochTo_T0_Rocket(data_dict_Efield_low['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
+Epoch_LShell_low_T0 = stl.EpochTo_T0_Rocket(data_dict_Lshell_low['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
+cs = CubicSpline(Epoch_LShell_low_T0,data_dict_Lshell_low['L-Shell'][0])
+data_dict_Efield_low = {**data_dict_Efield_low,
+                     **{'L-Shell':[cs(Epoch_EFI_low_T0),{}]}}
 
 ############################
 # --- --- --- --- --- --- --
@@ -89,193 +189,160 @@ stl.Done(start_time)
 # --- --- --- --- --- --- --
 ############################
 
-
-# --- Calculate Omni-Directional Flux ---
-stl.prgMsg('Calculating OmniFlux')
-
-omniDirFlux_low = np.zeros(shape=(len(data_dict_eepaa_low['Differential_Energy_Flux'][0]), len(data_dict_eepaa_low['Energy'][0])))
-for tme in range(len(data_dict_eepaa_low['Epoch'][0])):
-    for engy in range(len(data_dict_eepaa_low['Energy'][0])):
-
-        sumVal = 0
-
-        for ptch in range(2, 18+1):
-            val = data_dict_eepaa_low['Differential_Energy_Flux'][0][tme, ptch, engy]
-            if val > 0:
-                sumVal += val
-
-        # Average the Omni-flux by the number of bins. ONLY include bins 10deg - 170 since they have full coverage
-        omniDirFlux_low[tme][engy] = sumVal/len(range(2, 18+1))
-
-omniDirFlux_high = np.zeros(shape=(len(data_dict_eepaa_high['Differential_Energy_Flux'][0]), len(data_dict_eepaa_high['Energy'][0])))
-for tme in range(len(data_dict_eepaa_high['Epoch'][0])):
-    for engy in range(len(data_dict_eepaa_high['Energy'][0])):
-        sumVal = 0
-
-        for ptch in range(2, 18 + 1):
-            val = data_dict_eepaa_high['Differential_Energy_Flux'][0][tme, ptch, engy]
-            if val > 0:
-                sumVal += val
-
-        # Average the Omni-flux by the number of bins. ONLY include bins 10deg - 170 since they have full coverage
-        omniDirFlux_high[tme][engy] = sumVal / len(range(2, 18 + 1))
-
-
-stl.Done(start_time)
+stl.prgMsg('Plotting Data')
 
 fig, ax = plt.subplots(8, height_ratios=[1.5, 1, 0.5, 0.5, 1.5, 1, 1, 0.5],sharex=False)
 fig.set_figwidth(Figure_width)
 fig.set_figheight(Figure_height)
 
-# ---HF EEPAA---
+
+### HIGH FLYER DATA ###
+
+# --- HF EEPAA 0 to 180 DEG---
 axNo = 0
-cmap = ax[axNo].pcolormesh(data_dict_eepaa_high['ILat'][0],data_dict_eepaa_high['Energy'][0],omniDirFlux_high.T, cmap=my_cmap,vmin=cbarMin,vmax=cbarMax, norm='log')
-ax[axNo].set_ylabel('Energy [eV]', fontsize=Label_FontSize, labelpad=Label_Padding)
+cmap = ax[axNo].pcolormesh(data_dict_Lshell_high['L-Shell'][0],data_dict_flux_high['Energy'][0],data_dict_flux_high['varPhi_E_Parallel'][0].T, cmap=my_cmap,vmin=cbarMin,vmax=cbarMax, norm='log')
+ax[axNo].set_ylabel('Parallel Energy Flux\nEnergy [eV]', fontsize=Label_FontSize, labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize-4, length=Tick_Length-2, width=Tick_Width-1)
 ax[axNo].set_yscale('log')
 ax[axNo].set_ylim(28,1E4)
 
-# --- delta B HF---
+# --- HF DC B-Field ---
 axNo +=1
-ax[axNo].plot(data_dict_mag_high['ILat'][0],data_dict_mag_high['B_e'][0], color='darkviolet', linewidth=Plot_LineWidth, label='$\delta B_{e}$')
-ax[axNo].plot(data_dict_mag_high['ILat'][0],data_dict_mag_high['B_r'][0], color='dodgerblue', linewidth=Plot_LineWidth, label='$\delta B_{r}$')
-ax[axNo].set_ylabel('[nT]', fontsize=Label_FontSize,labelpad=Label_Padding)
-ax[axNo].tick_params(axis='y',which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
-ax[axNo].set_ylim(-Conjugacy_EBlimits, Conjugacy_EBlimits)
-leg=ax[axNo].legend(loc='upper left',fontsize=Legend_FontSize)
-for line in leg.get_lines():
-    line.set_linewidth(4)
+# ax[axNo].plot(data_dict_mag_high['ILat'][0],data_dict_mag_high['B_e'][0], color='darkviolet', linewidth=Plot_LineWidth, label='$\delta B_{e}$')
+# ax[axNo].plot(data_dict_mag_high['ILat'][0],data_dict_mag_high['B_r'][0], color='dodgerblue', linewidth=Plot_LineWidth, label='$\delta B_{r}$')
+# ax[axNo].set_ylabel('[nT]', fontsize=Label_FontSize,labelpad=Label_Padding)
+# ax[axNo].tick_params(axis='y',which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+# ax[axNo].set_ylim(-Conjugacy_EBlimits, Conjugacy_EBlimits)
+# leg=ax[axNo].legend(loc='upper left',fontsize=Legend_FontSize)
+# for line in leg.get_lines():
+#     line.set_linewidth(4)
+#
 
 # --- LP High---
 axNo +=1
 colorChoice = 'black'
-ax[axNo].plot(data_dict_LP_high['ILat'][0], stl.butter_filter(data= data_dict_LP_high['ni'][0]/1E5,
-                                                              lowcutoff=0.3,
-                                                              highcutoff=0.3,
+filtered = stl.butter_filter(data= data_dict_LP_high['ni'][0]/LP_scale,
+                                                              lowcutoff=0.03,
+                                                              highcutoff=0.03,
                                                               fs=100,
-                                                              filtertype='LowPass',
+                                                              filtertype='lowpass',
                                                               order=4
-                                                              ),
-                                                              color=colorChoice, linewidth=Plot_LineWidth+1)
-ax[axNo].set_ylabel('[10$^{5}$ cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
+                                                              )
+
+ax[axNo].plot(data_dict_LP_high['L-Shell'][0], filtered,color=colorChoice, linewidth=Plot_LineWidth+1)
+# ax[axNo].set_ylabel('[10$^{5}$ cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
+ax[axNo].set_ylabel('[cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize-3, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize - 6, length=Tick_Length-2, width=Tick_Width)
 ax[axNo].tick_params(axis='x', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length + 4, width=Tick_Width, pad=Tick_Padding)
 ax[axNo].tick_params(axis='x', which='minor', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width, pad=Tick_Padding)
-ax[axNo].set_ylim(0, 2.55)
+ax[axNo].set_ylim(LP_limit[0], LP_limit[1])
 ax[axNo].minorticks_on()
+ax[axNo].set_yscale('log')
 ax[axNo].xaxis.set_tick_params(labelbottom=True)
-ax[axNo].set_xlabel('ILat [deg] \n time [UTC]', fontsize=Tick_FontSize, weight='bold')
+ax[axNo].set_xlabel('L-Shell \n Alt [km]', fontsize=Tick_FontSize-2, weight='bold')
 ax[axNo].xaxis.set_label_coords(-0.085, -0.26)
 
 # --- BREAK AXIS ---
 axNo +=1
 ax[axNo].axis('off')
-# ax[axNo].spines[['left', 'right']].set_visible(False)
-# ax[axNo].set_yticks(ticks=[],labels=[])
-# ax[axNo].set_axisbelow(False)
 
-# --- LF EEPAA---
+# # --- LF EEPAA---
 axNo +=1
-cmap = ax[axNo].pcolormesh(data_dict_eepaa_low['ILat'][0], data_dict_eepaa_low['Energy'][0], omniDirFlux_low.T, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log')
+cmap = ax[axNo].pcolormesh(data_dict_Lshell_low['L-Shell'][0], data_dict_flux_low['Energy'][0], data_dict_flux_low['varPhi_E_Parallel'][0].T, cmap=my_cmap, vmin=cbarMin, vmax=cbarMax, norm='log')
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize-4, length=Tick_Length-2, width=Tick_Width-1)
-ax[axNo].set_ylabel('Energy [eV]', fontsize=Label_FontSize, labelpad=Label_Padding)
+ax[axNo].set_ylabel('Parallel Energy Flux\nEnergy [eV]', fontsize=Label_FontSize, labelpad=Label_Padding)
 ax[axNo].set_yscale('log')
 ax[axNo].set_ylim(28,1E4)
 
-# --- delta B LF---
+# # --- DC Delta B LF---
+# TODO: Get data from Kenton
 axNo +=1
-ax[axNo].plot(data_dict_mag_low['ILat'][0], data_dict_mag_low['B_e'][0], color='darkviolet', linewidth=Plot_LineWidth, label='$\delta B_{e}$')
-ax[axNo].plot(data_dict_mag_low['ILat'][0], data_dict_mag_low['B_r'][0], color='dodgerblue', linewidth=Plot_LineWidth, label='$\delta B_{r}$')
-ax[axNo].set_ylabel('[nT]', fontsize=Label_FontSize, color='black', labelpad=Label_Padding)
-ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
-ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=0, length=0, width=0)
-ax[axNo].set_ylim(-Conjugacy_EBlimits, Conjugacy_EBlimits)
-leg=ax[axNo].legend(loc='upper left',fontsize=Legend_FontSize)
-for line in leg.get_lines():
-    line.set_linewidth(4)
+# ax[axNo].plot(data_dict_mag_low['ILat'][0], data_dict_mag_low['B_e'][0], color='darkviolet', linewidth=Plot_LineWidth, label='$\delta B_{e}$')
+# ax[axNo].plot(data_dict_mag_low['ILat'][0], data_dict_mag_low['B_r'][0], color='dodgerblue', linewidth=Plot_LineWidth, label='$\delta B_{r}$')
+# ax[axNo].set_ylabel('[nT]', fontsize=Label_FontSize, color='black', labelpad=Label_Padding)
+# ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+# ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=0, length=0, width=0)
+# ax[axNo].set_ylim(-Conjugacy_EBlimits, Conjugacy_EBlimits)
+# leg=ax[axNo].legend(loc='upper left',fontsize=Legend_FontSize)
+# for line in leg.get_lines():
+#     line.set_linewidth(4)
 
-# --- delta E LF---
+
+# ---Low Flyer E-Field ---
 axNo +=1
-ax[axNo].plot(data_dict_Efield_low['ILat'][0], data_dict_Efield_low['E_r'][0], linewidth=Plot_LineWidth, color='red',label=r'$\delta E_{r}$')
-ax[axNo].plot(data_dict_Efield_low['ILat'][0], data_dict_Efield_low['E_e'][0], linewidth=Plot_LineWidth, color='blue',label=r'$\delta E_{e}$')
+ax[axNo].plot(data_dict_Efield_low['L-Shell'][0], data_dict_Efield_low['E_p'][0]*Escale, linewidth=Plot_LineWidth, color='tab:blue', label=r'$E_{p}$')
+ax[axNo].plot(data_dict_Efield_low['L-Shell'][0], data_dict_Efield_low['E_T'][0]*Escale, linewidth=Plot_LineWidth, color='tab:red', label=r'$E_{T}$')
+ax[axNo].plot(data_dict_Efield_low['L-Shell'][0], data_dict_Efield_low['E_N'][0]*Escale, linewidth=Plot_LineWidth, color='tab:green', label=r'$E_{N}$')
 ax[axNo].set_ylabel('[mV/m]', fontsize=Label_FontSize, color='black', labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='both', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=0, length=0, width=0)
-ax[axNo].set_ylim(-Conjugacy_EBlimits, Conjugacy_EBlimits)
-leg = ax[axNo].legend(loc='upper left',fontsize=Legend_FontSize)
-# get the individual lines inside legend and set line width
+ax[axNo].set_ylim(E_limits[0], E_limits[1])
+ax[axNo].yaxis.set_ticks(np.arange(-75,300,75))
+leg = ax[axNo].legend(loc='upper right',fontsize=Legend_FontSize)
 for line in leg.get_lines():
     line.set_linewidth(4)
 
+
 # --- LP Low ---
 axNo +=1
-ax[axNo].plot(data_dict_LP_low['ILat'][0], data_dict_LP_low['ni'][0]/1E5, color='black', linewidth=Plot_LineWidth+1)
-ax[axNo].set_ylabel('[10$^{5}$ cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
+filtered= stl.butter_filter(data= data_dict_LP_low['ni'][0]/LP_scale,
+                                                              lowcutoff=0.03,
+                                                              highcutoff=0.03,
+                                                              fs=100,
+                                                              filtertype='lowpass',
+                                                              order=4
+                                                              )
+ax[axNo].plot(data_dict_LP_low['L-Shell'][0],filtered, color=colorChoice, linewidth=Plot_LineWidth+1)
+# ax[axNo].set_ylabel('[10$^{5}$ cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
+ax[axNo].set_ylabel('[cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize-3, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize - 6, length=Tick_Length-2, width=Tick_Width)
 ax[axNo].tick_params(axis='x', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length + 4, width=Tick_Width, pad=Tick_Padding)
 ax[axNo].tick_params(axis='x', which='minor', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width, pad=Tick_Padding)
-ax[axNo].set_ylim(0, 2.55)
-ax[axNo].set_xlabel('ILat [deg] \n time [UTC]', fontsize=Tick_FontSize, weight='bold')
+ax[axNo].set_ylim(LP_limit[0], LP_limit[1])
+ax[axNo].set_xlabel('L-Shell \n Alt [km]', fontsize=Tick_FontSize-2, weight='bold')
 ax[axNo].xaxis.set_label_coords(-0.085, -0.26)
+ax[axNo].set_yscale('log')
+
 ax[axNo].minorticks_on()
 
-# --- get UTC labels and ILat Labels together ---
+# # --- get L-Shell labels and Alt Labels together ---
 xTickLabels = ax[axNo].axes.get_xticklabels()
-xTick_ILatLocations = [float(tickVal.get_text()) for tickVal in xTickLabels]
-xTick_newLabels_high = [f'{iLat}\n{data_dict_eepaa_high["Epoch"][0][np.abs(data_dict_eepaa_high["ILat"][0] - iLat).argmin()].strftime("%H:%M:%S")}' for iLat in xTick_ILatLocations]
-xTick_newLabels_low = [f'{iLat}\n{data_dict_eepaa_low["Epoch"][0][np.abs(data_dict_eepaa_low["ILat"][0] - iLat).argmin()].strftime("%H:%M:%S")}' for iLat in xTick_ILatLocations]
-ax[2].set_xticks(xTick_ILatLocations,labels=xTick_newLabels_high)
-ax[7].set_xticks(xTick_ILatLocations,labels=xTick_newLabels_low)
+xTick_Locations = [float(tickVal.get_text()) for tickVal in xTickLabels]
+xTick_newLabels_high = [f'{LshellVal}\n{round(data_dict_Lshell_high["Alt"][0][np.abs(data_dict_Lshell_high["L-Shell"][0] - LshellVal).argmin()]/stl.m_to_km)}' for LshellVal in xTick_Locations]
+xTick_newLabels_low = [f'{LshellVal}\n{round(data_dict_Lshell_low["Alt"][0][np.abs(data_dict_Lshell_low["L-Shell"][0] - LshellVal).argmin()]/stl.m_to_km)}' for LshellVal in xTick_Locations]
+ax[2].set_xticks(xTick_Locations,labels=xTick_newLabels_high)
+ax[7].set_xticks(xTick_Locations,labels=xTick_newLabels_low)
 
 # -- Do some minor adjustments to labels/margins/limits ---
 for i in range(8):
     ax[i].margins(0)
-    ax[i].set_xlim(targetILat[0], targetILat[1])
+    ax[i].set_xlim(simLShell_min, simLShell_max)
 fig.align_ylabels(ax[:])
 
+for i in [1,2,5,6,7]:
+    ax[i].grid(alpha=0.9, which='both')
+
 # --- cbar 1---
-cax = fig.add_axes([0.91, 0.796, 0.03, 0.184])
+cax = fig.add_axes([0.885, 0.796, 0.03, 0.184])
 cbar = plt.colorbar(cmap, cax=cax)
 cbar.ax.minorticks_on()
 cbar.ax.tick_params(labelsize=cbar_TickLabelSize + 5)
+cbar.set_label(r'[eV-cm$^{-2}$-s$^{-1}$]', fontsize=cbar_FontSize)
 
 # --- cbar 2---
-cax = fig.add_axes([0.91, 0.367, 0.03, 0.184])
+cax = fig.add_axes([0.885, 0.367, 0.03, 0.184])
 cbar = plt.colorbar(cmap, cax=cax)
 cbar.ax.minorticks_on()
 cbar.ax.tick_params(labelsize=cbar_TickLabelSize + 5)
+cbar.set_label(r'[eV-cm$^{-2}$-s$^{-1}$]', fontsize=cbar_FontSize)
 
-
-
-
-# --- Draw the Alignment Boxes ---
-
-# HIGH FLYER
-ILat_extent_HF = [71.88058376450155, 72.02140329807906]
-
-# red rec on HF spectrogram
-ax[0].vlines(x=ILat_extent_HF,ymin=8,ymax=1000, linewidth=4,linestyle='--',color='red')
-
-# Black rec on DeltaB
-rect = patches.Rectangle((ILat_extent_HF[0], -1*9.25), ILat_extent_HF[1] - ILat_extent_HF[0], 2*9.25, linewidth=4, edgecolor='black', facecolor='none',linestyle='--')
-ax[1].add_patch(rect)
-
-# LOW FLYER
-ILat_extent_LF = [71.50725526574467, 71.75561945332441]
-
-# Black rec on DeltaB
-rect = patches.Rectangle((ILat_extent_LF[0], -1*9.25), ILat_extent_LF[1] - ILat_extent_LF[0], 2*9.25, linewidth=4, edgecolor='black', facecolor='none',linestyle='--')
-ax[5].add_patch(rect)
-rect = patches.Rectangle((ILat_extent_LF[0], -1*9.25), ILat_extent_LF[1] - ILat_extent_LF[0], 2*9.5, linewidth=4, edgecolor='black', facecolor='none',linestyle='--')
-ax[6].add_patch(rect)
-
-fig.subplots_adjust(left=0.12, bottom=0.06, right=0.9, top=0.98,hspace=0)  # remove the space between plots
-plt.savefig(r'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_Alfven_Observations\PLOTS\Plot2\Plot2_Conjugacy_base.png', dpi=dpi)
-
+fig.subplots_adjust(left=0.12, bottom=0.06, right=0.88, top=0.98,hspace=0)  # remove the space between plots
+plt.savefig(r'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_JouleHeating\PLOTS\Plot1\Plot1_data_stack_plot_base.png', dpi=dpi)
+stl.Done(start_time)
 
 
 
