@@ -31,17 +31,17 @@ justPrintFileNames = False
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 5
+wRocket = 4
 
 # select which files to convert
 # [] --> all files
 # [#0,#1,#2,...etc] --> only specific files. Follows python indexing. use justPrintFileNames = True to see which files you need.
-wFiles = [2]
+wFile = 0
 
 
 modifier = ''
-inputPath_modifier = 'mag'
-outputPath_modifier = 'l3'
+inputPath_modifier = r'science\ampere_currents'
+outputPath_modifier = r'science\ampere_currents'
 
 
 
@@ -50,15 +50,15 @@ outputPath_modifier = 'l3'
 # --- --- --- ---
 from mat73 import loadmat
 from copy import deepcopy
+import scipy
 
-def mat_to_cdf(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
+def mat_to_cdf(wRocket,justPrintFileNames,wFile):
 
-    inputrocketFolderPath = rocketFolderPath + 'ACESII_matlab'
-    outputrocketFolderPath = rocketFolderPath
+
+    inputrocketFolderPath = DataPaths.ACES_data_folder + 'ACESII_matlab'
+    outputrocketFolderPath = DataPaths.ACES_data_folder
 
     # --- ACES II Flight/Integration Data ---
-    rocketID = rocketAttrs.rocketID[wflyer]
-
     inputFiles = glob(f'{inputrocketFolderPath}\{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\*.mat')
     outputFiles = glob(f'{outputrocketFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')
 
@@ -70,8 +70,7 @@ def mat_to_cdf(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
 
     dataFile_name = inputFiles[wFile].replace(f'{inputrocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\\', '')
 
-    fileoutName = dataFile_name.replace(f'{inputrocketFolderPath}\\{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\\', "").replace('.mat','.cdf').replace('l1','l2')
-
+    fileoutName = dataFile_name.replace(f'{inputrocketFolderPath}\\{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\\', "").replace('.mat','.cdf').replace(inputPath_modifier,outputPath_modifier)
 
     if justPrintFileNames:
         for i, file in enumerate(inputFiles):
@@ -81,7 +80,7 @@ def mat_to_cdf(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
 
     print('\n')
     print(stl.color.UNDERLINE + f'Converting to {outputPath_modifier} data for {dataFile_name}' + stl.color.END)
-    print('[' + str(wFile) + ']   ' + str(round(getsize(inputFiles[wFile]) / (10 ** 6), 1)) + 'MiB')
+    print('[' + str(0) + ']   ' + str(round(getsize(inputFiles[wFile]) / (10 ** 6), 1)) + 'MiB')
 
     ##########################
     # --- DEFINE VARIABLES ---
@@ -107,13 +106,19 @@ def mat_to_cdf(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
         print(e,'\n')
         stl.prgMsg('Loading with scipy.io instead')
         mat = scipy.io.loadmat(loadThisFile)
+        stl.Done(start_time)
 
     # --- convert data into dictionary ---
     data_dict = {}
     for key,val in mat.items():
         if key not in ['__header__','__version__','__globals__','__function_workspace__','None']:
-            if key.lower() in ['epoch','Time']:
-                data_dict = {**data_dict,**{'epoch':[np.array(val),deepcopy(exampleEpoch)]}}
+            if key.lower() in ['epoch','time_lf','time_hf']:
+                if key.lower() == 'epoch':
+                    data_dict = {**data_dict,**{'Epoch':[np.array(val),deepcopy(exampleEpoch)]}}
+                else:
+                    val = np.array([v[0] for v in val])
+                    Epoch_array = np.array([dt.datetime(2022, 11, 20, 17, 21, 00, 00) + dt.timedelta(seconds=v) for v in val])
+                    data_dict = {**data_dict, **{'Epoch': [Epoch_array, deepcopy(exampleEpoch)]}}
             else:
                 data_dict = {**data_dict, **{key: [np.array(val), deepcopy(exampleVar)]}}
 
@@ -129,7 +134,7 @@ def mat_to_cdf(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
     # --- --- --- --- --- --- ---
     stl.prgMsg('Creating output file')
 
-    outputPath = f'{outputrocketFolderPath}{outputPath_modifier}\\{fileoutName}'
+    outputPath = f'{outputrocketFolderPath}{outputPath_modifier}\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
 
     # --- --- --- --- --- ---
     # --- WRITE OUT DATA ---
@@ -142,4 +147,4 @@ def mat_to_cdf(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-mat_to_cdf(wRocket)
+mat_to_cdf(wRocket, justPrintFileNames,wFile)
