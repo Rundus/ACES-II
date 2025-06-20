@@ -28,7 +28,7 @@ print(stl.color.UNDERLINE + f'Plot3_simulation_conductivity' + stl.color.END)
 # --- TOGGLES ---
 # --- --- --- ---
 plt.rcParams["font.family"] = "Arial"
-dpi = 800
+dpi = 200
 
 # --- Cbar ---
 cbar_TickLabelSize = 14

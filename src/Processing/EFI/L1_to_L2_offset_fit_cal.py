@@ -35,11 +35,11 @@ justPrintFileNames = False
 # 5 -> ACES-II Low Flier
 wRocket = 5
 wFiles = [0]
-outputData = False
+outputData = True
 
 # --- TOGGLES ---
 smooth_fit_data = False
-Plot_fit_data = True
+Plot_fit_data = False
 Plot_fitted_data = True
 Plot_corrected_data = True
 
@@ -107,8 +107,6 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
                             ydata=yData
                            )
 
-
-
     # METHOD 2: METHOD OF LEAST SQUARES
     # Description: Loop over many slope values to see which gives the smallest reduced ChiSquare value for error=1 on all values
     N = 1000
@@ -164,9 +162,9 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
 
         plt.show()
 
-    E_N_correction = np.nanmean(data_dict_fit_data['vxB_N'][0] / data_dict_fit_data['E_N_raw'][0])
+    # E_N_correction = np.nanmean(data_dict_fit_data['vxB_N'][0] / data_dict_fit_data['E_N_raw'][0])
+    E_N_correction = 2.577
     E_T_correction = params[0]
-
 
     if Plot_corrected_data:
 
@@ -207,7 +205,6 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
         data_dict_output['E_N'][1]['LABLAXIS'] = 'E_Normal'
         data_dict_output['E_T'][1]['LABLAXIS'] = 'E_Tangent'
         data_dict_output['E_p'][1]['LABLAXIS'] = 'E_Field_Aligned'
-
 
         E_Field = np.array([deepcopy(data_dict_output['E_N'][0]),deepcopy(data_dict_output['E_T'][0]),deepcopy(data_dict_output['E_p'][0])]).T
         Emag = np.array([np.linalg.norm(val) for val in E_Field])

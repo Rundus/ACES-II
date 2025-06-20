@@ -31,9 +31,9 @@ justPrintFileNames = False
 # 5 -> ACES-II Low Flier
 wRocket = 5
 wFiles = [0]
-outputData = True
+outputData = False
 
-Plot_correction_term = False
+Plot_correction_term = True
 
 # --- --- --- ---
 # --- IMPORTS ---
@@ -177,7 +177,6 @@ def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
 
     stl.Done(start_time)
 
-
     data_dict_output = {'vxB_N':[vxB_auroral[:,0], {'LABLAXIS': 'vxB_N', 'DEPEND_0': 'Epoch',
                                                                 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': ACESII.epoch_fillVal,
                                                                 'FORMAT': 'E12.2', 'UNITS': 'V/m',
@@ -200,7 +199,6 @@ def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
                             'E_p_raw': [E_Field_auroral[:,2],deepcopy(data_dict_EFI['E_Up'][1])],
                            }
 
-
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
     # --- --- --- --- --- --- ---
@@ -212,12 +210,6 @@ def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
         outputPath = f'{DataPaths.ACES_data_folder}\\calibration\\EFI_rkt_convection_calibration\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output, globalAttrsMod=GlobalAttrs, instrNam='EFI')
         stl.Done(start_time)
-
-
-
-
-
-
 
 # --- --- --- ---
 # --- EXECUTE ---

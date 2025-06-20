@@ -65,7 +65,8 @@ cbar_FontSize = 25
 stl.prgMsg('Loading Data')
 
 # DC B-Field
-# TODO: Get the Mag data from Kenton
+data_dict_BField_high = stl.loadDictFromFile(r'C:\Data\ACESII\science\ampere_currents\high\ACESII_36359_RingCore_Field_Aligned_median_filtered.cdf')
+data_dict_BField_low = stl.loadDictFromFile(r'C:\Data\ACESII\science\ampere_currents\low\ACESII_36364_RingCore_Field_Aligned_median_filtered')
 
 # E-Field Data
 data_dict_Efield_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_E_Field_auroral_fullCal.cdf')
@@ -134,9 +135,16 @@ cs = CubicSpline(Epoch_LShell_high_T0,data_dict_Lshell_high['L-Shell'][0])
 data_dict_LP_high = {**data_dict_LP_high,
                      **{'L-Shell':[cs(Epoch_LP_high_T0),{}]}}
 
+# HIGH FLYER: interpolate L-Shell into B-Field median data
+Epoch_B_high_T0 = stl.EpochTo_T0_Rocket(data_dict_BField_high['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
+cs = CubicSpline(Epoch_LShell_high_T0,data_dict_Lshell_high['L-Shell'][0])
+data_dict_BField_high = {**data_dict_BField_high, **{'L-Shell':[cs(Epoch_B_high_T0),{}]}}
 
-
-
+# HIGH FLYER: reduce B-Field data to only the relevant range
+low_idx = np.abs(data_dict_BField_high['L-Shell'][0] - simLShell_min).argmin()
+high_idx = np.abs(data_dict_BField_high['L-Shell'][0] - simLShell_max).argmin()
+for key in data_dict_BField_high.keys():
+    data_dict_BField_high[key][0] = data_dict_BField_high[key][0][low_idx:high_idx+1]
 
 # LOW FLYER: reduce the EEPAA data
 low_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_min).argmin()
@@ -183,6 +191,17 @@ cs = CubicSpline(Epoch_LShell_low_T0,data_dict_Lshell_low['L-Shell'][0])
 data_dict_Efield_low = {**data_dict_Efield_low,
                      **{'L-Shell':[cs(Epoch_EFI_low_T0),{}]}}
 
+# HIGH FLYER: interpolate L-Shell into B-Field median data
+Epoch_B_low_T0 = stl.EpochTo_T0_Rocket(data_dict_BField_low['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
+cs = CubicSpline(Epoch_LShell_low_T0,data_dict_Lshell_low['L-Shell'][0])
+data_dict_BField_low = {**data_dict_BField_low, **{'L-Shell':[cs(Epoch_B_low_T0),{}]}}
+
+# HIGH FLYER: reduce B-Field data to only the relevant range
+low_idx = np.abs(data_dict_BField_low['L-Shell'][0] - simLShell_min).argmin()
+high_idx = np.abs(data_dict_BField_low['L-Shell'][0] - simLShell_max).argmin()
+for key in data_dict_BField_low.keys():
+    data_dict_BField_low[key][0] = data_dict_BField_low[key][0][low_idx:high_idx+1]
+
 ############################
 # --- --- --- --- --- --- --
 # --- START THE PLOTTING ---
@@ -209,15 +228,16 @@ ax[axNo].set_ylim(28,1E4)
 
 # --- HF DC B-Field ---
 axNo +=1
-# ax[axNo].plot(data_dict_mag_high['ILat'][0],data_dict_mag_high['B_e'][0], color='darkviolet', linewidth=Plot_LineWidth, label='$\delta B_{e}$')
-# ax[axNo].plot(data_dict_mag_high['ILat'][0],data_dict_mag_high['B_r'][0], color='dodgerblue', linewidth=Plot_LineWidth, label='$\delta B_{r}$')
-# ax[axNo].set_ylabel('[nT]', fontsize=Label_FontSize,labelpad=Label_Padding)
-# ax[axNo].tick_params(axis='y',which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
-# ax[axNo].set_ylim(-Conjugacy_EBlimits, Conjugacy_EBlimits)
-# leg=ax[axNo].legend(loc='upper left',fontsize=Legend_FontSize)
-# for line in leg.get_lines():
-#     line.set_linewidth(4)
-#
+ax[axNo].plot(data_dict_BField_high['L-Shell'][0],data_dict_BField_high['MagHF_p'][0], color='tab:blue', linewidth=Plot_LineWidth, label='$\Delta B_{p}$')
+ax[axNo].plot(data_dict_BField_high['L-Shell'][0],data_dict_BField_high['MagHF_e'][0], color='tab:red', linewidth=Plot_LineWidth, label='$\Delta B_{T}$')
+ax[axNo].plot(data_dict_BField_high['L-Shell'][0],data_dict_BField_high['MagHF_r'][0], color='tab:green', linewidth=Plot_LineWidth, label='$\Delta B_{N}$')
+ax[axNo].set_ylabel('DC B-Field\n[nT]', fontsize=Label_FontSize,labelpad=Label_Padding)
+ax[axNo].tick_params(axis='y',which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+ax[axNo].set_ylim(-3000,3000)
+leg=ax[axNo].legend(fontsize=Legend_FontSize,loc='upper right')
+for line in leg.get_lines():
+    line.set_linewidth(4)
+
 
 # --- LP High---
 axNo +=1
@@ -231,7 +251,6 @@ filtered = stl.butter_filter(data= data_dict_LP_high['ni'][0]/LP_scale,
                                                               )
 
 ax[axNo].plot(data_dict_LP_high['L-Shell'][0], filtered,color=colorChoice, linewidth=Plot_LineWidth+1)
-# ax[axNo].set_ylabel('[10$^{5}$ cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
 ax[axNo].set_ylabel('[cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize-3, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize - 6, length=Tick_Length-2, width=Tick_Width)
@@ -258,18 +277,16 @@ ax[axNo].set_yscale('log')
 ax[axNo].set_ylim(28,1E4)
 
 # # --- DC Delta B LF---
-# TODO: Get data from Kenton
 axNo +=1
-# ax[axNo].plot(data_dict_mag_low['ILat'][0], data_dict_mag_low['B_e'][0], color='darkviolet', linewidth=Plot_LineWidth, label='$\delta B_{e}$')
-# ax[axNo].plot(data_dict_mag_low['ILat'][0], data_dict_mag_low['B_r'][0], color='dodgerblue', linewidth=Plot_LineWidth, label='$\delta B_{r}$')
-# ax[axNo].set_ylabel('[nT]', fontsize=Label_FontSize, color='black', labelpad=Label_Padding)
-# ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
-# ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=0, length=0, width=0)
-# ax[axNo].set_ylim(-Conjugacy_EBlimits, Conjugacy_EBlimits)
-# leg=ax[axNo].legend(loc='upper left',fontsize=Legend_FontSize)
-# for line in leg.get_lines():
-#     line.set_linewidth(4)
-
+ax[axNo].plot(data_dict_BField_low['L-Shell'][0],data_dict_BField_low['MagLF_p'][0], color='tab:blue', linewidth=Plot_LineWidth, label='$\Delta B_{p}$')
+ax[axNo].plot(data_dict_BField_low['L-Shell'][0],data_dict_BField_low['MagLF_e'][0], color='tab:red', linewidth=Plot_LineWidth, label='$\Delta B_{T}$')
+ax[axNo].plot(data_dict_BField_low['L-Shell'][0],data_dict_BField_low['MagLF_r'][0], color='tab:green', linewidth=Plot_LineWidth, label='$\Delta B_{N}$')
+ax[axNo].set_ylabel('DC B-Field\n[nT]', fontsize=Label_FontSize,labelpad=Label_Padding)
+ax[axNo].tick_params(axis='y',which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+ax[axNo].set_ylim(-3000,3000)
+leg=ax[axNo].legend(fontsize=Legend_FontSize,loc='upper right')
+for line in leg.get_lines():
+    line.set_linewidth(4)
 
 # ---Low Flyer E-Field ---
 axNo +=1
@@ -340,7 +357,7 @@ cbar.ax.minorticks_on()
 cbar.ax.tick_params(labelsize=cbar_TickLabelSize + 5)
 cbar.set_label(r'[eV-cm$^{-2}$-s$^{-1}$]', fontsize=cbar_FontSize)
 
-fig.subplots_adjust(left=0.12, bottom=0.06, right=0.88, top=0.98,hspace=0)  # remove the space between plots
+fig.subplots_adjust(left=0.13, bottom=0.06, right=0.88, top=0.98,hspace=0)  # remove the space between plots
 plt.savefig(r'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_JouleHeating\PLOTS\Plot1\Plot1_data_stack_plot_base.png', dpi=dpi)
 stl.Done(start_time)
 
