@@ -85,7 +85,6 @@ def traj_to_auroral_coordinates(wRocket):
 
         return x, y, z
 
-
     # DEFINE THE X0 POINT for the position vector
     # Description: Use the L-Shell value right before the High Flyer reached the
     # Aurora as the initial "position" for the auroral coordinates on both flyers.

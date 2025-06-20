@@ -80,7 +80,6 @@ def ECEF_to_Field_Aligned(wRocket):
     B_CHAOS_ECEF = np.array([np.matmul(data_dict_transform['ENU_to_ECEF'][0][i], B_model[i]) for i in range(len(data_dict_transform['Epoch'][0]))])
     stl.Done(start_time)
 
-
     # --- determine the Payload's transformation matrix to ECEF ---
     R_REF = 6371.2  # earth Radius in km
     Radius = data_dict_transform['Alt'][0] + R_REF

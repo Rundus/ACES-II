@@ -87,7 +87,7 @@ def L2_EFI_to_integratedPotential():
 
     # pick the initial integration point (i.e. Vref = 0) via high flyer altitude, but
     # correlated via L-Shell value
-    high_flyer_alt_limit = 300*stl.m_to_km # in km
+    high_flyer_alt_limit = 350*stl.m_to_km # in km
     limit_indicies = np.where(data_dict_LShell_high['Alt'][0]>=high_flyer_alt_limit)[0]
     L_lower, L_higher = data_dict_LShell_high['L-Shell'][0][limit_indicies][0],data_dict_LShell_high['L-Shell'][0][limit_indicies][-1]
 

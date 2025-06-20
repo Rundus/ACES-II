@@ -40,8 +40,8 @@ outputData = True
 # --- TOGGLES ---
 smooth_fit_data = False
 Plot_fit_data = False
-Plot_fitted_data = True
-Plot_corrected_data = True
+Plot_fitted_data = False
+Plot_corrected_data = False
 
 
 # --- --- --- ---
@@ -163,7 +163,7 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
         plt.show()
 
     # E_N_correction = np.nanmean(data_dict_fit_data['vxB_N'][0] / data_dict_fit_data['E_N_raw'][0])
-    E_N_correction = 2.577
+    E_N_correction = 3.31
     E_T_correction = params[0]
 
     if Plot_corrected_data:
