@@ -35,13 +35,13 @@ justPrintFileNames = False
 # 5 -> ACES-II Low Flier
 wRocket = 5
 wFiles = [0]
-outputData = True
+outputData = False
 
 # --- TOGGLES ---
 smooth_fit_data = False
-Plot_fit_data = False
-Plot_fitted_data = False
-Plot_corrected_data = False
+Plot_fit_data = True
+Plot_fitted_data = True
+Plot_corrected_data = True
 
 
 # --- --- --- ---
@@ -85,8 +85,19 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
         keys = ['N', 'T', 'p']
 
         for idx,key in enumerate(keys):
-            ax[idx].plot(data_dict_fit_data['Epoch'][0],data_dict_fit_data[f'E_{key}_raw'][0],label=f'E_{key}')
-            ax[idx].plot(data_dict_fit_data['Epoch'][0], data_dict_fit_data[f'vxB_{key}'][0], label=f'vxB_{key}',color='red')
+            if key == 'N':
+                ax[idx].plot(data_dict_fit_data['Epoch'][0], data_dict_fit_data[f'E_{key}_raw'][0], label=f'E_{key}')
+                ax[idx].plot(data_dict_fit_data['Epoch'][0], data_dict_fit_data[f'vxB_{key}'][0], label=f'vxB_{key}',
+                             color='red')
+            elif key == 'T':
+                ax[idx].plot(data_dict_fit_data['Epoch'][0], data_dict_fit_data[f'E_{key}_raw'][0], label=f'E_{key}')
+                ax[idx].plot(data_dict_fit_data['Epoch'][0], data_dict_fit_data[f'vxB_{key}'][0], label=f'vxB_{key}',
+                             color='red')
+            else:
+                ax[idx].plot(data_dict_fit_data['Epoch'][0], data_dict_fit_data[f'E_{key}_raw'][0], label=f'E_{key}')
+                ax[idx].plot(data_dict_fit_data['Epoch'][0], data_dict_fit_data[f'vxB_{key}'][0], label=f'vxB_{key}',
+                             color='red')
+
             ax[idx].legend()
 
         plt.show()
@@ -163,6 +174,7 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
         plt.show()
 
     # E_N_correction = np.nanmean(data_dict_fit_data['vxB_N'][0] / data_dict_fit_data['E_N_raw'][0])
+
     E_N_correction = 3.31
     E_T_correction = params[0]
 

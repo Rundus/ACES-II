@@ -16,8 +16,6 @@ from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
 
-
-
 # --- --- --- ---
 # --- TOGGLES ---
 # --- --- --- ---
@@ -102,7 +100,7 @@ def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
                         times=data_dict_traj['Epoch'][0])  # CHAOS in ENU coordinates
 
     # Calculate the vxB electric field in ENU
-    vxB_term = np.array([np.cross(vec,B_model[i]) for i, vec in enumerate(rkt_VEL_ENU)])
+    vxB_term = np.array([np.cross(vec, B_model[i]) for i, vec in enumerate(rkt_VEL_ENU)])
 
     # plot the calibration term
     if Plot_correction_term:
