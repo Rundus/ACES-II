@@ -16,7 +16,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ACESII_code.myImports import *
+from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -87,7 +87,7 @@ spinFreq = sum([fitResults['Bz']['Spin Freq'], fitResults['By']['Spin Freq'], fi
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from ACESII_code.myImports import *
+
 from scipy.interpolate import CubicSpline
 from ACESII_code.class_var_func import CHAOS, EpochTo_T0_Rocket
 

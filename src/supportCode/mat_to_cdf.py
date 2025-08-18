@@ -41,7 +41,7 @@ wFile = 0
 
 modifier = ''
 inputPath_modifier = r'science\ampere_currents'
-outputPath_modifier = r'science\ampere_currents'
+outputPath_modifier = r'science\kentons_ampere_currents'
 
 
 
@@ -70,7 +70,8 @@ def mat_to_cdf(wRocket,justPrintFileNames,wFile):
 
     dataFile_name = inputFiles[wFile].replace(f'{inputrocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\\', '')
 
-    fileoutName = dataFile_name.replace(f'{inputrocketFolderPath}\\{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\\', "").replace('.mat','.cdf').replace(inputPath_modifier,outputPath_modifier)
+    # fileoutName = dataFile_name.replace(f'{inputrocketFolderPath}\\{inputPath_modifier}\{ACESII.fliers[wRocket-4]}{modifier}\\', "").replace('.mat','.cdf').replace(inputPath_modifier,outputPath_modifier)
+    fileoutName = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_RingCore_Field_Aligned_median_filtered.cdf'
 
     if justPrintFileNames:
         for i, file in enumerate(inputFiles):
@@ -117,7 +118,7 @@ def mat_to_cdf(wRocket,justPrintFileNames,wFile):
                     data_dict = {**data_dict,**{'Epoch':[np.array(val),deepcopy(exampleEpoch)]}}
                 else:
                     val = np.array([v[0] for v in val])
-                    Epoch_array = np.array([dt.datetime(2022, 11, 20, 17, 21, 00, 00) + dt.timedelta(seconds=v) for v in val])
+                    Epoch_array = np.array([dt.datetime(2022, 11, 20, 17, 20, 00, 00) + dt.timedelta(seconds=v) for v in val])
                     data_dict = {**data_dict, **{'Epoch': [Epoch_array, deepcopy(exampleEpoch)]}}
             else:
                 data_dict = {**data_dict, **{key: [np.array(val), deepcopy(exampleVar)]}}
@@ -135,6 +136,7 @@ def mat_to_cdf(wRocket,justPrintFileNames,wFile):
     stl.prgMsg('Creating output file')
 
     outputPath = f'{outputrocketFolderPath}{outputPath_modifier}\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
+    print(outputPath)
 
     # --- --- --- --- --- ---
     # --- WRITE OUT DATA ---

@@ -5,8 +5,6 @@
 # --- bookkeeping ---
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
-__date__ = "2022-08-22"
-__version__ = "1.0.0"
 from src.my_imports import *
 import time
 start_time = time.time()

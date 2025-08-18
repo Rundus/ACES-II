@@ -1,4 +1,4 @@
-# --- Plot1_data_stackplot.py ---
+# --- Plot1_rkt_data_stackplot.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Stack Plot detailing the inputs into the simulation
 
@@ -22,6 +22,7 @@ start_time = time.time()
 # --- --- --- ---
 import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
+from src.Papers.ACESII_Joule_Heating.file_toggles import *
 print(stl.color.UNDERLINE + f'Plot1_data_stackplot' + stl.color.END)
 
 # --- --- --- ---
@@ -33,6 +34,8 @@ Escale = 1000 # what to scale the deltaE field by
 # LP_scale = 1E5
 LP_scale = 1
 E_limits = [-125, 265]
+
+B_limits = [-750,3500]
 
 # --- Cbar ---
 cbarMin, cbarMax = 1E8, 1E11
@@ -54,7 +57,7 @@ Tick_Width = 2
 Plot_LineWidth = 1.5
 Label_Padding = 15
 Tick_Padding = 10
-Legend_FontSize = 20
+Legend_FontSize = 15
 cbar_FontSize = 25
 
 
@@ -65,8 +68,8 @@ cbar_FontSize = 25
 stl.prgMsg('Loading Data')
 
 # DC B-Field
-data_dict_BField_high = stl.loadDictFromFile(r'C:\Data\ACESII\science\ampere_currents\high\ACESII_36359_RingCore_Field_Aligned_median_filtered.cdf')
-data_dict_BField_low = stl.loadDictFromFile(r'C:\Data\ACESII\science\ampere_currents\low\ACESII_36364_RingCore_Field_Aligned_median_filtered')
+data_dict_BField_high = stl.loadDictFromFile(r'C:\Data\ACESII\science\kentons_ampere_currents\high\ACESII_36359_RingCore_Field_Aligned_median_filtered.cdf')
+data_dict_BField_low = stl.loadDictFromFile(r'C:\Data\ACESII\science\kentons_ampere_currents\low\ACESII_36364_RingCore_Field_Aligned_median_filtered')
 
 # E-Field Data
 data_dict_Efield_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_E_Field_auroral_fullCal.cdf')
@@ -228,12 +231,12 @@ ax[axNo].set_ylim(28,1E4)
 
 # --- HF DC B-Field ---
 axNo +=1
-ax[axNo].plot(data_dict_BField_high['L-Shell'][0],data_dict_BField_high['MagHF_p'][0], color='tab:blue', linewidth=Plot_LineWidth, label='$\Delta B_{p}$')
-ax[axNo].plot(data_dict_BField_high['L-Shell'][0],data_dict_BField_high['MagHF_e'][0], color='tab:red', linewidth=Plot_LineWidth, label='$\Delta B_{T}$')
-ax[axNo].plot(data_dict_BField_high['L-Shell'][0],data_dict_BField_high['MagHF_r'][0], color='tab:green', linewidth=Plot_LineWidth, label='$\Delta B_{N}$')
+ax[axNo].plot(data_dict_BField_high['L-Shell'][0],data_dict_BField_high['MagHF_p'][0], color='tab:blue', linewidth=Plot_LineWidth+2, label='$\Delta B_{p}$')
+ax[axNo].plot(data_dict_BField_high['L-Shell'][0],data_dict_BField_high['MagHF_e'][0], color='tab:red', linewidth=Plot_LineWidth+2, label='$\Delta B_{T}$')
+ax[axNo].plot(data_dict_BField_high['L-Shell'][0],data_dict_BField_high['MagHF_r'][0], color='tab:green', linewidth=Plot_LineWidth+2, label='$\Delta B_{N}$')
 ax[axNo].set_ylabel('DC B-Field\n[nT]', fontsize=Label_FontSize,labelpad=Label_Padding)
-ax[axNo].tick_params(axis='y',which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
-ax[axNo].set_ylim(-3000,3000)
+ax[axNo].tick_params(axis='y', which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+ax[axNo].set_ylim(-1000, 3500)
 leg=ax[axNo].legend(fontsize=Legend_FontSize,loc='upper right')
 for line in leg.get_lines():
     line.set_linewidth(4)
@@ -242,7 +245,7 @@ for line in leg.get_lines():
 # --- LP High---
 axNo +=1
 colorChoice = 'black'
-filtered = stl.butter_filter(data= data_dict_LP_high['ni'][0]/LP_scale,
+filtered = stl.butterFilter().butter_filter(data= data_dict_LP_high['ni'][0]/LP_scale,
                                                               lowcutoff=0.03,
                                                               highcutoff=0.03,
                                                               fs=100,
@@ -251,7 +254,7 @@ filtered = stl.butter_filter(data= data_dict_LP_high['ni'][0]/LP_scale,
                                                               )
 
 ax[axNo].plot(data_dict_LP_high['L-Shell'][0], filtered,color=colorChoice, linewidth=Plot_LineWidth+1)
-ax[axNo].set_ylabel('[cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
+ax[axNo].set_ylabel('LP\n[cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize-3, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize - 6, length=Tick_Length-2, width=Tick_Width)
 ax[axNo].tick_params(axis='x', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length + 4, width=Tick_Width, pad=Tick_Padding)
@@ -278,12 +281,12 @@ ax[axNo].set_ylim(28,1E4)
 
 # # --- DC Delta B LF---
 axNo +=1
-ax[axNo].plot(data_dict_BField_low['L-Shell'][0],data_dict_BField_low['MagLF_p'][0], color='tab:blue', linewidth=Plot_LineWidth, label='$\Delta B_{p}$')
-ax[axNo].plot(data_dict_BField_low['L-Shell'][0],data_dict_BField_low['MagLF_e'][0], color='tab:red', linewidth=Plot_LineWidth, label='$\Delta B_{T}$')
-ax[axNo].plot(data_dict_BField_low['L-Shell'][0],data_dict_BField_low['MagLF_r'][0], color='tab:green', linewidth=Plot_LineWidth, label='$\Delta B_{N}$')
+ax[axNo].plot(data_dict_BField_low['L-Shell'][0],data_dict_BField_low['MagLF_p'][0], color='tab:blue', linewidth=Plot_LineWidth+2, label='$\Delta B_{p}$')
+ax[axNo].plot(data_dict_BField_low['L-Shell'][0],data_dict_BField_low['MagLF_e'][0], color='tab:red', linewidth=Plot_LineWidth+2, label='$\Delta B_{T}$')
+ax[axNo].plot(data_dict_BField_low['L-Shell'][0],data_dict_BField_low['MagLF_r'][0], color='tab:green', linewidth=Plot_LineWidth+2, label='$\Delta B_{N}$')
 ax[axNo].set_ylabel('DC B-Field\n[nT]', fontsize=Label_FontSize,labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y',which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
-ax[axNo].set_ylim(-3000,3000)
+ax[axNo].set_ylim(-700, 1000)
 leg=ax[axNo].legend(fontsize=Legend_FontSize,loc='upper right')
 for line in leg.get_lines():
     line.set_linewidth(4)
@@ -293,7 +296,7 @@ axNo +=1
 ax[axNo].plot(data_dict_Efield_low['L-Shell'][0], data_dict_Efield_low['E_p'][0]*Escale, linewidth=Plot_LineWidth, color='tab:blue', label=r'$E_{p}$')
 ax[axNo].plot(data_dict_Efield_low['L-Shell'][0], data_dict_Efield_low['E_T'][0]*Escale, linewidth=Plot_LineWidth, color='tab:red', label=r'$E_{T}$')
 ax[axNo].plot(data_dict_Efield_low['L-Shell'][0], data_dict_Efield_low['E_N'][0]*Escale, linewidth=Plot_LineWidth, color='tab:green', label=r'$E_{N}$')
-ax[axNo].set_ylabel('[mV/m]', fontsize=Label_FontSize, color='black', labelpad=Label_Padding)
+ax[axNo].set_ylabel('E-Field\n[mV/m]', fontsize=Label_FontSize, color='black', labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='both', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=0, length=0, width=0)
 ax[axNo].set_ylim(E_limits[0], E_limits[1])
@@ -305,7 +308,7 @@ for line in leg.get_lines():
 
 # --- LP Low ---
 axNo +=1
-filtered= stl.butter_filter(data= data_dict_LP_low['ni'][0]/LP_scale,
+filtered= stl.butterFilter().butter_filter(data= data_dict_LP_low['ni'][0]/LP_scale,
                                                               lowcutoff=0.03,
                                                               highcutoff=0.03,
                                                               fs=100,
@@ -314,7 +317,7 @@ filtered= stl.butter_filter(data= data_dict_LP_low['ni'][0]/LP_scale,
                                                               )
 ax[axNo].plot(data_dict_LP_low['L-Shell'][0],filtered, color=colorChoice, linewidth=Plot_LineWidth+1)
 # ax[axNo].set_ylabel('[10$^{5}$ cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
-ax[axNo].set_ylabel('[cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
+ax[axNo].set_ylabel('LP\n[cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize-3, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize - 6, length=Tick_Length-2, width=Tick_Width)
 ax[axNo].tick_params(axis='x', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length + 4, width=Tick_Width, pad=Tick_Padding)
@@ -358,7 +361,7 @@ cbar.ax.tick_params(labelsize=cbar_TickLabelSize + 5)
 cbar.set_label(r'[eV-cm$^{-2}$-s$^{-1}$]', fontsize=cbar_FontSize)
 
 fig.subplots_adjust(left=0.13, bottom=0.06, right=0.88, top=0.98,hspace=0)  # remove the space between plots
-plt.savefig(r'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_JouleHeating\PLOTS\Plot1\Plot1_data_stack_plot_base.png', dpi=dpi)
+plt.savefig(rf'{path_to_plots}\Plot1\Plot1_rkt_data_stackplot_base.png', dpi=dpi)
 stl.Done(start_time)
 
 
