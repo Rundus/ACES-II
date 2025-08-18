@@ -1,6 +1,6 @@
-# --- Plot1_rkt_data_stackplot.py ---
+# --- Plot2_rkt_data_stackplot.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: Stack Plot detailing the inputs into the simulation
+# DESCRIPTION: Stack Plot detailing the derived quantities from the rocket instruments
 
 
 # --- bookkeeping ---
@@ -23,7 +23,7 @@ start_time = time.time()
 import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline
 from src.Papers.ACESII_Joule_Heating.file_toggles import *
-print(stl.color.UNDERLINE + f'Plot1_data_stackplot' + stl.color.END)
+print(stl.color.UNDERLINE + f'Plot2_rkt_derived_data' + stl.color.END)
 
 # --- --- --- ---
 # --- TOGGLES ---
@@ -60,31 +60,34 @@ Tick_Padding = 10
 Legend_FontSize = 15
 cbar_FontSize = 25
 
-
-
 # --- --- --- --- --- ---
 # --- LOAD IN THE DATA ---
 # --- --- --- --- --- ---
 stl.prgMsg('Loading Data')
 
-# DC B-Field
-data_dict_BField_high = stl.loadDictFromFile(r'C:\Data\ACESII\L2\high\ACESII_36359_RingCore_auroral_median_filter.cdf')
-data_dict_BField_low = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_RingCore_auroral_median_filter.cdf')
 
-# E-Field Data
-data_dict_Efield_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_E_Field_auroral_fullCal.cdf')
+# EEPAA/IEPAA Parallel Current -
+data_dict_EEPAA_current_high = stl.loadDictFromFile(glob('C:\Data\ACESII\science\ESA_currents\high\*.cdf*')[0])
+data_dict_EEPAA_current_low = stl.loadDictFromFile(glob('C:\Data\ACESII\science\ESA_currents\high\*.cdf*')[0])
 
-# EEPAA Particle Data
-data_dict_flux_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Energy_Flux\low\ACESII_36364_l3_eepaa_flux.cdf')[0])
-data_dict_flux_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Energy_Flux\high\ACESII_36359_l3_eepaa_flux.cdf')[0])
+# data_dict_IEPAA_current_high = stl.loadDictFromFile(glob('C:\Data\ACESII\science\ESA_currents\high\*.cdf*')[0])
+# data_dict_IEPAA_current_low = stl.loadDictFromFile(glob('C:\Data\ACESII\science\ESA_currents\high\*.cdf*')[0])
 
 # L-Shell Data
 data_dict_Lshell_low = stl.loadDictFromFile(glob('C:\Data\ACESII\coordinates\Lshell\low\ACESII_36364_Lshell.cdf')[0])
 data_dict_Lshell_high = stl.loadDictFromFile(glob('C:\Data\ACESII\coordinates\Lshell\high\ACESII_36359_Lshell.cdf')[0])
 
-# Langmuir Probe Density Data
+# DERPA Temperature Data
+data_dict_DERPA_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L2\high\ACESII_36359_ERPA.cdf')[0])
+data_dict_DERPA_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L2\low\ACESII_36364_ERPA.cdf')[0])
+
+# Langmuir Probe Temperature Data
 data_dict_LP_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\low\*langmuir_fixed*')[0])
 data_dict_LP_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed*')[0])
+
+# Load MPI Data
+# data_dict_MPI_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed*')[0])
+
 stl.Done(start_time)
 
 
@@ -101,53 +104,43 @@ data_dict_sim_spatial = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\s
 simLShell_min = deepcopy(data_dict_sim_spatial['simLShell'][0][0])
 simLShell_max = deepcopy(data_dict_sim_spatial['simLShell'][0][-1])
 
-# HIGH FLYER: reduce the EEPAA data
+# HIGH FLYER: reduce the Parallel Current data to the simulation size
 low_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_min).argmin()
 high_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_max).argmin()
-for key in data_dict_flux_high.keys():
-    if key in ['Epoch','varPhi_E_Parallel']:
-        data_dict_flux_high[key][0] = data_dict_flux_high[key][0][low_idx:high_idx+1]
+
+for key in data_dict_EEPAA_current_high.keys():
+    if key in ['Epoch', 'J_parallel']:
+        data_dict_EEPAA_current_high[key][0] = data_dict_EEPAA_current_high[key][0][low_idx:high_idx+1]
 
 # HIGH FLYER: reduce the Langmuir Probe Data
-time_target_low = data_dict_Lshell_high['Epoch'][0][low_idx]
-time_target_high = data_dict_Lshell_high['Epoch'][0][high_idx]
-low_idx = np.abs(data_dict_LP_high['Epoch'][0] - time_target_low).argmin()
-high_idx = np.abs(data_dict_LP_high['Epoch'][0] - time_target_high).argmin()
-for key in data_dict_LP_high.keys():
-    if key in ['Epoch', 'ni']:
-        data_dict_LP_high[key][0] = data_dict_LP_high[key][0][low_idx:high_idx+1]
-
-# HIGH FLYER: remove some bad indices from the LP High Data
-temp = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_LP_high['Epoch'][0]])
-bad_idxs = np.where(temp < 0)
-for key in data_dict_LP_high.keys():
-    if key in ['Epoch','ni']:
-        data_dict_LP_high[key][0] = np.delete(data_dict_LP_high[key][0],bad_idxs)
+# time_target_low = data_dict_Lshell_high['Epoch'][0][low_idx]
+# time_target_high = data_dict_Lshell_high['Epoch'][0][high_idx]
+# low_idx = np.abs(data_dict_LP_high['Epoch'][0] - time_target_low).argmin()
+# high_idx = np.abs(data_dict_LP_high['Epoch'][0] - time_target_high).argmin()
+# for key in data_dict_LP_high.keys():
+#     if key in ['Epoch', 'ni']:
+#         data_dict_LP_high[key][0] = data_dict_LP_high[key][0][low_idx:high_idx+1]
 
 # HIGH FLYER: reduce the L-Shell data
 low_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_min).argmin()
 high_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_max).argmin()
 for key in data_dict_Lshell_high.keys():
-    if key in ['Epoch', 'L-Shell','Alt']:
+    if key in ['Epoch', 'L-Shell', 'Alt']:
         data_dict_Lshell_high[key][0] = data_dict_Lshell_high[key][0][low_idx:high_idx+1]
 
-# HIGH FLYER: interpolate L-Shell into LP data
-Epoch_LP_high_T0 = stl.EpochTo_T0_Rocket(data_dict_LP_high['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
-Epoch_LShell_high_T0 = stl.EpochTo_T0_Rocket(data_dict_Lshell_high['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
-cs = CubicSpline(Epoch_LShell_high_T0,data_dict_Lshell_high['L-Shell'][0])
-data_dict_LP_high = {**data_dict_LP_high,
-                     **{'L-Shell':[cs(Epoch_LP_high_T0),{}]}}
+# HIGH FLYER: interpolate L-Shell into Parallel Current data
+Epoch_Jparallel_high_T0 = stl.EpochTo_T0_Rocket(data_dict_EEPAA_current_high['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
+cs = CubicSpline(Epoch_Jparallel_high_T0,data_dict_Lshell_high['L-Shell'][0])
+data_dict_EEPAA_current_high = {**data_dict_EEPAA_current_high, **{'L-Shell':[cs(Epoch_Jparallel_high_T0),{}]}}
 
-# HIGH FLYER: interpolate L-Shell into B-Field median data
-Epoch_B_high_T0 = stl.EpochTo_T0_Rocket(data_dict_BField_high['Epoch'][0],T0=dt.datetime(2022,11,20,17,20,00))
-cs = CubicSpline(Epoch_LShell_high_T0,data_dict_Lshell_high['L-Shell'][0])
-data_dict_BField_high = {**data_dict_BField_high, **{'L-Shell':[cs(Epoch_B_high_T0),{}]}}
+# HIGH FLYER: Swept Langmuir Probe
+# TODO
 
-# HIGH FLYER: reduce B-Field data to only the relevant range
-low_idx = np.abs(data_dict_BField_high['L-Shell'][0] - simLShell_min).argmin()
-high_idx = np.abs(data_dict_BField_high['L-Shell'][0] - simLShell_max).argmin()
-for key in data_dict_BField_high.keys():
-    data_dict_BField_high[key][0] = data_dict_BField_high[key][0][low_idx:high_idx+1]
+# HIGH FLYER: interpolate L-Shell into DERPA data
+Epoch_DERPA_high_T0 = stl.EpochTo_T0_Rocket(data_dict_DERPA_high['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
+cs = CubicSpline(Epoch_Jparallel_high_T0,data_dict_Lshell_high['L-Shell'][0])
+data_dict_DERPA_high = {**data_dict_DERPA_high, **{'L-Shell':[cs(Epoch_Jparallel_high_T0),{}]}}
+
 
 # LOW FLYER: reduce the EEPAA data
 low_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_min).argmin()

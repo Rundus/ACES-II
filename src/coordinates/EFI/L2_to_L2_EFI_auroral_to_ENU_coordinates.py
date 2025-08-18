@@ -39,7 +39,7 @@ outputData = True
 # --- --- --- ---
 # none
 
-def L2_to_L2_EFI_auroral_coordinates(wRocket):
+def L2_to_L2_EFI_auroral_to_ENU_coordinates(wRocket):
 
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
@@ -130,4 +130,4 @@ def L2_to_L2_EFI_auroral_coordinates(wRocket):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-L2_to_L2_EFI_auroral_coordinates(wRocket)
+L2_to_L2_EFI_auroral_to_ENU_coordinates(wRocket)

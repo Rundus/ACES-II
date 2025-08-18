@@ -35,6 +35,5 @@ class DespinToggles:
                'Offset': 32.456720919269245}
     }
 
-    coneFreq = sum([fitResults['By']['Cone Freq'], fitResults['Bz']['Cone Freq']]) / 2
-    spinFreq = sum([fitResults['Bz']['Spin Freq'], fitResults['By']['Spin Freq'],
-                    fitResults['Bz']['Spin Freq']]) / 3 if wRocket == 4 else 0.55
+    # coneFreq = sum([fitResults['By']['Cone Freq'], fitResults['Bz']['Cone Freq']]) / 2
+    # spinFreq = sum([fitResults['Bz']['Spin Freq'], fitResults['By']['Spin Freq'], fitResults['Bz']['Spin Freq']]) / 3 if wRocket == 4 else 0.55

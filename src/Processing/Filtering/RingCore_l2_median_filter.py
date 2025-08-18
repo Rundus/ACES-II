@@ -34,6 +34,7 @@ outputData = True
 # --- --- --- ---
 from src.my_imports import *
 from src.mission_attributes import ACESII
+from scipy.signal import savgol_filter
 
 #######################
 # --- MAIN FUNCTION ---
@@ -41,7 +42,7 @@ from src.mission_attributes import ACESII
 
 def RingCore_l2_median_filter(wRocket):
 
-    B_files = f'{DataPaths.ACES_data_folder}\\l2\\{ACESII.fliers[wRocket - 4]}\*RingCore_Field_Aligned.cdf*'
+    B_files = f'{DataPaths.ACES_data_folder}\\l2\\{ACESII.fliers[wRocket - 4]}\*RingCore_auroral.cdf*'
     L_files = f'{DataPaths.ACES_data_folder}\\coordinates\\Lshell\\{ACESII.fliers[wRocket - 4]}\*.cdf*'
 
     # --- FILE I/O ---
@@ -59,7 +60,7 @@ def RingCore_l2_median_filter(wRocket):
     ###################################
     stl.prgMsg('Median Filtering Data')
     from scipy.signal import medfilt
-    dat_keys = ['r', 'e', 'p']
+    dat_keys = ['N', 'T', 'p']
 
     # Filter the data
     for key in dat_keys:
@@ -75,9 +76,13 @@ def RingCore_l2_median_filter(wRocket):
 
         # Median filter the data
 
-        data_dict_mag[f'B_{key}'][0]= medfilt(volume=filtered, kernel_size=filter_window)
+        med_filtered = medfilt(volume=filtered, kernel_size=filter_window)
         # data_dict_mag[f'B_{key}'][0] = filtered
 
+        # savitz-golay filter the data
+        data_dict_mag[f'B_{key}'][0] = savgol_filter(x=med_filtered,
+                                                     window_length=filter_window,
+                                                     polyorder=3)
 
     data_dict_output = {**data_dict_output,
                         **data_dict_mag}
@@ -104,7 +109,7 @@ def RingCore_l2_median_filter(wRocket):
     # --- --- --- --- --- --- ---
     if outputData:
         stl.prgMsg('Creating output file')
-        file_out_name = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_RingCore_Field_Aligned_median_filter.cdf'
+        file_out_name = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_RingCore_auroral_median_filter.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}\\l2\\{ACESII.fliers[wRocket - 4]}\{file_out_name}'
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)

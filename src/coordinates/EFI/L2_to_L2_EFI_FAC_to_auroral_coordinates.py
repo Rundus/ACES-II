@@ -1,4 +1,4 @@
-# --- L2_to_L2_EFI_auroral_to_FAC_coordinates.py ---
+# --- L2_to_L2_EFI_FAC_to_auroral_coordinates.py ---
 # Description: convert EFI ENU coordinates to FAC and output as L2 data
 
 
@@ -33,7 +33,7 @@ Plot_correction_term = False
 # --- --- --- ---
 # none
 
-def L2_to_L2_EFI_auroral_to_FAC_coordinates(wRocket):
+def L2_to_L2_EFI_FAC_to_auroral_coordinates(wRocket):
 
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
@@ -125,4 +125,4 @@ def L2_to_L2_EFI_auroral_to_FAC_coordinates(wRocket):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-L2_to_L2_EFI_auroral_to_FAC_coordinates(wRocket)
+L2_to_L2_EFI_FAC_to_auroral_coordinates(wRocket)
