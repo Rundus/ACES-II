@@ -11,11 +11,7 @@ __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
-import math
-
 import matplotlib.pyplot as plt
-import numpy as np
-
 from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
@@ -23,18 +19,12 @@ start_time = time.time()
 # --- --- --- ---
 # --- TOGGLES ---
 # --- --- --- ---
-
-# Just print the names of files
 justPrintFileNames = False
 
 # --- Select the Rocket ---
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
 wRocket = 5
-
-# select which files to convert
-# [] --> all files
-# [#0,#1,#2,...etc] --> only specific files. Follows python indexing. use justPrintFileNames = True to see which files you need.
 wFiles = [0]
 
 modifier = ''
@@ -42,69 +32,36 @@ inputPath_modifier = 'l1' # e.g. 'L1' or 'L1'. It's the name of the broader inpu
 inputPath_modifier_attitude = 'attitude' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
 outputPath_modifier_despin = 'l2' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
-# --- --- --- Reduce Data --- --- ---
-reduceTimes = [ [dt.datetime(2022, 11, 20, 17, 22, 00, 000000), dt.datetime(2022, 11, 20, 17, 28, 00, 000000)],
-                [dt.datetime(2022, 11, 20, 17, 22, 00, 000000), dt.datetime(2022, 11, 20, 17, 28, 00, 000000)]]
-
-# --- --- --- DETERMINE DC AND TIME OFFSET --- --- ---
+include_CHAOS_model = False
 find_time_offset = False
 find_DC_offset = False
 replaceNANS = True
 
-# --- --- --- Apply Kenton/Antonio T0 correction --- --- ---
-# Description: Antontio worked with kenton to determine how to best
-# determine the T0 for the internal integration_tad_files timer and the rocket T0. This matters
-# When trying to determine the deltat between E-Field and B-Field measurements.
-# For similar events observed in the E/B fields, two linear fits were done to try to bring the epochs into alignment
-# based on the peaks of the two waveforms:
-KentonAntonio_T0_Correction = True
-EB_East = [0.999994, 0.03374] # slope, intercept (in seconds)
-EB_North = [0.999986, 0.03294]
-# The fits are done by finding 5 deltaT
-
-
-# --- --- --- output Data --- --- ---
 outputData = True # plots RKT XYZ and CHAOS model Spun-up XYZ
 
 
 
-fitResults = {
-            'Bx': {'Spin Amp': 25.42873940404161, 'Spin Freq': 0.6463295881639182, 'Spin Phase': 91.9759995936283,
-                   'Cone Amp': 625.8772357084948, 'Cone Freq': 0.05294818121871208, 'Cone Phase': -138.77308595997619,
-                   'Offset': -44919.748937299344},
-            'By': {'Spin Amp': 7.378420193701481, 'Spin Freq': 0.6442248190622027, 'Spin Phase': 109.20255873087793,
-                   'Cone Amp': 1380.5616077430786, 'Cone Freq': 0.02700105226961604, 'Cone Phase': 109.87799606103452,
-                   'Offset': -139.74554466082876},
-            'Bz': {'Spin Amp': 8.095746809541962, 'Spin Freq': 0.6442537451458561, 'Spin Phase': 19.11852573798773,
-                   'Cone Amp': 1257.0313161879794, 'Cone Freq': 0.026874206798816504, 'Cone Phase': -69.78175516947503,
-                   'Offset': 32.456720919269245}
-        }
-
-coneFreq = sum([fitResults['By']['Cone Freq'], fitResults['Bz']['Cone Freq']]) / 2
-spinFreq = sum([fitResults['Bz']['Spin Freq'], fitResults['By']['Spin Freq'], fitResults['Bz']['Spin Freq']]) / 3 if wRocket == 4 else 0.55
 
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-
 from scipy.interpolate import CubicSpline
-from ACESII_code.class_var_func import CHAOS, EpochTo_T0_Rocket
+from src.Processing.Magnetometer.RingCore_despin_toggles import DespinToggles
+
 
 
 def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
 
     # --- ACES II Flight/Integration Data ---
-    rocketAttrs, b, c = ACES_mission_dicts()
-    rocketID = rocketAttrs.rocketID[wflyer]
-    globalAttrsMod = rocketAttrs.globalAttributes[wflyer]
+
+    rocketID = ACESII.payload_IDs[wflyer]
+    globalAttrsMod = ACESII.globalAttributes[wflyer]
     globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'L2'
-    outputModelData = L0_ACES_Quick(wflyer)
+    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wflyer]}{modifier}\*RingCore_rktFrm*')
+    inputFiles_attitude = glob(f'{rocketFolderPath}{inputPath_modifier_attitude}\{ACESII.fliers[wflyer]}{modifier}\*.cdf')
 
-    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}{modifier}\*RingCore_rktFrm*')
-    inputFiles_attitude = glob(f'{rocketFolderPath}{inputPath_modifier_attitude}\{fliers[wflyer]}{modifier}\*.cdf')
-
-    input_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}{modifier}\\', '') for ifile in inputFiles]
+    input_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wflyer]}{modifier}\\', '') for ifile in inputFiles]
 
     input_names_searchable = [ifile.replace('_v00', '') for ifile in input_names]
 
@@ -116,26 +73,26 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
             print('[{:.0f}] {:80s}{:5.1f} MB'.format(i, input_names_searchable[i], round(getsize(file) / (10 ** 6), 1)))
     else:
         print('\n')
-        print(color.UNDERLINE + f'DeSpining RingCore Data' + color.END)
+        print(stl.color.UNDERLINE + f'DeSpining RingCore Data' + stl.color.END)
         print('[' + str(wFile) + ']   ' + str(round(getsize(inputFiles[wFile]) / (10 ** 6), 1)) + 'MiB')
 
         # --- get the data from the Magnetometer file ---
-        prgMsg(f'Loading data from {inputPath_modifier} RingCore Files')
-        data_dict_mag = loadDictFromFile(inputFiles[wFile],targetVar=[reduceTimes[wRocket-4],'Epoch'])
-        Done(start_time)
+        stl.prgMsg(f'Loading data from {inputPath_modifier} RingCore Files')
+        data_dict_mag = stl.loadDictFromFile(inputFiles[wFile],targetVar=[DespinToggles.reduceTimes[wRocket-4],'Epoch'])
+        stl.Done(start_time)
 
         # --- get the data from the attitude file ---
-        prgMsg(f'Loading data from {inputPath_modifier_attitude} Files')
-        data_dict_attitude = loadDictFromFile(inputFiles_attitude[0],targetVar=[reduceTimes[wRocket-4],'Epoch'])
+        stl.prgMsg(f'Loading data from {inputPath_modifier_attitude} Files')
+        data_dict_attitude = stl.loadDictFromFile(inputFiles_attitude[0],targetVar=[DespinToggles.reduceTimes[wRocket-4],'Epoch'])
         data_dict_attitude['Alt'][0] = data_dict_attitude['Alt'][0]/1000
-        Done(start_time)
+        stl.Done(start_time)
 
         ########################
         # --- Reduce dataset ---
         ########################
-        prgMsg('Reducing Dataset')
+        stl.prgMsg('Reducing Dataset')
 
-        targetTimes = reduceTimes[wRocket - 4]
+        targetTimes = DespinToggles.reduceTimes[wRocket - 4]
 
 
         # --- prepare some variables for later ---
@@ -145,26 +102,24 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
         # convert attitude epoch to tt2000
         Epoch_attitude_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(tme) for tme in data_dict_attitude['Epoch'][0]])
         Epoch_mag_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(tme) for tme in data_dict_mag['Epoch'][0]])
-        Done(start_time)
-
-
+        stl.Done(start_time)
 
         #################################################
         # --- Determine CHAOS model on Attitude Epoch ---
         #################################################
-        prgMsg('Calculating CHAOS model on Attitude Epoch')
-        B_CHAOS_ENU_attitude = CHAOS(
+        stl.prgMsg('Calculating CHAOS model on Attitude Epoch')
+        B_CHAOS_ENU_attitude = stl.CHAOS(
                         lat=data_dict_attitude['Lat'][0],
                         long=data_dict_attitude['Long'][0],
                         alt=data_dict_attitude['Alt'][0],
                         times=data_dict_attitude['Epoch'][0])
-        Done(start_time)
+        stl.Done(start_time)
 
         ############################################
         # --- Spin Up CHAOS model into RKT frame ---
         ############################################
 
-        prgMsg('Convert CHAOS to rkt frame')
+        stl.prgMsg('Convert CHAOS to rkt frame')
         # --- get the DCM ---
         DCM = np.array(
             [
@@ -178,7 +133,7 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
         DCMinv = np.array([np.linalg.inv(mat) for mat in DCM])
         B_CHAOS_rkt = np.array([np.matmul(DCMinv[i], B_CHAOS_ENU_attitude[i]) for i in range(len(data_dict_attitude['Epoch'][0]))])
 
-        Done(start_time)
+        stl.Done(start_time)
 
 
         ##################################################
@@ -210,7 +165,7 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
                 ax[i].plot(data_dict_mag['Epoch'][0], B_rkt[:, i], label='B_rkt')
             plt.show()
 
-            prgMsg('Finding best temporal offset')
+            stl.prgMsg('Finding best temporal offset')
 
             N = 30
             timeOffsets = np.linspace(0.12755, 0.12757, N) * 1E9
@@ -252,7 +207,7 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
                     bestChi = [deltaT, ChiSquare]
 
             print('The best offset was:', bestChi)
-            Done(start_time)
+            stl.Done(start_time)
         else:  # apply the temporal offset
             TimeOffset = [127567241.37931032, 120789473.68421052]
 
@@ -262,7 +217,7 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
         # --- interpolate CHAOS onto mag Epoch ---
         ##########################################
 
-        prgMsg('Interpolating CHAOS onto integration_tad_files Epoch')
+        stl.prgMsg('Interpolating CHAOS onto integration_tad_files Epoch')
         B_CHAOS_rkt_magTime = []
 
         for i in range(3):
@@ -276,7 +231,7 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
         # create B_CHAOS_RKT variable that's on mag Epoch
         B_CHAOS_rkt_magTime = np.array([[B_CHAOS_rkt_magTime[0][i], B_CHAOS_rkt_magTime[1][i], B_CHAOS_rkt_magTime[2][i]] for i in range(len(Epoch_mag_tt2000))])
 
-        Done(start_time)
+        stl.Done(start_time)
 
 
         ###################################################
@@ -311,8 +266,6 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
             offsetDC = np.array([[0.10010010010010717,-1.2901290129012892,4.590459045904595], [0,0,0]])
 
         B_CHAOS_rkt_magTime = B_CHAOS_rkt_magTime + offsetDC[wRocket-4]
-
-
 
         #####################################
         # --- interpolate DCM to mag time ---
@@ -363,12 +316,10 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
         B_CHAOS_ENU_magTime = np.array([np.matmul(DCM_magEpoch_forCHAOS[i], B_CHAOS_rkt_magTime[i]) for i in range(len(Epoch_mag_tt2000))])
 
 
-
         #####################################
         # --- Subtract B_Model from B_Rkt ---
         #####################################
         DeltaB_ENU = B_rkt_ENU - B_CHAOS_ENU_magTime
-
 
         ###################################
         # --- Handle NAN values in data ---
@@ -397,17 +348,17 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
 
             DeltaB_ENU = np.array([ [newB[0][i],newB[1][i],newB[2][i]] for i in range(len(DeltaB_ENU))])
 
-
         ###########################################
         # --- Add DeltaB to Modified CHAOS data ---
         ###########################################
-
-        # data_for_output = B_CHAOS_ENU_magTime + DeltaB_ENU
-        data_for_output = DeltaB_ENU
+        if include_CHAOS_model:
+            data_for_output = B_CHAOS_ENU_magTime + DeltaB_ENU
+        else:
+            data_for_output = DeltaB_ENU
 
         if outputData:
 
-            prgMsg('Creating model subtracted output file')
+            stl.prgMsg('Creating model subtracted output file')
 
             # create the output data_dict
             data_dict_output = deepcopy(data_dict_mag)
@@ -433,34 +384,34 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
             # [1] Create a new Epoch variable through multiplication
             # [2] interpolate the B-Field data onto the old time-base?
             # [3] export the newly interpolated B-Field data
-            if KentonAntonio_T0_Correction:
+            if DespinToggles.KentonAntonio_T0_Correction:
                 if wRocket == 5:
-                    prgMsg('Applying Kenton/Antonio T0 correction')
+                    stl.prgMsg('Applying Kenton/Antonio T0 correction')
                     # Calculate old timebase
                     T0_time = dt.datetime(2022, 11, 20, 17, 20, 00, 000000)
-                    oldEpoch_TSL = EpochTo_T0_Rocket(InputEpoch=data_dict_output['Epoch'][0],
-                                                     T0=T0_time)
-                    slope = EB_East[0]
-                    interscept = EB_East[1]
+                    oldEpoch_TSL = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_output['Epoch'][0], T0=T0_time)
+                    slope = DespinToggles.EB_East[0]
+                    interscept = DespinToggles.EB_East[1]
                     newEpoch = np.array([ pycdf.lib.tt2000_to_datetime(int((slope * val + interscept)*1E9 + pycdf.lib.datetime_to_tt2000(T0_time))) for val in oldEpoch_TSL])
 
                     # interpolate onto old timebase
-                    data_dict_output_interp = InterpolateDataDict(InputDataDict=data_dict_output,
+                    data_dict_output_interp = stl.InterpolateDataDict(InputDataDict=data_dict_output,
                                                                   InputEpochArray=newEpoch,
                                                                   targetEpochArray=deepcopy(data_dict_output['Epoch'][0]),
                                                                   wKeys=[])
 
                     data_dict_output = deepcopy(data_dict_output_interp)
-                    Done(start_time)
+                    stl.Done(start_time)
 
-            if KentonAntonio_T0_Correction:
-                outputPath = f'{rocketFolderPath}{outputPath_modifier_despin}\{fliers[wflyer]}\\{fileoutName_despin}_KentonCorrection.cdf'
+
+            if DespinToggles.KentonAntonio_T0_Correction:
+                outputPath = f'{rocketFolderPath}{outputPath_modifier_despin}\{ACESII.fliers[wflyer]}\\{fileoutName_despin}_KentonCorrection.cdf'
             else:
-                outputPath = f'{rocketFolderPath}{outputPath_modifier_despin}\{fliers[wflyer]}\\{fileoutName_despin}.cdf'
+                outputPath = f'{rocketFolderPath}{outputPath_modifier_despin}\{ACESII.fliers[wflyer]}\\{fileoutName_despin}.cdf'
 
-            outputCDFdata(outputPath, data_dict_output, instrNam='RingCore')
+            stl.outputCDFdata(outputPath, data_dict_output, instrNam='RingCore')
 
-            Done(start_time)
+            stl.Done(start_time)
 
 
 
@@ -476,19 +427,19 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
 # --- EXECUTE ---
 # --- --- --- ---
 if wRocket == 4:  # ACES II High
-    rocketFolderPath = ACES_data_folder
+    rocketFolderPath = DataPaths.ACES_data_folder
     wflyer = 0
 elif wRocket == 5: # ACES II Low
-    rocketFolderPath = ACES_data_folder
+    rocketFolderPath = DataPaths.ACES_data_folder
     wflyer = 1
 
-if len(glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\*.cdf')) == 0:
-    print(color.RED + 'There are no .cdf files in the specified directory' + color.END)
+if len(glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wflyer]}\*.cdf')) == 0:
+    print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
     if justPrintFileNames:
         RingCore_L1_to_L2_Despin(wRocket, 0, rocketFolderPath, justPrintFileNames,wflyer)
     elif not wFiles:
-        for fileNo in (range(len(glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\*.cdf')))):
+        for fileNo in (range(len(glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wflyer]}\*.cdf')))):
             RingCore_L1_to_L2_Despin(wRocket, fileNo, rocketFolderPath, justPrintFileNames,wflyer)
     else:
         for filesNo in wFiles:
