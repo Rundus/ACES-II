@@ -8,6 +8,7 @@ __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from src.my_imports import *
@@ -22,7 +23,7 @@ justPrintFileNames = False # Just print the names of files
 
 # --- Select the Rocket ---
 # 5 -> ACES II Low Flier - ONLY ONE AVAILABLE
-wRocket = 4
+wRocket = 5
 
 # --- Select DERPA 1 or DERPA 2 [1/2]---
 wDERPA = 1 # 1 or 2
@@ -75,9 +76,8 @@ def txt_to_l2_DERPA(wflyer, justPrintFileNames, wDERPA):
 
             # Handle the '?'
             temp_data = np.array(temp_data).T
-            temp_data[np.where(temp_data=='?')] = np.nan
+            temp_data[np.where(temp_data=='?')] = 0
             temp_data = np.array(temp_data,dtype='float64')
-
 
             # correct the output from T0 = 2020-11-20
             T0 = dt.datetime(2022,11,20,17,20)
@@ -124,34 +124,30 @@ def txt_to_l2_DERPA(wflyer, justPrintFileNames, wDERPA):
 
 
 
+
     # --- Get everything on a SINGLE timebase ---
     # Description: The Skin current starts at 50s for every DERPA and the high/low flyers.
     # Choose this Epoch as the referene Epoch and interpolate the rest
 
-    Epoch = deepcopy(data_dict_output['Epoch_skinu'][0])
-    temp_peak_voltage = []
-    temp_temperature = []
-
-    for idx, tme in enumerate(data_dict_output['Epoch_peak'][0]):
-
-        # create a dummy dataset for peak voltage
-        if tme not in Epoch:
-            temp_peak_voltage.append(np.nan)
-        else:
-            temp_peak_voltage.append(deepcopy(data_dict_output['peak_voltage'][0][idx]))
-
-    for idx, tme in enumerate(data_dict_output['Epoch_temp'][0]):
-        # create a dummy dataset for temperature
-        if tme not in Epoch:
-            temp_temperature.append(np.nan)
-        else:
-            temp_temperature.append(deepcopy(data_dict_output['temperature'][0][idx]))
+    # Reference Epoch
+    data_dict_output = {**data_dict_output, **{'Epoch': [np.array(deepcopy(data_dict_output['Epoch_skinu'][0])), deepcopy(data_dict_output['Epoch_skinu'][1])]}}
+    from scipy.interpolate import CubicSpline
+    seconds_current = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_output['Epoch_skinu'][0],T0=dt.datetime(2022,11,20,17,20))
+    bad_idx = np.abs(data_dict_output['Epoch'][0] - (T0 + dt.timedelta(seconds=95))).argmin()
 
 
-    data_dict_output = {**data_dict_output,
-                        **{'Epoch':[np.array(Epoch),deepcopy(data_dict_output['Epoch_skinu'][1])]}}
-    data_dict_output['temperature'][0] = np.array(temp_temperature)
-    data_dict_output['peak_voltge'][0] = np.array(temp_peak_voltage)
+    # get new temperature
+    seconds_temp = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_output['Epoch_temp'][0], T0=dt.datetime(2022, 11, 20, 17, 20))
+    cs = CubicSpline(seconds_temp, data_dict_output['temperature'][0])
+    data_dict_output['temperature'][0] = np.array(cs(seconds_current))
+
+    data_dict_output['temperature'][0][:bad_idx] = 0
+
+    # get new peak voltage
+    seconds_voltage = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_output['Epoch_peak'][0], T0=dt.datetime(2022, 11, 20, 17, 20))
+    cs = CubicSpline(seconds_voltage, data_dict_output['peak_voltage'][0])
+    data_dict_output['peak_voltage'][0] = np.array(cs(seconds_current))
+    data_dict_output['peak_voltage'][0][:bad_idx] = 0
 
     # remove all the epoch keys
     data_dict_output.pop('Epoch_temp')

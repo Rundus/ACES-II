@@ -75,8 +75,8 @@ data_dict_Lshell_low = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\l
 data_dict_Lshell_high = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\high\ACESII_36359_Lshell.cdf')
 
 # DERPA Temperature Data
-data_dict_DERPA_high = stl.loadDictFromFile('C:\Data\ACESII\L2\high\ACESII_36359_l2_ERPA.cdf')
-data_dict_DERPA_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_ERPA.cdf')
+data_dict_DERPA_high = stl.loadDictFromFile('C:\Data\ACESII\L2\high\ACESII_36359_l2_ERPA1.cdf')
+data_dict_DERPA_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_ERPA2.cdf')
 
 # Langmuir Probe Temperature Data
 data_dict_LP_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\low\*langmuir_fixed*')[0])
@@ -101,91 +101,93 @@ data_dict_sim_spatial = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\s
 simLShell_min = deepcopy(data_dict_sim_spatial['simLShell'][0][0])
 simLShell_max = deepcopy(data_dict_sim_spatial['simLShell'][0][-1])
 
-# HIGH FLYER: reduce the Parallel Current data to the simulation size
-low_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_min).argmin()
-high_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_max).argmin()
 
-for key in data_dict_EEPAA_current_high.keys():
-    if key in ['Epoch', 'J_parallel']:
-        data_dict_EEPAA_current_high[key][0] = data_dict_EEPAA_current_high[key][0][low_idx:high_idx+1]
-
-# HIGH FLYER: reduce the swept Langmuir Probe Data
-# TODO:
-
-
-# HIGH FLYER: reduce the DERPA Data to the simulation size
-low_idx = np.abs(data_dict_DERPA_high['Epoch1_temp'][0] - simLShell_min).argmin()
-high_idx = np.abs(data_dict_DERPA_high['Epoch1_temp'][0] - simLShell_max).argmin()
-for key in data_dict_Lshell_high.keys():
-    if key in ['Epoch1_temp','']
-# TODO:
-
-# HIGH FLYER: reduce the L-Shell dataset itself
-low_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_min).argmin()
-high_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_max).argmin()
-for key in data_dict_Lshell_high.keys():
-    if key in ['Epoch', 'L-Shell', 'Alt']:
-        data_dict_Lshell_high[key][0] = data_dict_Lshell_high[key][0][low_idx:high_idx+1]
-
-
-
-
-# HIGH FLYER: interpolate L-Shell into Parallel Current data
-Epoch_Jparallel_high_T0 = stl.EpochTo_T0_Rocket(data_dict_EEPAA_current_high['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
+###########################
+# --- HIGH FLYER: EEPAA ---
+###########################
+# Prepare the L-Shell cubic interpolation
 Epoch_Lshell_high_T0 = stl.EpochTo_T0_Rocket(data_dict_Lshell_high['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
 cs = CubicSpline(Epoch_Lshell_high_T0, data_dict_Lshell_high['L-Shell'][0])
+
+# interpolate L-Shell into Parallel Current data
+Epoch_Jparallel_high_T0 = stl.EpochTo_T0_Rocket(data_dict_EEPAA_current_high['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
 data_dict_EEPAA_current_high = {**data_dict_EEPAA_current_high, **{'L-Shell':[cs(Epoch_Jparallel_high_T0),{}]}}
 
-# HIGH FLYER: Swept Langmuir Probe
+# reduce the Parallel current data to the simulation size
+low_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_min).argmin()
+high_idx = np.abs(data_dict_Lshell_high['L-Shell'][0] - simLShell_max).argmin()
+for key in data_dict_EEPAA_current_high.keys():
+    if key in ['Epoch', 'J_parallel','L-Shell']:
+        data_dict_EEPAA_current_high[key][0] = data_dict_EEPAA_current_high[key][0][low_idx:high_idx+1]
+
+##############################
+# --- HIGH FLYER: LANGMUIR ---
+##############################
+# Interpolate L-Shell into Swept Langmuir Probe
 # TODO:
 
+# reduce the swept Langmuir Probe Data
+# TODO:
+
+###########################
+# --- HIGH FLYER: DERPA ---
+###########################
 # HIGH FLYER: interpolate L-Shell into DERPA data
-Epoch_DERPA_high_T0 = stl.EpochTo_T0_Rocket(data_dict_DERPA_high['Epoch1_temp'][0], T0=dt.datetime(2022,11,20,17,20,00))
+Epoch_DERPA_high_T0 = stl.EpochTo_T0_Rocket(data_dict_DERPA_high['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
 data_dict_DERPA_high = {**data_dict_DERPA_high, **{'L-Shell':[cs(Epoch_DERPA_high_T0), {}]}}
 
-fig, ax = plt.subplots()
-plt.plot(data_dict_DERPA_high['L-Shell'][0],data_dict_DERPA_high['ERPA1_temp'][0])
-plt.show()
+# HIGH FLYER: reduce the DERPA Data to the simulation size
+low_idx = np.abs(data_dict_DERPA_high['L-Shell'][0] - simLShell_min).argmin()
+high_idx = np.abs(data_dict_DERPA_high['L-Shell'][0] - simLShell_max).argmin()
+for key in data_dict_Lshell_high.keys():
+    if key in ['Epoch', 'temperature']:
+        data_dict_DERPA_high[key][0] = data_dict_DERPA_high[key][0][low_idx:high_idx + 1]
 
 
+###########################
+# --- LOW FLYER: EEPAA ---
+###########################
+Epoch_Lshell_low_T0 = stl.EpochTo_T0_Rocket(data_dict_Lshell_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
+cs = CubicSpline(Epoch_Lshell_low_T0, data_dict_Lshell_low['L-Shell'][0])
 
-
-
-
+# LOW FLYER: interpolate L-Shell into EEPAA/IEPAA currents data
+Epoch_Jparallel_low_T0 = stl.EpochTo_T0_Rocket(data_dict_EEPAA_current_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
+data_dict_EEPAA_current_low = {**data_dict_EEPAA_current_low, **{'L-Shell':[cs(Epoch_Jparallel_low_T0),{}]}}
 
 # LOW FLYER: reduce the EEPAA data
 low_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_min).argmin()
 high_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_max).argmin()
 for key in data_dict_EEPAA_current_low.keys():
-    if key in ['Epoch', 'J_parallel']:
+    if key in ['Epoch', 'J_parallel', 'L-Shell']:
         data_dict_EEPAA_current_low[key][0] = data_dict_EEPAA_current_low[key][0][low_idx:high_idx+1]
 
-# LOW FLYER: reduce the Swept Langmuir Probe Data
+##############################
+# --- LOW FLYER: LANGMUIR ---
+##############################
 # TODO:
 
-# LOW FLYER: reduce the L-Shell data
-low_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_min).argmin()
-high_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_max).argmin()
-for key in data_dict_Lshell_low.keys():
-    if key in ['Epoch', 'L-Shell','Alt']:
-        data_dict_Lshell_low[key][0] = data_dict_Lshell_low[key][0][low_idx:high_idx+1]
-stl.Done(start_time)
-
-# LOW FLYER: interpolate L-Shell into EEPAA/IEPAA currents data
-Epoch_Jparallel_low_T0 = stl.EpochTo_T0_Rocket(data_dict_EEPAA_current_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
-Epoch_Lshell_low_T0 = stl.EpochTo_T0_Rocket(data_dict_Lshell_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
-cs = CubicSpline(Epoch_Lshell_low_T0, data_dict_Lshell_low['L-Shell'][0])
-data_dict_EEPAA_current_low = {**data_dict_EEPAA_current_low, **{'L-Shell':[cs(Epoch_Jparallel_low_T0), {}]}}
-
-
+##########################
+# --- LOW FLYER: DERPA ---
+##########################
 # LOW FLYER: interpolate L-Shell into DERPA data
-Epoch_DERPA_low_T0 = stl.EpochTo_T0_Rocket(data_dict_DERPA_low['Epoch1_temp'][0], T0=dt.datetime(2022,11,20,17,20,00))
+Epoch_DERPA_low_T0 = stl.EpochTo_T0_Rocket(data_dict_DERPA_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
 data_dict_DERPA_low = {**data_dict_DERPA_low, **{'L-Shell':[cs(Epoch_DERPA_low_T0), {}]}}
+print(data_dict_DERPA_low['L-Shell'][0])
 
+# LOW FLYER: reduce the ERPA Data to the simulation size
+low_idx = np.abs(data_dict_DERPA_low['L-Shell'][0] - simLShell_min).argmin()
+high_idx = np.abs(data_dict_DERPA_low['L-Shell'][0] - simLShell_max).argmin()
+for key in data_dict_DERPA_low.keys():
+    if key in ['Epoch', 'temperature']:
+        data_dict_DERPA_low[key][0] = data_dict_DERPA_low[key][0][low_idx:high_idx + 1]
 
-# MPI DATA
-
-
+#########################
+# --- LOW FLYER: MPI ---
+#########################
+fig, ax = plt.subplots(2)
+ax[0].plot(data_dict_DERPA_high['L-Shell'][0],data_dict_DERPA_high['temperature'][0])
+ax[1].plot(data_dict_DERPA_low['L-Shell'][0],data_dict_DERPA_low['temperature'][0])
+plt.show()
 
 ############################
 # --- --- --- --- --- --- --
@@ -203,7 +205,7 @@ fig.set_figheight(Figure_height)
 
 # --- HF EEPAA/IEPAA PARALLEL CURRENT---
 axNo = 0
-ax[axNo].plot(data_dict_Lshell_high['L-Shell'][0], data_dict_EEPAA_current_high['J_parallel'][0]/Jpara_scale, label='EEPAA/IEPAA $J_{\parallel}$')
+ax[axNo].plot(data_dict_EEPAA_current_high['L-Shell'][0], data_dict_EEPAA_current_high['J_parallel'][0]/Jpara_scale, label='EEPAA/IEPAA $J_{\parallel}$')
 ax[axNo].set_ylabel('Parallel Current [nA]', fontsize=Label_FontSize, labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize-4, length=Tick_Length-2, width=Tick_Width-1)
@@ -211,11 +213,11 @@ ax[axNo].set_ylim(-1E-6, 1E-7)
 
 # --- HF Electron Temperatue (DERPA/LP) ---
 axNo +=1
-ax[axNo].plot(data_dict_DERPA_high['L-Shell'][0],data_dict_DERPA_high['ERPA1_temp'][0], color='tab:red', linewidth=Plot_LineWidth+2, label='ERPA1 $T_{e}$')
-ax[axNo].plot(data_dict_DERPA_high['L-Shell'][0],data_dict_DERPA_high['ERPA2_temp'][0], color='tab:blue', linewidth=Plot_LineWidth+2, label='ERPA2 $T_{e}$')
+ax[axNo].plot(data_dict_DERPA_high['L-Shell'][0],data_dict_DERPA_high['temperature'][0], color='tab:red', linewidth=Plot_LineWidth+2, label='ERPA1 $T_{e}$')
 ax[axNo].set_ylabel('Temperature [eV]', fontsize=Label_FontSize,labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 leg=ax[axNo].legend(fontsize=Legend_FontSize,loc='upper right')
+
 
 # --- BREAK AXIS ---
 axNo +=1
@@ -226,7 +228,7 @@ ax[axNo].axis('off')
 
 # --- LF EEPAA/IEPAA PARALLEL CURRENT---
 axNo +=1
-ax[axNo].plot(data_dict_Lshell_low['L-Shell'][0], data_dict_EEPAA_current_low['J_parallel'][0]/Jpara_scale, label='EEPAA/IEPAA $J_{\parallel}$')
+ax[axNo].plot(data_dict_EEPAA_current_low['L-Shell'][0], data_dict_EEPAA_current_low['J_parallel'][0]/Jpara_scale, label='EEPAA/IEPAA $J_{\parallel}$')
 ax[axNo].set_ylabel('Parallel Current [nA]', fontsize=Label_FontSize, labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize-4, length=Tick_Length-2, width=Tick_Width-1)
@@ -234,22 +236,21 @@ ax[axNo].set_ylim(-500,100)
 
 # --- LF Electron Temperatue (DERPA/LP) ---
 axNo +=1
-ax[axNo].plot(data_dict_DERPA_low['L-Shell'][0],data_dict_DERPA_low['ERPA1_temp'][0], color='tab:red', linewidth=Plot_LineWidth+2, label='ERPA1 $T_{e}$')
-ax[axNo].plot(data_dict_DERPA_low['L-Shell'][0],data_dict_DERPA_low['ERPA2_temp'][0], color='tab:blue', linewidth=Plot_LineWidth+2, label='ERPA2 $T_{e}$')
+ax[axNo].plot(data_dict_DERPA_low['L-Shell'][0],data_dict_DERPA_low['temperature'][0], color='tab:blue', linewidth=Plot_LineWidth+2, label='ERPA2 $T_{e}$')
 ax[axNo].set_ylabel('Temperature [eV]', fontsize=Label_FontSize,labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 leg=ax[axNo].legend(fontsize=Legend_FontSize,loc='upper right')
 
 # ---Low Flyer MPI ---
 axNo +=1
-ax[axNo].plot(data_dict_DERPA_low['L-Shell'][0],data_dict_DERPA_low['ERPA2_temp'][0], color='tab:blue', linewidth=Plot_LineWidth+2, label='ERPA2 $T_{e}$')
+ax[axNo].plot(data_dict_DERPA_low['L-Shell'][0],data_dict_DERPA_low['temperature'][0], color='tab:blue', linewidth=Plot_LineWidth+2, label='ERPA2 $T_{e}$')
 ax[axNo].set_ylabel('Temp', fontsize=Label_FontSize,labelpad=Label_Padding)
 
 
 
 # # --- get L-Shell labels and Alt Labels together ---
 xTickLabels = ax[1].axes.get_xticklabels()
-print(xTickLabels)
+xTick_Locations = [tickVal.get_text() for tickVal in xTickLabels]
 xTick_Locations = [float(tickVal.get_text()) for tickVal in xTickLabels]
 xTick_newLabels_high = [f'{LshellVal}\n{round(data_dict_Lshell_high["Alt"][0][np.abs(data_dict_Lshell_high["L-Shell"][0] - LshellVal).argmin()]/stl.m_to_km)}' for LshellVal in xTick_Locations]
 xTick_newLabels_low = [f'{LshellVal}\n{round(data_dict_Lshell_low["Alt"][0][np.abs(data_dict_Lshell_low["L-Shell"][0] - LshellVal).argmin()]/stl.m_to_km)}' for LshellVal in xTick_Locations]
