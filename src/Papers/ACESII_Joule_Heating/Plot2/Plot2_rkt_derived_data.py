@@ -144,50 +144,73 @@ for key in data_dict_Lshell_high.keys():
         data_dict_DERPA_high[key][0] = data_dict_DERPA_high[key][0][low_idx:high_idx + 1]
 
 
-###########################
-# --- LOW FLYER: EEPAA ---
-###########################
-Epoch_Lshell_low_T0 = stl.EpochTo_T0_Rocket(data_dict_Lshell_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
-cs = CubicSpline(Epoch_Lshell_low_T0, data_dict_Lshell_low['L-Shell'][0])
+###################
+# --- LOW FLYER ---
+###################
 
-# LOW FLYER: interpolate L-Shell into EEPAA/IEPAA currents data
-Epoch_Jparallel_low_T0 = stl.EpochTo_T0_Rocket(data_dict_EEPAA_current_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
-data_dict_EEPAA_current_low = {**data_dict_EEPAA_current_low, **{'L-Shell':[cs(Epoch_Jparallel_low_T0),{}]}}
+# --- --- --- --- --- --- -
+### REDUCE THE DATASETS ###
+# --- --- --- --- --- --- -
+# Description: Reduce the datasets to only the simulation region FIRST to avoid weird interpolation issues
+min_time = data_dict_Lshell_low['Epoch'][0][np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_min).argmin()]
+max_time = data_dict_Lshell_low['Epoch'][0][np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_max).argmin()]
 
-# LOW FLYER: reduce the EEPAA data
-low_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_min).argmin()
-high_idx = np.abs(data_dict_Lshell_low['L-Shell'][0] - simLShell_max).argmin()
+
+# --- EEPAA ---
+low_idx = np.abs(data_dict_EEPAA_current_low['Epoch'][0] - min_time).argmin()
+high_idx = np.abs(data_dict_EEPAA_current_low['Epoch'][0] - max_time).argmin()
 for key in data_dict_EEPAA_current_low.keys():
-    if key in ['Epoch', 'J_parallel', 'L-Shell']:
+    if key in ['Epoch', 'J_parallel']:
         data_dict_EEPAA_current_low[key][0] = data_dict_EEPAA_current_low[key][0][low_idx:high_idx+1]
 
-##############################
-# --- LOW FLYER: LANGMUIR ---
-##############################
-# TODO:
+# --- Langmuir Probe ---
+#TODO
 
-##########################
-# --- LOW FLYER: DERPA ---
-##########################
-# LOW FLYER: interpolate L-Shell into DERPA data
-Epoch_DERPA_low_T0 = stl.EpochTo_T0_Rocket(data_dict_DERPA_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
-data_dict_DERPA_low = {**data_dict_DERPA_low, **{'L-Shell':[cs(Epoch_DERPA_low_T0), {}]}}
-print(data_dict_DERPA_low['L-Shell'][0])
-
-# LOW FLYER: reduce the ERPA Data to the simulation size
-low_idx = np.abs(data_dict_DERPA_low['L-Shell'][0] - simLShell_min).argmin()
-high_idx = np.abs(data_dict_DERPA_low['L-Shell'][0] - simLShell_max).argmin()
+# --- DERPA ---
+low_idx = np.abs(data_dict_DERPA_low['Epoch'][0] - min_time).argmin()
+high_idx = np.abs(data_dict_DERPA_low['Epoch'][0] - max_time).argmin()
 for key in data_dict_DERPA_low.keys():
     if key in ['Epoch', 'temperature']:
         data_dict_DERPA_low[key][0] = data_dict_DERPA_low[key][0][low_idx:high_idx + 1]
 
-#########################
-# --- LOW FLYER: MPI ---
-#########################
+# --- MPI ---
+#TODO
+
+# --- L-Shell ---
+low_idx = np.abs(data_dict_Lshell_low['Epoch'][0] - min_time).argmin()
+high_idx = np.abs(data_dict_Lshell_low['Epoch'][0] - max_time).argmin()
+for key in data_dict_Lshell_low.keys():
+    if key in ['Epoch', 'L-Shell']:
+        data_dict_Lshell_low[key][0] = data_dict_Lshell_low[key][0][low_idx:high_idx + 1]
+
+# --- --- --- --- --- --- --- --- --- ---
+### INTERPOLATE L-SHELL INTO DATASETS ###
+# --- --- --- --- --- --- --- --- --- ---
+Epoch_Lshell_low_T0 = stl.EpochTo_T0_Rocket(data_dict_Lshell_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
+cs = CubicSpline(Epoch_Lshell_low_T0, data_dict_Lshell_low['L-Shell'][0])
+
+
+# --- EEPAA ---
+Epoch_Jparallel_low_T0 = stl.EpochTo_T0_Rocket(data_dict_EEPAA_current_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
+data_dict_EEPAA_current_low = {**data_dict_EEPAA_current_low, **{'L-Shell':[cs(Epoch_Jparallel_low_T0),{}]}}
+
+# --- LANGMUIR ---
+# TODO:
+
+# --- DERPA ---
+# LOW FLYER: interpolate L-Shell into DERPA data
+Epoch_DERPA_low_T0 = stl.EpochTo_T0_Rocket(data_dict_DERPA_low['Epoch'][0], T0=dt.datetime(2022,11,20,17,20,00))
+data_dict_DERPA_low = {**data_dict_DERPA_low, **{'L-Shell':[cs(Epoch_DERPA_low_T0), {}]}}
+
+# --- MPI ---
 fig, ax = plt.subplots(2)
 ax[0].plot(data_dict_DERPA_high['L-Shell'][0],data_dict_DERPA_high['temperature'][0])
 ax[1].plot(data_dict_DERPA_low['L-Shell'][0],data_dict_DERPA_low['temperature'][0])
 plt.show()
+
+
+
+
 
 ############################
 # --- --- --- --- --- --- --

@@ -137,10 +137,14 @@ def traj_to_L_shell(wRocket):
         for key in data_dict_output.keys():
             data_dict_output[key][0] = np.array(data_dict_output[key][0])
 
+            # adjust the L-Shell for the Low Flyer: we'd like to keep the same timebase as the High Flyer BUT the interpolation
+            # goes crazy if you evaluate it too far. Just set these points to the beginning of the Low Flyer's L-Shell
+            if wRocket == 5:
+                target_idx = np.abs(data_dict_output['Epoch'][0] - dt.datetime(2022,11,20,17,21,40)).argmin()
+                target_L_Shell = deepcopy(data_dict_output['L-Shell'][0][target_idx])
+                data_dict_output['L-Shell'][0][:target_idx] = target_L_Shell
 
         outputPath = f'{DataPaths.ACES_data_folder}{outputPath_modifier}\{DataPaths.fliers[wRocket-4]}\\{fileoutName}'
-        print(outputPath)
-
         stl.outputCDFdata(outputPath, data_dict_output)
 
         stl.Done(start_time)

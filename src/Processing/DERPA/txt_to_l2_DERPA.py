@@ -23,10 +23,10 @@ justPrintFileNames = False # Just print the names of files
 
 # --- Select the Rocket ---
 # 5 -> ACES II Low Flier - ONLY ONE AVAILABLE
-wRocket = 5
+wRocket = 4
 
 # --- Select DERPA 1 or DERPA 2 [1/2]---
-wDERPA = 1 # 1 or 2
+wDERPA = 2 # 1 or 2
 
 # --- OutputData ---
 outputData = True
@@ -155,18 +155,34 @@ def txt_to_l2_DERPA(wflyer, justPrintFileNames, wDERPA):
     data_dict_output.pop('Epoch_skinu')
 
 
+    # Remove anything before 17:21:40 OR past 17:28:00 on the LOW Flyer
+    if DERPA_flyers[wRocket-4] == 'LO':
+        cutoff_low_idx = np.abs(data_dict_output['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 20,50)).argmin()
+        cutoff_high_idx = np.abs(data_dict_output['Epoch'][0] - dt.datetime(2022,11,20,17,28)).argmin()
+        for key in data_dict_output.keys():
+            data_dict_output[key][0] = data_dict_output[key][0][cutoff_low_idx:cutoff_high_idx+1]
+
+    # Include attitude/L-Shell data
+    from scipy.interpolate import CubicSpline
+    attitude_path = 'C:\Data\ACESII\coordinates\Lshell\\' + f'{ACESII.fliers[wRocket-4]}\\*.cdf*'
+    data_dict_Lshell = stl.loadDictFromFile(glob(attitude_path)[0])
+    attitude_seconds = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_Lshell['Epoch'][0],T0=dt.datetime(2022,11,20,17,20))
+    DERPA_seconds = stl.EpochTo_T0_Rocket(InputEpoch=data_dict_output['Epoch'][0],T0=dt.datetime(2022,11,20,17,20))
+
+    for key in ['L-Shell', 'Alt', 'Long', 'Lat']:
+        cs = CubicSpline(attitude_seconds, data_dict_Lshell[key][0])
+        data_dict_output = {**data_dict_output, **{key:[np.array(cs(DERPA_seconds)), deepcopy(data_dict_Lshell[key][1])]}}
+        data_dict_output[key][1]['VAR_TYPE'] = 'support_data'
+
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
     # --- --- --- --- --- --- ---
     if outputData:
-
         stl.prgMsg('Creating output file')
         fileoutName = f'ACESII_{rocketID}_l2_ERPA{wDERPA}.cdf'
         outputPath = f'C:\Data\ACESII\L2\{ACESII.fliers[wRocket-4]}' + f'\\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)
-
-
 
 # --- --- --- ---
 # --- EXECUTE ---
