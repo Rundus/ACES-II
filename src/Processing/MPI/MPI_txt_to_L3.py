@@ -65,7 +65,6 @@ def txt_raw_MPI_Data_to_cdf():
                             }
     stl.Done(start_time)
 
-
     # write out the data
     stl.prgMsg('Writing out the data')
     outputPath = 'C:\Data\ACESII\L3\MPI\low\\'

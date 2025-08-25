@@ -4,6 +4,7 @@
 # the first moment of the distribution funciton
 
 
+
 # --- bookkeeping ---
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
@@ -12,7 +13,6 @@ __version__ = "1.0.0"
 
 # --- --- --- --- ---
 from src.my_imports import *
-
 start_time = time.time()
 # --- --- --- --- ---
 
@@ -37,7 +37,6 @@ wRocket = 4
 # [#0,#1,#2,...etc] --> only specific files. Follows python indexing. use justPrintFileNames = True to see which files you need.
 wFiles = []
 
-
 # Number of points to interpolate between coordinate values in the velocity space coordinate change
 # N = 500
 # fillvalue = 0 # value to place
@@ -55,10 +54,10 @@ wFiles = []
 # --- --- --- ---
 
 def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames):
+
     # Set the paths for the file names
     rocketFolderPath = DataPaths.ACES_data_folder
-    inputFiles = glob(
-        f'{rocketFolderPath}\\L3\\DistFunc\\{ACESII.fliers[wRocket - 4]}\*eepaa_fullCal.cdf*' + '*leesa_fullCal*' + '*iepaa_fullCal.cdf*')
+    inputFiles = glob(f'{rocketFolderPath}\\L3\\DistFunc\\{ACESII.fliers[wRocket-4]}\*eepaa_fullCal.cdf*'+'*leesa_fullCal*' + '*iepaa_fullCal.cdf*' )
 
     if justPrintFileNames:
         for file in inputFiles:
@@ -119,6 +118,9 @@ def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames):
     #     interp = LinearNDInterpolator(list(zip(Vpars, Vperps)), DistFuncs[i], fill_value=fillvalue)
     #     Z.append(interp(X, Y))
 
+
+
+    
     # # --- --- --- --- --- --- --- ---
     # # --- Trapezoidal Integration ---
     # # --- --- --- --- --- --- --- ---
