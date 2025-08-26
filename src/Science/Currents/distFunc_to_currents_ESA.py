@@ -10,6 +10,8 @@ __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
+import numpy as np
+
 # --- --- --- --- ---
 from src.my_imports import *
 
@@ -21,7 +23,7 @@ start_time = time.time()
 # --- --- --- ---
 
 # Just print the names of files
-justPrintFileNames = True
+justPrintFileNames = False
 
 # --- Select the Rocket ---
 # 0 -> Integration High Flier
@@ -37,219 +39,139 @@ wRocket = 4
 # [#0,#1,#2,...etc] --> only specific files. Follows python indexing. use justPrintFileNames = True to see which files you need.
 wFiles = []
 
-
-# Number of points to interpolate between coordinate values in the velocity space coordinate change
-# N = 500
-# fillvalue = 0 # value to place
-# EngyRange = [12, 40] # nominally [12,40]. Reduces the energy range to interpolate over since we don't really reach the higher energies ever
-# pitchBound = [-10,10] # boundaries of pitch angle for acceptence to calculate J_parallel
-# energyBound = 7 # same as above but energy. In eV. Nominally 7eV
-# useSpecificLocations = False
-# locations = [i for i in range(0,9000,100)]
-# reduceData=True
-# targetTimes= [dt.datetime(2022,11,20,17,22,30,00),dt.datetime(2022,11,20,17,27,30,00)]
-
+outputData = True
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
+from scipy.integrate import simpson
+from tqdm import tqdm
 
-def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames):
+def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames,wFile):
     # Set the paths for the file names
     rocketFolderPath = DataPaths.ACES_data_folder
-    inputFiles = glob(
-        f'{rocketFolderPath}\\L3\\DistFunc\\{ACESII.fliers[wRocket - 4]}\*eepaa_fullCal.cdf*' + '*leesa_fullCal*' + '*iepaa_fullCal.cdf*')
+    inputFiles = [f for f in glob(f'{rocketFolderPath}\\L3\\DistFunc\\{ACESII.fliers[wRocket - 4]}\*.cdf*') if "eepaa" in f or "iepaa" in f or "leesa" in f]
+    names = ['eepaa','iepaa','leesa']
+    inputFiles_Lshell = glob(f'{rocketFolderPath}\\coordinates\\Lshell\\{ACESII.fliers[wRocket - 4]}\*.cdf*')
 
     if justPrintFileNames:
-        for file in inputFiles:
-            print(file)
+        for idx,file in enumerate(inputFiles):
+            print(f'[{idx}] ', file)
         return
-    #
-    # print('\n')
-    # print(stl.color.UNDERLINE + f'Calculating J_parallel from ESA data' + stl.color.END)
-    #
-    # # --- get the data from the tmCDF file ---
-    # stl.prgMsg('Loading data from distribution function Files')
-    # data_dict_elec = stl.loadDictFromFile(inputFiles_electron)
-    # data_dict_ion = stl.loadDictFromFile(inputFiles_ion)
-    #
-    #
-    # # --- --- --- --- --- --- --- --- --- --- -
-    # # --- ELECTRON - CALCULATE ESA CURRENTS ---
-    # # --- --- --- --- --- --- --- --- --- --- -
-    #
-    # stl.Done(start_time) ; stl.prgMsg('Performing Distribution Function Coordinate Change')
-    #
-    # # The distribution function data must be converted into a new coordinate space, v_perp & v_para
-    # # Since we ultimately wish to integrate the data, we should interpolate between the non-uniform spacing of v_perp & v_para to get a nice grid
-    # # We can then integrate the interpolated distribution function
-    #
-    # # --- organize/convert the data ---
-    # distFunc = data_dict['Distribution_Function'][0]
-    # DistFuncs= []
-    # Pitch = data_dict['Pitch_Angle'][0]
-    # Energy = data_dict['Energy'][0]
-    #
-    # # The vperp and vparallel coordinates never change, so pre-calculate them here for use later
-    # Vpars = [np.cos(np.radians(Pitch[ptch])) * np.sqrt(2 * q0 * Energy[engy] / m_e) for engy in range(EngyRange[0], EngyRange[1]) for ptch in range(len(distFunc[0]))]
-    # Vperps = [np.sin(np.radians(Pitch[ptch])) * np.sqrt(2 * q0 * Energy[engy] / m_e) for engy in range(EngyRange[0], EngyRange[1]) for ptch in range(len(distFunc[0]))]
-    #
-    # for tme in range(len(distFunc)):
-    #     tempDists = [distFunc[tme][ptch][engy] for engy in range(EngyRange[0],EngyRange[1]) for ptch in range(len(distFunc[0]))]
-    #     DistFuncs.append(tempDists)
-    #
-    # Vpars = np.array(Vpars) ; Vperps = np.array(Vperps) ; DistFuncs = np.array(DistFuncs)
-    #
-    # stl.Done(start_time) ; stl.prgMsg('Interpolating Dist Func')
-    #
-    # # interpolate Data
-    # X = np.linspace(Vpars.min(), Vpars.max(), N)
-    # Y = np.linspace(Vperps.min(), Vperps.max(), N)
-    # X, Y = np.meshgrid(X, Y, indexing='ij')
-    # Z = []
-    #
-    # # interpolate all the data
-    #
-    # if useSpecificLocations:
-    #     iterateThis = locations
-    # else:
-    #     iterateThis = range(len(distFunc))
-    #
-    # for i in tqdm(iterateThis):
-    #     interp = LinearNDInterpolator(list(zip(Vpars, Vperps)), DistFuncs[i], fill_value=fillvalue)
-    #     Z.append(interp(X, Y))
 
-    # # --- --- --- --- --- --- --- ---
-    # # --- Trapezoidal Integration ---
-    # # --- --- --- --- --- --- --- ---
-    # stl.Done(start_time) ; stl.prgMsg('Calculating J_parallel \n')
-    #
-    # j_para = []
-    # for tme in tqdm(iterateThis):
-    #     zData = Z[tme]
-    #
-    #     ##########################################################################
-    #     # --- Filter out z-data that is within the pitch and energy boundaries ---
-    #     ##########################################################################
-    #     par_Strips = []
-    #     perp_Strips = []
-    #     z_Strips = []
-    #
-    #     for parIndex in range(N): # loop over x axis
-    #         par_temp = []
-    #         perp_temp = []
-    #         z_temp = []
-    #
-    #         for perpIndex in range(N): # loop over y axis:
-    #
-    #             particlePitch = np.degrees(np.arctan(Y[0][perpIndex] /X[parIndex][0] )) # particle's pitch angle
-    #             particleEnergy =  (0.5*m_e*((Y[0][perpIndex]**2) + (X[parIndex][0]**2)))/q0 # particle's energy in eV
-    #
-    #             if Y[0][perpIndex] < 0: # if you're below Vperp = 0
-    #                 # if you're pitch is outside the -10 to 190deg range
-    #                 if (particlePitch <= pitchBound[0]) or (particlePitch >= pitchBound[1]):
-    #                     par_temp.append(X[parIndex][0])
-    #                     perp_temp.append(Y[0][perpIndex])
-    #                     z_temp.append(0)
-    #                 else: # if you're within the correct, pitch
-    #                     if particleEnergy >= energyBound:  # place the data if it's good
-    #                         par_temp.append(X[parIndex][0])
-    #                         perp_temp.append(Y[0][perpIndex])
-    #                         z_temp.append(zData[parIndex][perpIndex])
-    #                     else:  # if its too low energy
-    #                         par_temp.append(X[parIndex][0])
-    #                         perp_temp.append(Y[0][perpIndex])
-    #                         z_temp.append(0)
-    #             else:
-    #                 if particleEnergy >= energyBound: # place the data if it's good
-    #                     par_temp.append(X[parIndex][0])
-    #                     perp_temp.append(Y[0][perpIndex])
-    #                     z_temp.append(zData[parIndex][perpIndex])
-    #                 else: # if it's bad do a fillvalue
-    #                     par_temp.append(X[parIndex][0])
-    #                     perp_temp.append(Y[0][perpIndex])
-    #                     z_temp.append(0)
-    #
-    #         par_Strips.append(par_temp)
-    #         perp_Strips.append(perp_temp)
-    #         z_Strips.append(z_temp)
-    #
-    #     ###############################
-    #     # --- Integrate over Strips ---
-    #     ###############################
-    #
-    #     # Method: Trapezoid rule: the more efficent form:G_n =  deltaX /2 (f(x0) + 2f(x1) + ... + 2f(X_N-1) + f(x_N))
-    #
-    #     G = []
-    #
-    #     deltaVperp = (perp_Strips[0][1] - perp_Strips[0][0])/2
-    #     deltaVpar = (par_Strips[1][0] - par_Strips[0][0])/2
-    #
-    #     for n in range(len(par_Strips)): # for each par strip
-    #
-    #         firstVal = perp_Strips[n][0]*par_Strips[n][0]*z_Strips[n][-1]
-    #         lastVal = perp_Strips[n][-1]*par_Strips[n][-1]*z_Strips[n][-1]
-    #
-    #         # Adjust the first val if it's within the 190deg or -10deg region
-    #         if perp_Strips[n][0] < 0:
-    #             firstVal = -1 * firstVal
-    #
-    #         # loop over the rest of the values, changing the multiplication if I'm in the V_perp <0 region
-    #         middleSum = sum([perp_Strips[n][k]*par_Strips[n][k]*z_Strips[n][k] if perp_Strips[n][k] >= 0 else -1*perp_Strips[n][k]*par_Strips[n][k]*z_Strips[n][k]  for k in range(1,len(par_Strips[n])-1)])
-    #
-    #         G.append(deltaVperp * (firstVal + middleSum + lastVal))
-    #
-    #     # calculate j_parallel by one more trapizoidal integration_tad_files
-    #     j_para_temp = -2*np.pi*q0*sum([deltaVpar*(G[i+1] + G[i]) for i in range(len(G) - 1)])
-    #     if np.abs(j_para_temp) >= 10**(-6):
-    #         j_para_temp = rocketAttrs.epoch_fillVal
-    #
-    #     j_para.append(j_para_temp)
-    #
-    # j_para = np.array(j_para)
-    #
-    # # --- --- --- --- --- --- ---
-    # # --- WRITE OUT THE DATA ---
-    # # --- --- --- --- --- --- ---
-    # stl.Done(start_time) ; stl.prgMsg('Creating output file')
-    #
-    # outputPath = f'{outputFolderPath}{ACESII.fliers[wRocket-4]}\\{fileoutName}'
-    #
-    # data_dict = {**data_dict, **{'J_parallel':
-    #                                  [j_para, {'LABLAXIS': 'J_parallel',
-    #                                            'DEPEND_0': 'Epoch_esa',
-    #                                            'DEPEND_1': None,
-    #                                            'DEPEND_2': None,
-    #                                            'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
-    #                                            'UNITS': '!N A!N m!U-2!N',
-    #                                            'VALIDMIN': j_para.min(), 'VALIDMAX': j_para.max(),
-    #                                            'VAR_TYPE': 'data', 'SCALETYP': 'linear'}]}}
-    #
-    # del data_dict['Distribution_Function']
-    #
-    # if useSpecificLocations:
-    #     newEpoch = [data_dict['Epoch_esa'][0][i] for i in iterateThis]
-    #     data_dict['Epoch_esa'][0] = np.array(newEpoch)
-    #
-    #
-    #
-    # # ADD IN THE traj DATA
-    # stl.prgMsg('Interpolating trajectory data into output file')
-    # inputFiles_traj = glob(f'{rocketFolderPath}trajectories\{ACESII.fliers[wRocket-4]}\*.cdf')
-    # data_dict_traj = stl.loadDictFromFile(inputFiles_traj[0],{},reduceData=False,targetTimes=[data_dict['Epoch'][0][0],data_dict['Epoch'][0][-1]])
-    # data_dict_trajInterp = stl.InterpolateDataDict(InputDataDict=data_dict_traj,
-    #                                                InputEpochArray=data_dict_traj['Epoch'][0],
-    #                                                wKeys=['geomagLat','geomagLong','geomagAlt'],
-    #                                                targetEpochArray=data_dict['Epoch'][0])
-    #
-    # data_dict = {**data_dict, **{'geomagLat': data_dict_trajInterp['geomagLat']}}
-    # data_dict = {**data_dict, **{'geomagLong': data_dict_trajInterp['geomagLong']}}
-    # data_dict = {**data_dict, **{'geomagAlt': data_dict_trajInterp['geomagAlt']}}
-    # stl.outputCDFdata(outputPath, data_dict, L2ModelData, globalAttrsMod)
-    # stl.Done(start_time)
+    print('\n')
+    print(stl.color.UNDERLINE + f'Calculating J_parallel from {names[wFile]} data' + stl.color.END)
+
+    # --- Load the Data ---
+    stl.prgMsg('Loading data from distribution function Files')
+    data_dict_ESA = stl.loadDictFromFile(inputFiles[wFile])
+    data_dict_LShell = stl.loadDictFromFile(inputFiles_Lshell[0])
+    stl.Done(start_time)
+
+    # --- prepare the output ---
+    data_dict_output = {}
+
+    # --- --- --- --- --- --- --- --- --- --- -
+    # --- ELECTRON - CALCULATE ESA CURRENTS ---
+    # --- --- --- --- --- --- --- --- --- --- -
+    stl.prgMsg('Calculating Parallel Current\n')
+    distFunc = deepcopy(data_dict_ESA['Distribution_Function'][0])
+    instr_nam = names[wFile]
+
+    # [0] Define the charge
+    charge = -1*stl.q0 if instr_nam in ['eepaa','leesa'] else stl.q0
+
+    # [1] Define the mass
+    mass = stl.m_e if instr_nam in ['eepaa','leesa'] else stl.ion_dict['O+']
+
+    # [2] Convert the energies to joules
+    Energy_Joules = np.array(deepcopy(data_dict_ESA['Energy'][0])*stl.q0)
+
+    # [3] Prepare the integrand
+
+    # [3a] Multiply by the energy
+    integrand = np.multiply(distFunc,Energy_Joules)
+
+    # [3b] Multiply the integrand by pitch angle dependence
+    for idx, ptch in enumerate(data_dict_ESA['Pitch_Angle'][0]):
+        integrand[:,idx,:] = integrand[:, idx, :]*np.cos(np.radians(ptch))*np.cos(np.radians(ptch))
+
+    # [4] Integrate over energy
+    # TODO: Adjust pitch_integrates for IEPAA and LEESA
+    elec_pitches = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]
+    ion_pitches = [0, 30, 60, 90, 120, 150, 180]
+    if wRocket-4 == 0:
+        if names[wFile] != 'iepaa':
+            pitch_integrates = elec_pitches[1:17 + 1]
+            integrand = integrand[:, 2:2 + len(pitch_integrates), :]
+        else:
+            pitch_integrates = ion_pitches[1:]
+            integrand = integrand[:, 1:1 + len(pitch_integrates), :]
+    elif wRocket-4 == 1:
+        if names[wFile] != 'iepaa':
+            pitch_integrates = elec_pitches
+            integrand = integrand[:, 1:1 + len(pitch_integrates), :]
+        else:
+            pitch_integrates = ion_pitches
+
+    J_para_ptch = np.zeros(shape=(len(data_dict_ESA['Epoch'][0]),len(pitch_integrates)))
+
+    for tme in tqdm(range(len(J_para_ptch))):
+        for ptch in range(len(pitch_integrates)):
+            J_para_ptch[tme][ptch] = simpson(integrand[tme][ptch], x=Energy_Joules)
+
+    # [4] Integrate over Pitch Angle - NOTE: ONLY integrate over 0 to 180deg
+    J_para = np.zeros(shape=len(data_dict_ESA['Epoch'][0]))
+    for tme in tqdm(range(len(J_para_ptch))):
+        J_para[tme] = simpson(J_para_ptch[tme], x=np.radians(pitch_integrates))
+
+    # [5] Multiply by the constant term
+    # TODO: Adjust mass for IEPAA
+    J_para = (4*np.pi*charge/np.power(mass,2)) * J_para
+
+    # --- --- --- --- --- --- ---
+    # --- WRITE OUT THE DATA ---
+    # --- --- --- --- --- --- ---
+    if outputData:
+        stl.prgMsg('Creating output file')
+
+        fileOutPath = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_Jpara_{names[wFile]}.cdf'
+        outputPath = f'C:\Data\ACESII\science\ESA_currents\\{ACESII.fliers[wRocket-4]}\\{fileOutPath}'
+
+        # output the main data
+        data_dict_output = {**data_dict_output, **{'j_para':
+                                         [J_para, {'LABLAXIS': 'J_parallel',
+                                                   'DEPEND_0': 'Epoch',
+                                                   'DEPEND_1': None,
+                                                   'DEPEND_2': None,
+                                                   'UNITS': '!N A!N m!U-2!N',
+                                                   'VAR_TYPE': 'data', 'SCALETYP': 'linear'}]}}
+
+        # Add the other data
+        data_dict_output = {**data_dict_output,
+                            **{f'{key}':deepcopy(data_dict_ESA[f'{key}']) for key in ['Epoch','Alt','Lat','Long']}}
+
+        # Include the L-Shell
+        data_dict_output = {**data_dict_output,
+                            **{f'{key}': deepcopy(data_dict_LShell[f'{key}']) for key in ['L-Shell']}}
+
+        data_dict_output['L-Shell'][1]['VAR_TYPE'] = 'support_data'
+
+        stl.outputCDFdata(data_dict=data_dict_output,outputPath=outputPath)
+
+        stl.Done(start_time)
 
 
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-DistFunc_to_ESAcurrents(wRocket, justPrintFileNames)
+
+if justPrintFileNames:
+    DistFunc_to_ESAcurrents(wRocket, justPrintFileNames, 0)
+else:
+    if wFiles == []:
+        for fileNo in range(len(glob(f'{DataPaths.ACES_data_folder}\\L3\\DistFunc\\{ACESII.fliers[wRocket - 4]}\*.cdf*'))):
+            DistFunc_to_ESAcurrents(wRocket, justPrintFileNames, fileNo)
+    else:
+        for fileNo in wFiles:
+            DistFunc_to_ESAcurrents(wRocket, justPrintFileNames, fileNo)

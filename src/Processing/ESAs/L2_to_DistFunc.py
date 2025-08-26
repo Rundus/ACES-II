@@ -40,57 +40,37 @@ wRocket = 4
 # [] --> all files
 # [#0,#1,#2,...etc] --> only specific files. Follows python indexing. use justPrintFileNames = True to see which files you need.
 wFiles = [[0, 2, 4], [0, 4]]
-
 IsElectron = True
 wIon = 0
 inputPath_modifier = 'L2' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
 outputPath_modifier = 'L3\DistFunc' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
-
 outputData = True
 
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-import numpy as np
-from warnings import filterwarnings # USED TO IGNORE WARNING ABOUT "UserWarning: Invalid dataL1 type for dataL1.... Skip warnings.warn('Invalid dataL1 type for dataL1.... Skip')" on Epoch High dataL1.
-filterwarnings("ignore")
-from tqdm import tqdm
-from src.missionAttributes_OUTDATED import ACES_mission_dicts
-from src.data_paths import Integration_data_folder, ACES_data_folder, TRICE_data_folder, fliers
-from src.archive.class_var_func import L2_ACES_Quick
-from spaceToolsLib import color,prgMsg,cm_to_m,q0,IonMasses,m_e
-from glob import glob
-from os.path import getsize
-setupPYCDF()
-from spacepy import pycdf
-pycdf.lib.set_backward(False)
+from src.my_imports import *
 
-
-def Distribution_Function(wRocket, wFile, rocketFolderPath, justPrintFileNames, wflyer):
+def L2_to_DistFunc(wRocket, wFile, rocketFolderPath, justPrintFileNames):
 
     outputFolderPath = rocketFolderPath
 
     # --- ACES II Flight/Integration Data ---
-    rocketAttrs,b,c = ACES_mission_dicts()
-    globalAttrsMod = rocketAttrs.globalAttributes[wflyer]
-    globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'Distribution_Function'
-    L2ModelData = L2_ACES_Quick(wflyer)
-
     # Set the paths for the file names
-    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\*.cdf')
-    outputFiles = glob(f'{outputFolderPath}{outputPath_modifier}\{fliers[wflyer]}\*.cdf')
+    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')
+    outputFiles = glob(f'{outputFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')
 
-    input_names = [file.replace(f'{rocketFolderPath}{inputPath_modifier}\{fliers[wflyer]}\\', '') for file in inputFiles]
-    output_names = [file.replace(f'{outputFolderPath}{outputPath_modifier}\{fliers[wflyer]}\\', '') for file in outputFiles]
+    input_names = [file.replace(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\\', '') for file in inputFiles]
+    output_names = [file.replace(f'{outputFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\\', '') for file in outputFiles]
 
     input_names_searchable = [file.replace('ACES_', '').replace('36359_', '').replace('36364_', '').replace('l2_', '').replace('_v00','').replace('__', '_') for file in input_names]
     output_names_searchable = [file.replace('ACES_', '').replace('36359_', '').replace('36364_', '').replace('distFunc_', '').replace('_v00', '') for file in output_names]
 
-    dataFile_name = input_names[wFile].replace(f'{rocketFolderPath}\{fliers[wflyer]}\\', '')
+    dataFile_name = input_names[wFile].replace(f'{rocketFolderPath}\{ACESII.fliers[wRocket-4]}\\', '')
     fileoutName = dataFile_name.replace('l2', 'distFunc')
 
     # determine which instrument the file corresponds to:
-    for index, instr in enumerate(['eepaa', 'leesa', 'iepaa', 'lp']):
+    for index, instr in enumerate(['eepaa', 'leesa', 'iepaa']):
         if instr in dataFile_name:
             wInstr = [index, instr]
 
@@ -98,133 +78,106 @@ def Distribution_Function(wRocket, wFile, rocketFolderPath, justPrintFileNames, 
         for i, file in enumerate(inputFiles):
             anws = ["yes" if input_names_searchable[i].replace('.cdf', "") in output_names_searchable else "no"]
             print('[{:.0f}] {:70s}{:5.1f} MB   Made ESACurrents: {:3s} '.format(i, input_names_searchable[i],round(getsize(file) / (10 ** 6), 1), anws[0]))
-    else:
-        print('\n')
-        print(color.UNDERLINE + f'Calculating Distribution Function for {dataFile_name}' + color.END)
-        print('[' + str(wFile) + ']   ' + str(round(getsize(inputFiles[wFile]) / (10 ** 6), 1)) + 'MiB')
+        return
 
-        # --- get the data from the tmCDF file ---
-        prgMsg('Loading data from L2Files')
-        data_dict = loadDictFromFile(inputFilePath=inputFiles[wFile])
+    print('\n')
+    print(stl.color.UNDERLINE + f'Calculating Distribution Function for {dataFile_name}' + stl.color.END)
+    print('[' + str(wFile) + ']   ' + str(round(getsize(inputFiles[wFile]) / (10 ** 6), 1)) + 'MiB')
 
-        Done(start_time)
+    # --- get the data ---
+    stl.prgMsg('Loading data from L2Files')
+    data_dict_esa = stl.loadDictFromFile(inputFilePath=inputFiles[wFile])
+    data_dict_meff_i = stl.loadDictFromFile(rf'C:\Data\ACESII\science\ion_mass_effective\\{ACESII.fliers[wRocket-4]}\\*.cdf*')
+    Done(start_time)
 
-        # --- --- --- --- --- --- --- --- ---
-        # --- Calculate Instrument Data ---
-        # --- --- --- --- --- --- --- --- ---
+    # --- prepare the output ---
+    data_dict_output = {}
 
-        prgMsg('Calculating the Distribution Function')
+    # --- --- --- --- --- --- --- --- ---
+    # --- Calculate Instrument Data ---
+    # --- --- --- --- --- --- --- --- ---
+    stl.prgMsg('Calculating the Distribution Function')
 
-        # --- CALCULATE DISTRIBUTION FUNCTION ---
-        diffNFlux = data_dict['Differential_Number_Flux'][0]
-        oneCountLevel = data_dict['oneCountLevel'][0]
-        pitchAngle = data_dict['Pitch_Angle'][0]
-        Energies = data_dict['Energy'][0]
+    # --- CALCULATE DISTRIBUTION FUNCTION ---
+    diffNFlux = data_dict_esa['Differential_Number_Flux'][0]
+    oneCountLevel = data_dict_esa['oneCountLevel'][0]
+    Energies = data_dict_esa['Energy'][0]
 
-        # define empty numpy array
-        sizes = [len(diffNFlux),len(diffNFlux[0]), len(diffNFlux[0][0])]
-        ranges = [range(sizes[0]), range(sizes[1]), range(sizes[2])]
-        distFunc = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
-        distFunc_oneCount = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
+    # define empty numpy array
+    sizes = [len(diffNFlux),len(diffNFlux[0]), len(diffNFlux[0][0])]
+    ranges = [range(sizes[0]), range(sizes[1]), range(sizes[2])]
+    distFunc = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
+    distFunc_oneCount = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
 
-        if IsElectron:
-            m = m_e
+
+    print(f'\nNum. of iterations: {sizes[0]*sizes[1]*sizes[2]}\n')
+
+    # --- Calculate DistFunc in SI units ---
+    for tme, ptch, engy in tqdm(itertools.product(*ranges)):
+        if diffNFlux[tme][ptch][engy] <= ACESII.epoch_fillVal:
+            distFunc[tme][ptch][engy] = ACESII.epoch_fillVal
         else:
-            m = IonMasses[wIon]
-
-        print(f'\nNum. of iterations: {sizes[0]*sizes[1]*sizes[2]}\n')
-
-        # --- Calculate DistFunc in SI units ---
-        for tme, ptch, engy in tqdm(itertools.product(*ranges)):
-            if diffNFlux[tme][ptch][engy] <= rocketAttrs.epoch_fillVal:
-                distFunc[tme][ptch][engy] = rocketAttrs.epoch_fillVal
+            distVal = (stl.cm_to_m*stl.cm_to_m/(stl.q0*stl.q0 ))*(((stl.m**2)*diffNFlux[tme][ptch][engy]) / (2 * Energies[engy]))
+            if distVal < 0:
+                distFunc[tme][ptch][engy] = 0
             else:
-                distVal = (cm_to_m*cm_to_m/(q0*q0 ))*(((m**2)*diffNFlux[tme][ptch][engy]) / (2 * Energies[engy]))
-                if distVal < 0:
-                    distFunc[tme][ptch][engy] = 0
-                else:
-                    distFunc[tme][ptch][engy] = distVal
+                distFunc[tme][ptch][engy] = distVal
 
-            distFunc_oneCount[tme][ptch][engy] = (cm_to_m*cm_to_m/(q0*q0 ))*(((m**2)*oneCountLevel[tme][ptch][engy]) / (2 * Energies[engy]))
+        distFunc_oneCount[tme][ptch][engy] = (stl.cm_to_m*stl.cm_to_m/(stl.q0*stl.q0 ))*(((stl.m**2)*oneCountLevel[tme][ptch][engy]) / (2 * Energies[engy]))
 
-        distFunc = np.array(distFunc)
+    Done(start_time)
 
-        del data_dict['Differential_Number_Flux'],data_dict['Differential_Energy_Flux']
+
+
+
+    # --- --- --- --- --- --- ---
+    # --- WRITE OUT THE DATA ---
+    # --- --- --- --- --- --- ---
+    if outputData:
+
+        stl.prgMsg('Creating output file')
+        outputPath = f'{outputFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
+
+        data_dict_output = {**data_dict_output, **{'Distribution_Function':
+                                         [distFunc, {'LABLAXIS': 'Distribution_Function',
+                                                   'DEPEND_0': 'Epoch',
+                                                   'DEPEND_1': 'Pitch_Angle',
+                                                   'DEPEND_2': 'Energy',
+                                                   'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
+                                                   'UNITS': 'm!A-6!Ns!A3!N',
+                                                   'VALIDMIN': distFunc.min(), 'VALIDMAX': distFunc.max(),
+                                                   'VAR_TYPE': 'data', 'SCALETYP': 'log'}]}}
+
+        data_dict = {**data_dict_output, **{'oneCountLevel':
+                                         [oneCountLevel, {'LABLAXIS': 'Distribution_Function',
+                                                     'DEPEND_0': 'Epoch',
+                                                     'DEPEND_1': 'Pitch_Angle',
+                                                     'DEPEND_2': 'Energy',
+                                                     'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
+                                                     'UNITS': 'm!A-6!Ns!A3!N',
+                                                     'VALIDMIN': distFunc.min(), 'VALIDMAX': distFunc.max(),
+                                                     'VAR_TYPE': 'support_data', 'SCALETYP': 'log'}]}}
+
+        outputCDFdata(outputPath=outputPath,data_dict=data_dict)
 
         Done(start_time)
-
-
-        if outputData:
-            # --- --- --- --- --- --- ---
-            # --- WRITE OUT THE DATA ---
-            # --- --- --- --- --- --- ---
-            prgMsg('Creating output file')
-
-            outputPath = f'{outputFolderPath}{outputPath_modifier}\{fliers[wflyer]}\\{fileoutName}'
-
-            data_dict = {**data_dict, **{'Distribution_Function':
-                                             [distFunc, {'LABLAXIS': 'Distribution_Function',
-                                                       'DEPEND_0': 'Epoch',
-                                                       'DEPEND_1': 'Pitch_Angle',
-                                                       'DEPEND_2': 'Energy',
-                                                       'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
-                                                       'UNITS': 'm!A-6!Ns!A3!N',
-                                                       'VALIDMIN': distFunc.min(), 'VALIDMAX': distFunc.max(),
-                                                       'VAR_TYPE': 'data', 'SCALETYP': 'log'}]}}
-
-            data_dict = {**data_dict, **{'oneCountLevel':
-                                             [oneCountLevel, {'LABLAXIS': 'Distribution_Function',
-                                                         'DEPEND_0': 'Epoch',
-                                                         'DEPEND_1': 'Pitch_Angle',
-                                                         'DEPEND_2': 'Energy',
-                                                         'FILLVAL': rocketAttrs.epoch_fillVal, 'FORMAT': 'E12.2',
-                                                         'UNITS': 'm!A-6!Ns!A3!N',
-                                                         'VALIDMIN': distFunc.min(), 'VALIDMAX': distFunc.max(),
-                                                         'VAR_TYPE': 'support_data', 'SCALETYP': 'log'}]}}
-
-            outputCDFdata(outputPath=outputPath,data_dict=data_dict,ModelData=L2ModelData,globalAttrsMod=globalAttrsMod,instrNam=wInstr[1])
-
-            Done(start_time)
-
-
-
-
-
-
-
-
 
 
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-if wRocket == 0:  # ACES II Integration High
-    rocketFolderPath = Integration_data_folder
-    wflyer = 0
-elif wRocket == 1: # ACES II Integration Low
-    rocketFolderPath = Integration_data_folder
-    wflyer = 1
-elif wRocket == 2:  # TRICE II High
-    rocketFolderPath = TRICE_data_folder
-    wflyer = 0
-elif wRocket == 3: # TRICE II Low
-    rocketFolderPath = TRICE_data_folder
-    wflyer = 1
-elif wRocket == 4:  # ACES II High
-    rocketFolderPath = ACES_data_folder
-    wflyer = 0
-elif wRocket == 5: # ACES II Low
-    rocketFolderPath = ACES_data_folder
-    wflyer = 1
 
-if len(glob(f'{rocketFolderPath}L2\{fliers[wflyer]}\*.cdf')) == 0:
-    print(color.RED + 'There are no .cdf files in the specified directory' + color.END)
+rocketFolderPath = DataPaths.ACES_data_folder
+
+
+if len(glob(f'{rocketFolderPath}L2\{ACESII.fliers[wRocket-4]}\*.cdf')) == 0:
+    print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
     if justPrintFileNames:
-        Distribution_Function(wRocket, 0, rocketFolderPath, justPrintFileNames, wflyer)
+        L2_to_DistFunc(wRocket, 0, rocketFolderPath, justPrintFileNames)
     elif not wFiles[wRocket-4]:
-        for fileNo in (range(len(glob(f'{rocketFolderPath}L2\{fliers[wflyer]}\*.cdf')))):
-            Distribution_Function(wRocket, fileNo, rocketFolderPath, justPrintFileNames, wflyer)
+        for fileNo in (range(len(glob(f'{rocketFolderPath}L2\{ACESII.fliers[wRocket-4]}\*.cdf')))):
+            L2_to_DistFunc(wRocket, fileNo, rocketFolderPath, justPrintFileNames)
     else:
         for filesNo in wFiles[wRocket-4]:
-            Distribution_Function(wRocket, filesNo, rocketFolderPath, justPrintFileNames, wflyer)
+            L2_to_DistFunc(wRocket, filesNo, rocketFolderPath, justPrintFileNames)
