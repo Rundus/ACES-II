@@ -112,7 +112,6 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
     xData = np.array(deepcopy(data_dict_fit_data['E_T_raw'][0]))
     yData = np.array(data_dict_fit_data['vxB_T'][0])
 
-
     params, cov = curve_fit(f=fitFunc,
                             xdata=xData,
                             ydata=yData
@@ -134,12 +133,9 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
     best_chival_Chi = ChiSquares[best_fit_idx]
     best_slope_Chi = slopes[best_fit_idx]
 
-
     if Plot_fitted_data:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(3)
-
-
         # get the fit data
         yData_fit = fitFunc(xData,*params)
         yData_Chi = fitFunc(xData,best_slope_Chi)
@@ -175,8 +171,10 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
 
     # E_N_correction = np.nanmean(data_dict_fit_data['vxB_N'][0] / data_dict_fit_data['E_N_raw'][0])
 
-    E_N_correction = 3.31
+    # E_N_correction = 3.31
+    E_N_correction = params[0]
     E_T_correction = params[0]
+    E_p_correction = params[0]
 
     if Plot_corrected_data:
 
@@ -187,8 +185,10 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
         for idx, key in enumerate(keys):
             if key == 'N':
                 ax[idx].plot(data_dict_fit_data['Epoch'][0], (E_N_correction) * data_dict_fit_data[f'E_{key}_raw'][0], label=f'E_{key}')
-            else:
+            elif key == 'T':
                 ax[idx].plot(data_dict_fit_data['Epoch'][0], (E_T_correction) * data_dict_fit_data[f'E_{key}_raw'][0], label=f'E_{key}')
+            else:
+                ax[idx].plot(data_dict_fit_data['Epoch'][0], (E_p_correction) * data_dict_fit_data[f'E_{key}_raw'][0], label=f'E_{key}')
 
             ax[idx].plot(data_dict_fit_data['Epoch'][0], data_dict_fit_data[f'vxB_{key}'][0], label=f'vxB_{key}',color='red')
             ax[idx].legend()

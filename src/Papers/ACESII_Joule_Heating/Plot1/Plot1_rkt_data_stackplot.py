@@ -327,7 +327,6 @@ ax[axNo].set_ylim(LP_limit[0], LP_limit[1])
 ax[axNo].set_xlabel('L-Shell \n Alt [km]', fontsize=Tick_FontSize-2, weight='bold')
 ax[axNo].xaxis.set_label_coords(-0.085, -0.26)
 ax[axNo].set_yscale('log')
-
 ax[axNo].minorticks_on()
 
 # # --- get L-Shell labels and Alt Labels together ---

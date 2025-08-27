@@ -29,8 +29,8 @@ justPrintFileNames = False
 # 5 -> ACES-II Low Flier
 wRocket = 5
 wFiles = [0]
-outputData = False
-
+outputData = True
+use_RingCore_data = True # if False, just use CHAOS data
 Plot_correction_term = True
 
 # --- --- --- ---
@@ -39,7 +39,6 @@ Plot_correction_term = True
 # none
 
 def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
-
     inputFiles_elec = glob(f'{DataPaths.ACES_data_folder}\\L1\\{ACESII.fliers[wRocket-4]}\*E_Field_ENU_no_corrections*')
     inputFiles_mag = glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\*RingCore_ENU.cdf*')
     input_names = [ifile.replace(f'{DataPaths.ACES_data_folder}\\L1\\{ACESII.fliers[wRocket-4]}\\', '') for ifile in inputFiles_elec]
@@ -60,8 +59,8 @@ def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
     # --- ADD IN ROGER'S TIME CORRECTION ---
     ########################################
     stl.prgMsg('Adding In Rogers timebase correction')
-    timeCorrection = (0.1157 * 1E9) # in ns
-    data_dict_EFI['Epoch'][0] = deepcopy(np.array([pycdf.lib.tt2000_to_datetime(int(pycdf.lib.datetime_to_tt2000(tme) + timeCorrection)) for tme in data_dict_EFI['Epoch'][0]]))
+    timeCorrection = (0.1157 * 1E6) # in us
+    data_dict_EFI['Epoch'][0] = np.array([tme + dt.timedelta(microseconds=timeCorrection) for tme in data_dict_EFI['Epoch'][0]])
     stl.Done(start_time)
 
     #########################################################
@@ -91,13 +90,27 @@ def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
     # Convert payload velocity to ENU
     data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket-4]}\\*ECEF_to_ENU.cdf*')[0])
 
-    rkt_VEL_ENU = np.array([np.matmul(data_dict_transform_ENU['ECEF_to_ENU'][0][i],vec) for i,vec in enumerate(rkt_VEL_ECEF)])
+    rkt_VEL_ENU = np.array([np.matmul(data_dict_transform_ENU['ECEF_to_ENU'][0][i], vec) for i,vec in enumerate(rkt_VEL_ECEF)])
 
     # Get the CHAOS geomagnetic field
-    B_model = 1E-9*stl.CHAOS(lat=data_dict_traj['Lat'][0],
-                        long=data_dict_traj['Long'][0],
-                        alt=data_dict_traj['Alt'][0],
-                        times=data_dict_traj['Epoch'][0])  # CHAOS in ENU coordinates
+    B_model = 1E-9 * stl.CHAOS(lat=data_dict_traj['Lat'][0],
+                               long=data_dict_traj['Long'][0],
+                               alt=data_dict_traj['Alt'][0],
+                               times=data_dict_traj['Epoch'][0])  # CHAOS in ENU coordinates
+
+    if use_RingCore_data:
+        # Load the RingCore - assumes the RingCore data does NOT have the CHAOS model included
+        data_dict_RingCore = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\L2\{ACESII.fliers[wRocket-4]}\\*RingCore_ENU.cdf*')[0])
+
+        # Interpolate RingCore Data onto Trajectory timebase
+        T0_RingCore = stl.EpochTo_T0_Rocket(data_dict_RingCore['Epoch'][0],T0=dt.datetime(2022,11,20,17,20))
+        T0_Traj = stl.EpochTo_T0_Rocket(data_dict_traj['Epoch'][0], T0=dt.datetime(2022, 11, 20, 17, 20))
+        for key in ['B_East', 'B_North', 'B_Up']:
+            cs = CubicSpline(T0_RingCore, data_dict_RingCore[f'{key}'][0])
+            data_dict_RingCore[f'{key}'][0] = cs(T0_Traj)
+
+        B_vec_Ringcore = 1E-9*np.array([data_dict_RingCore['B_East'][0], data_dict_RingCore['B_North'][0], data_dict_RingCore['B_Up'][0]]).T
+        B_model = B_model + B_vec_Ringcore
 
     # Calculate the vxB electric field in ENU
     vxB_term = np.array([np.cross(vec, B_model[i]) for i, vec in enumerate(rkt_VEL_ENU)])

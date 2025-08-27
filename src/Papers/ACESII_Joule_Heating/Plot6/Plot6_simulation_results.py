@@ -66,6 +66,12 @@ data_dict_conductivity = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\
 # Simulation - Spatial Grid
 data_dict_spatial = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\spatial_environment\spatial_environment.cdf')
 
+# Simulation - Currents
+data_dict_currents = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\currents\currents_01.cdf')
+
+# Simulation - Joule Heating
+data_dict_joule = stl.loadDictFromFile('C:\Data\physicsModels\ionosphere\joule_heating\joule_heating.cdf')
+
 stl.Done(start_time)
 
 ############################
@@ -76,7 +82,7 @@ stl.Done(start_time)
 
 stl.prgMsg('Plotting Data')
 
-fig, ax = plt.subplots(2)
+fig, ax = plt.subplots(6, height_ratios=[1, 1, 1, 1, 1, 1], sharex=False)
 fig.set_figwidth(Figure_width)
 fig.set_figheight(Figure_height)
 
@@ -108,12 +114,68 @@ ax[axNo].plot(simLShell, data_dict_conductivity['Sigma_H_K10'][0],linewidth=Plot
 ax[axNo].legend(fontsize=Legend_FontSize)
 ax[axNo].set_ylim(-0.5, 13)
 
+# --- DC PEDERSEN CURRENT (HEIGHT-INTEGRATED) ---
+axNo += 1
+ax[axNo].set_ylabel('$J_{P}$ (Height-Integrated)\n[A/m$^{2}$]', fontsize=Label_FontSize, labelpad=Label_Padding)
+ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize-4, length=Tick_Length-2, width=Tick_Width-1)
+ax[axNo].plot(simLShell, data_dict_currents['J_P_HI_DC'][0],linewidth=Plot_LineWidth,color='tab:blue', label=r'Simulation')
+ax[axNo].plot(simLShell, data_dict_currents['J_P_HI_AC'][0],linewidth=Plot_LineWidth,color='tab:green', label=r'Simulation')
+ax[axNo].legend(fontsize=Legend_FontSize)
+# ax[axNo].set_ylim(-0.1, 13)
+
+
+# --- DC HALL CURRENT (HEIGHT-INTEGRATED) ---
+axNo += 1
+ax[axNo].set_ylabel('$J_{H}$ (Height-Integrated)\n[A/m$^{2}$]', fontsize=Label_FontSize, labelpad=Label_Padding)
+ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize-4, length=Tick_Length-2, width=Tick_Width-1)
+ax[axNo].plot(simLShell, data_dict_currents['J_H_HI_DC'][0],linewidth=Plot_LineWidth,color='tab:blue', label=r'Simulation')
+ax[axNo].plot(simLShell, data_dict_currents['J_H_HI_AC'][0],linewidth=Plot_LineWidth,color='tab:green', label=r'Simulation')
+ax[axNo].legend(fontsize=Legend_FontSize)
+# ax[axNo].set_ylim(-0.1, 13)
+
+
+# --- DC ELECTRIC FIELD  ---
+axNo += 1
+ax[axNo].set_ylabel('$E_{T}$', fontsize=Label_FontSize, labelpad=Label_Padding)
+ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize-4, length=Tick_Length-2, width=Tick_Width-1)
+cmap1 = ax[axNo].pcolormesh(simLShell, simAlt, data_dict_Efield['E_N'][0], cmap='bwr',vmin=-0.4,vmax=0.4)
+ax[axNo].legend(fontsize=Legend_FontSize)
+
+
+# --- DC JOULE HEATING RATE  ---
+axNo += 1
+ax[axNo].set_ylabel('$Q_{J}$', fontsize=Label_FontSize, labelpad=Label_Padding)
+ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
+ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize-4, length=Tick_Length-2, width=Tick_Width-1)
+cmap2 = ax[axNo].pcolormesh(simLShell, simAlt, data_dict_joule['q_j_DC'][0], cmap=stl.apl_rainbow_black0_cmap())
+ax[axNo].legend(fontsize=Legend_FontSize)
+
+
+
+# --- cbar 1---
+cax = fig.add_axes([0.885, 0.796, 0.03, 0.184])
+cbar = plt.colorbar(cmap1, cax=cax)
+cbar.ax.minorticks_on()
+cbar.ax.tick_params(labelsize=cbar_TickLabelSize + 5)
+cbar.set_label(r'[V/m]', fontsize=cbar_FontSize)
+
+# --- cbar 2---
+cax = fig.add_axes([0.885, 0.796, 0.03, 0.184])
+cbar = plt.colorbar(cmap2, cax=cax)
+cbar.ax.minorticks_on()
+cbar.ax.tick_params(labelsize=cbar_TickLabelSize + 5)
+cbar.set_label(r'[W/$m^{3}$]', fontsize=cbar_FontSize)
+
+
+
 # -- Do some minor adjustments to labels/margins/limits ---
 for i in range(axNo+1):
     ax[i].margins(0)
     ax[i].set_xlim(data_dict_spatial['simLShell'][0][0], data_dict_spatial['simLShell'][0][-1])
     ax[i].tick_params(axis='x', which='major', colors='black', labelsize=Tick_FontSize+10, length=Tick_Length,width=Tick_Width)
-
     if i <= 0:
         ax[i].set_xticklabels([])
 
@@ -121,7 +183,7 @@ fig.align_ylabels(ax[:])
 
 # fig.subplots_adjust(left=0.12, bottom=0.06, right=0.88, top=0.98,hspace=0.08)  # remove the space between plots
 plt.tight_layout()
-plt.savefig(r'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_JouleHeating\PLOTS\Plot4\Plot4_simulation_HI_conductivity_base.png', dpi=dpi)
+plt.savefig(r'C:\Users\cfelt\OneDrive - University of Iowa\Research\ACESII\Feltman2025_ACESII_JouleHeating\PLOTS\Plot6\Plot6_simulation_results_base.png', dpi=dpi)
 stl.Done(start_time)
 
 

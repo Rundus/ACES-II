@@ -32,7 +32,7 @@ justPrintFileNames = False
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # select which files to convert
 # [] --> all files
@@ -51,7 +51,7 @@ def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames,wFile):
     # Set the paths for the file names
     rocketFolderPath = DataPaths.ACES_data_folder
     inputFiles = [f for f in glob(f'{rocketFolderPath}\\L3\\DistFunc\\{ACESII.fliers[wRocket - 4]}\*.cdf*') if "eepaa" in f or "iepaa" in f or "leesa" in f]
-    names = ['eepaa','iepaa','leesa']
+    names = ['eepaa', 'iepaa', 'leesa']
     inputFiles_Lshell = glob(f'{rocketFolderPath}\\coordinates\\Lshell\\{ACESII.fliers[wRocket - 4]}\*.cdf*')
 
     if justPrintFileNames:
@@ -97,7 +97,6 @@ def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames,wFile):
         integrand[:,idx,:] = integrand[:, idx, :]*np.cos(np.radians(ptch))*np.cos(np.radians(ptch))
 
     # [4] Integrate over energy
-    # TODO: Adjust pitch_integrates for IEPAA and LEESA
     elec_pitches = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]
     ion_pitches = [0, 30, 60, 90, 120, 150, 180]
     if wRocket-4 == 0:
