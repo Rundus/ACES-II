@@ -34,7 +34,6 @@ Escale = 1000 # what to scale the deltaE field by
 # LP_scale = 1E5
 LP_scale = 1
 E_limits = [-125, 265]
-
 B_limits = [-1500, 3000]
 
 # --- Cbar ---

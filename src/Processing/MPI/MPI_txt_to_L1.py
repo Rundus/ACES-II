@@ -26,7 +26,7 @@ def txt_raw_MPI_Data_to_cdf():
 
     # Load in the .txt files
     stl.prgMsg('Loading the data')
-    path_to_data = 'C:\Data\ACESII\L3\MPI\low\\'
+    path_to_data = 'C:\Data\ACESII\L1\low\MPI\\'
     data_file_names = glob(path_to_data + '*MPI*' +'*.txt')
 
     # prepare the output
@@ -67,8 +67,8 @@ def txt_raw_MPI_Data_to_cdf():
 
     # write out the data
     stl.prgMsg('Writing out the data')
-    outputPath = 'C:\Data\ACESII\L3\MPI\low\\'
-    file_out_name = 'ACESII_36364_l3_MPI_rktFrm.cdf'
+    outputPath = 'C:\Data\ACESII\L1\low\MPI\\'
+    file_out_name = 'ACESII_36364_l1_MPI_instrFrm.cdf'
     stl.outputCDFdata(outputPath=outputPath+file_out_name, data_dict=data_dict_output)
     stl.Done(start_time)
 
