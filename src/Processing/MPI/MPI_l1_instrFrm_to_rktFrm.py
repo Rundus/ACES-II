@@ -50,7 +50,7 @@ def MPI_instrFrm_to_rktFrm():
         if idx == 0: # MPI1
             R1 = stl.Rx(90)
             R2 = stl.Ry(90)
-            vec_rkt = np.array([R2@(R1@v) for v in vec_instr])
+            vec_rkt = np.array([R2 @ (R1 @ v) for v in vec_instr])
 
         elif idx == 1: # MPI2
             R1 = stl.Rz(90)
@@ -69,21 +69,21 @@ def MPI_instrFrm_to_rktFrm():
         # store the data
         data_dict_output = {**data_dict_output,
                             **{
-                                f'Vx_rkt_MPI{idx + 1}': [vec_rkt[:,0], {}],
-                                f'Vy_rkt_MPI{idx + 1}': [vec_rkt[:,1], {}],
-                                f'Vz_rkt_MPI{idx + 1}': [vec_rkt[:,2], {}],
+                                f'Vx_rkt_MPI{idx + 1}': [vec_rkt[:, 0], {'DEPEND_0':f'Epoch_MPI{idx+1}','LABLAXIS':f'Vx_rkt_MPI{idx + 1}'}],
+                                f'Vy_rkt_MPI{idx + 1}': [vec_rkt[:, 1], {'DEPEND_0':f'Epoch_MPI{idx+1}','LABLAXIS':f'Vy_rkt_MPI{idx + 1}'}],
+                                f'Vz_rkt_MPI{idx + 1}': [vec_rkt[:, 2], {'DEPEND_0':f'Epoch_MPI{idx+1}','LABLAXIS':f'Vz_rkt_MPI{idx + 1}'}],
                             }
                             }
 
     stl.Done(start_time)
 
 
-    # # write out the data
-    # stl.prgMsg('Writing out the data')
-    # outputPath = 'C:\Data\ACESII\L1\low\MPI\\'
-    # file_out_name = 'ACESII_36364_l1_MPI_instrFrm.cdf'
-    # stl.outputCDFdata(outputPath=outputPath+file_out_name, data_dict=data_dict_output)
-    # stl.Done(start_time)
+    # write out the data
+    stl.prgMsg('Writing out the data')
+    outputPath = 'C:\Data\ACESII\L1\low\\'
+    file_out_name = 'ACESII_36364_l1_MPI_rktFrm.cdf'
+    stl.outputCDFdata(outputPath=outputPath+file_out_name, data_dict=data_dict_output)
+    stl.Done(start_time)
 
 
 ### EXECUTE ###
