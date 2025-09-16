@@ -59,6 +59,7 @@ def L2_EFI_to_integratedPotential():
     from scipy.interpolate import CubicSpline
     T0 = dt.datetime(2022, 11, 20, 17, 20)
     time_EFI = stl.EpochTo_T0_Rocket(data_dict_EFI['Epoch'][0], T0=T0)
+    stl.Ep
     time_traj = stl.EpochTo_T0_Rocket(data_dict_traj['Epoch'][0], T0=T0)
 
     for key in data_dict_traj.keys():

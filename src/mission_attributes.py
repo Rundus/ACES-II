@@ -181,8 +181,15 @@ class ACESII:
     LP_epoch_range_to_determine_step_DAC = [[dt.datetime(2022, 11, 20, 17, 24, 30, 300000), dt.datetime(2022, 11, 20, 17, 25, 10, 310000)], [dt.datetime(2022, 11, 20, 17, 24, 30, 440000), dt.datetime(2022, 11, 20, 17, 25, 10, 450000)]]
     LP_start_end_langmuir_break_into_curves = [ [dt.datetime(2022, 11, 20, 17, 21, 00, 890000), dt.datetime(2022, 11, 20, 17, 29, 57, 700000)], [dt.datetime(2022, 11, 20, 17, 23, 5, 10000), dt.datetime(2022, 11, 20, 17, 28, 9, 900000)]]
 
+    # ERPA
 
-
+    # applies to both flyers
+    ERPA_dict = {
+                 'ERPA_SN9': {'Look_direction':'forward', 'payload':'high flyer'},
+                 'ERPA_SN11': {'Look_direction':'aft', 'payload':'high flyer'},
+                'ERPA_SN10': {'Look_direction': 'forward', 'payload': 'low flyer'},
+                'ERPA_SN7': {'Look_direction': 'aft', 'payload': 'low flyer'}
+                 }
 
     # RingCore
 

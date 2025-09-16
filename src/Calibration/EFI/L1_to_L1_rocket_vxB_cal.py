@@ -1,4 +1,4 @@
-# --- L1_to_L1_rocket_convection_cal.py ---
+# --- L1_to_L1_rocket_vxB_cal.py ---
 # Description: Calculate the rocket convection terms to the EFI dataset
 # THEN rotate everything into auroral coordinates
 
@@ -141,17 +141,24 @@ def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
     # X
     cs = CubicSpline(Epoch_traj_tt2000,vxB_term[:,0])
     vxB_E = cs(Epoch_mag_tt2000)
+    cs = CubicSpline(Epoch_traj_tt2000,B_model[:,0])
+    B_E = cs(Epoch_mag_tt2000)
 
     # Y
     cs = CubicSpline(Epoch_traj_tt2000, vxB_term[:, 1])
     vxB_N = cs(Epoch_mag_tt2000)
+    cs = CubicSpline(Epoch_traj_tt2000, B_model[:, 1])
+    B_N = cs(Epoch_mag_tt2000)
 
     # Z
     cs = CubicSpline(Epoch_traj_tt2000, vxB_term[:, 2])
     vxB_U = cs(Epoch_mag_tt2000)
+    cs = CubicSpline(Epoch_traj_tt2000, B_model[:, 2])
+    B_U = cs(Epoch_mag_tt2000)
 
     # form the new, downsampled vectors
-    vxB_ENU = np.array([vxB_E,vxB_N,vxB_U]).T
+    vxB_ENU = np.array([vxB_E, vxB_N, vxB_U]).T
+    B_model = np.array([B_E, B_N, B_U]).T
 
     # --- prepare the E-Field ---
     E_Field_ENU = np.array([deepcopy(data_dict_EFI['E_East'][0]), data_dict_EFI['E_North'][0], data_dict_EFI['E_Up'][0]]).T
@@ -186,6 +193,9 @@ def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
     E_Field_ECEF = np.array([np.matmul(ENU_to_ECEF_transform[i], vec) for i, vec in enumerate(E_Field_ENU)])
     E_Field_auroral = np.array([np.matmul(ECEF_to_auroral_transform[i], vec) for i, vec in enumerate(E_Field_ECEF)])
 
+    B_Field_ECEF = np.array([np.matmul(ENU_to_ECEF_transform[i], vec) for i, vec in enumerate(B_model)])
+    B_Field_auroral = np.array([np.matmul(ECEF_to_auroral_transform[i], vec) for i, vec in enumerate(B_Field_ECEF)])
+
     stl.Done(start_time)
 
     data_dict_output = {'vxB_N':[vxB_auroral[:,0], {'LABLAXIS': 'vxB_N', 'DEPEND_0': 'Epoch',
@@ -208,6 +218,25 @@ def L1_to_L1_rocket_convection_cal(wRocket, justPrintFileNames):
                             'E_N_raw': [E_Field_auroral[:,0],deepcopy(data_dict_EFI['E_East'][1])],
                             'E_T_raw': [E_Field_auroral[:,1],deepcopy(data_dict_EFI['E_North'][1])],
                             'E_p_raw': [E_Field_auroral[:,2],deepcopy(data_dict_EFI['E_Up'][1])],
+
+                            'B_N': [B_Field_auroral[:, 0], {'LABLAXIS': 'B_N', 'DEPEND_0': 'Epoch',
+                                                          'DEPEND_1': None, 'DEPEND_2': None,
+                                                          'FILLVAL': ACESII.epoch_fillVal,
+                                                          'FORMAT': 'E12.2', 'UNITS': 'T',
+                                                          'VAR_TYPE': 'support_data',
+                                                          'SCALETYP': 'linear'}],
+                            'B_T': [B_Field_auroral[:, 1], {'LABLAXIS': 'B_T', 'DEPEND_0': 'Epoch',
+                                                            'DEPEND_1': None, 'DEPEND_2': None,
+                                                            'FILLVAL': ACESII.epoch_fillVal,
+                                                            'FORMAT': 'E12.2', 'UNITS': 'T',
+                                                            'VAR_TYPE': 'support_data',
+                                                            'SCALETYP': 'linear'}],
+                            'B_p': [B_Field_auroral[:, 2], {'LABLAXIS': 'B_p', 'DEPEND_0': 'Epoch',
+                                                            'DEPEND_1': None, 'DEPEND_2': None,
+                                                            'FILLVAL': ACESII.epoch_fillVal,
+                                                            'FORMAT': 'E12.2', 'UNITS': 'T',
+                                                            'VAR_TYPE': 'support_data',
+                                                            'SCALETYP': 'linear'}],
                            }
 
     # --- --- --- --- --- --- ---
