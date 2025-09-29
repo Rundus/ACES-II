@@ -34,8 +34,8 @@ wFiles = [0]
 outputData = True
 
 # --- TOGGLES ---
-Plot_vxB_rawEField_data = True
-Plot_corrected_data = True
+Plot_vxB_rawEField_data = False
+Plot_corrected_data = False
 
 # --- --- --- ---
 # --- IMPORTS ---
@@ -91,9 +91,9 @@ def L1_to_L2_offset_fit_cal(wRocket, justPrintFileNames):
         plt.show()
 
     # E_N_correction = 3.31
-    E_N_correction = np.sqrt(2)
-    E_T_correction = np.sqrt(2)
-    E_p_correction = np.sqrt(2)
+    E_N_correction = 1/np.sqrt(2)
+    E_T_correction = 1/np.sqrt(2)
+    E_p_correction = 1/np.sqrt(2)
 
     if Plot_corrected_data:
 
