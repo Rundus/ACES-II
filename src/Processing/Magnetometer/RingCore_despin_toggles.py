@@ -20,8 +20,6 @@ class DespinToggles:
     EB_North = [0.999986, 0.03294]
     # The fits are stl.done by finding 5 deltaT
 
-
-
     # --- Fit Results ---
     fitResults = {
         'Bx': {'Spin Amp': 25.42873940404161, 'Spin Freq': 0.6463295881639182, 'Spin Phase': 91.9759995936283,

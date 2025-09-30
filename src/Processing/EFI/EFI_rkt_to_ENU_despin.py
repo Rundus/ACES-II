@@ -2,6 +2,8 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION:
 
+# TODO: need to determine which time offset is required to de-spin the EFI data
+
 # --- bookkeeping ---
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
@@ -63,25 +65,25 @@ def EFI_rkt_to_ENU_despun(wRocket, justPrintFileNames):
     # --- prepare the output ---
     data_dict_output = {}
 
-
     ############################################################
     # --- Interpolate the Attitude DCM onto the EFI timebase ---
     ############################################################
     stl.prgMsg('Interpolating attitude DCM')
-    T0 = dt.datetime(2022,11,20,17,20)
-    T0_EFI = stl.EpochTo_T0_Rocket(data_dict_EFI['Epoch'][0],T0=T0)
-    T0_attitude  = stl.EpochTo_T0_Rocket(data_dict_attitude['Epoch'][0],T0=T0)
+    T0 = dt.datetime(2022, 11, 20, 17, 20)
+    T0_EFI = np.array([pycdf.lib.datetime_to_tt2000(data_dict_EFI['Epoch'][0][i]) for i in range(len(data_dict_EFI['Epoch'][0]))])
+    T0_attitude = np.array([pycdf.lib.datetime_to_tt2000(data_dict_attitude['Epoch'][0][i]) for i in range(len(data_dict_attitude['Epoch'][0]))])
+    TimeOffset = [127567241.37931032, 120789473.68421052]
+    T0_attitude = np.array([T0_attitude[i] for i in range(len(T0_attitude))])
 
     # interpolate onto EFI timebase
     from scipy.interpolate import CubicSpline
     DCM_EFI = np.zeros(shape=(len(data_dict_EFI['Epoch'][0]),3,3))
-    for i in range(1,4):
-        for j in range(1,4):
+    for i in range(1, 4):
+        for j in range(1, 4):
             cs = CubicSpline(T0_attitude, data_dict_attitude[f'a{i}{j}'][0])
-            DCM_EFI[:,i-1,j-1] = cs(T0_EFI)
+            DCM_EFI[:, i-1, j-1] = cs(T0_EFI)
 
     stl.Done(start_time)
-
 
     #############################
     # --- DESPIN THE EFI DATA ---
@@ -91,9 +93,9 @@ def EFI_rkt_to_ENU_despun(wRocket, justPrintFileNames):
     EFI_ENU_vec = np.array([DCM_EFI[i]@vec for vec in EFI_rkt_vec])
     data_dict_output = {**data_dict_output,
                         **{
-                            'E_E' : [EFI_ENU_vec[:,0], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_East'}],
-                            'E_N': [EFI_ENU_vec[:,1], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_North'}],
-                            'E_Up': [EFI_ENU_vec[:,2], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_up'}],
+                            'E_E' : [EFI_ENU_vec[:, 0], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_East'}],
+                            'E_N': [EFI_ENU_vec[:, 1], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_North'}],
+                            'E_Up': [EFI_ENU_vec[:, 2], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_up'}],
                             '|E|': [np.array([np.linalg.norm(vec) for vec in EFI_ENU_vec]), {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'|E|'}],
                             'Epoch' : deepcopy(data_dict_EFI['Epoch'])
                         }

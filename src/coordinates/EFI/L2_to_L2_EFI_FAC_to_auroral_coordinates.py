@@ -47,7 +47,6 @@ def L2_to_L2_EFI_FAC_to_auroral_coordinates(wRocket):
         'E_r' : [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_T'][1]],
         'E_e': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_N'][1]],
         'E_p': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_p'][1]],
-        'E_mag':data_dict_EFI['Emag'],
         'Epoch':data_dict_EFI['Epoch']
     }
 
@@ -102,6 +101,11 @@ def L2_to_L2_EFI_FAC_to_auroral_coordinates(wRocket):
 
     data_dict_output['E_p'][0] = EFI_FAC[:, 2]
     data_dict_output['E_r'][1]['LABLAXIS'] = 'Field-Aligned Component'
+
+
+    vec = np.array([data_dict_output['E_r'][0],data_dict_output['E_e'][0],data_dict_output['E_p'][0]]).T
+    data_dict_output = {**data_dict_output,
+                        **{'|E|':[np.array([np.linalg.norm([v]) for v in vec]),deepcopy(data_dict_EFI['E_mag'][1])]}}
 
 
     # --- --- --- --- --- --- ---

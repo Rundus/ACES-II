@@ -109,6 +109,10 @@ def L2_to_L2_EFI_auroral_to_ENU_coordinates(wRocket):
     data_dict_output['E_Up'][0] = EFI_ENU[:, 2]
     data_dict_output['E_Up'][1]['LABLAXIS'] = 'E_Up'
 
+    vec = np.array([data_dict_output['E_East'][0], data_dict_output['E_North'][0], data_dict_output['E_Up'][0]]).T
+    data_dict_output = {**data_dict_output,
+                        **{'|E|': [np.array([np.linalg.norm([v]) for v in vec]), deepcopy(data_dict_EFI['E_mag'][1])]}}
+
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
     # --- --- --- --- --- --- ---
