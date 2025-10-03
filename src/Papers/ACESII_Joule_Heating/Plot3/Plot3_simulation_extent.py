@@ -100,7 +100,7 @@ fig.set_figwidth(figure_width)
 fig.set_figheight(figure_height)
 
 ax.set_ylabel('Altitude [km]', fontsize=Plot_labelFontSize,weight='bold', labelpad=Plot_LabelPadding)
-ax.set_xlabel('Distance from Launch [km]',fontsize=Plot_labelFontSize,weight='bold', labelpad=Plot_LabelPadding-40)
+ax.set_xlabel('Distance from Launch (+N/-S) [km]',fontsize=Plot_labelFontSize,weight='bold', labelpad=Plot_LabelPadding-40)
 ax.set_ylim(0, 430)
 ax.set_xlim(-20, 600)
 

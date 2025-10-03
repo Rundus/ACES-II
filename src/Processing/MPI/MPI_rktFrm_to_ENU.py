@@ -1,175 +1,98 @@
 # --- MPI_rktFrm_to_ENU.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION:
+# DESCRIPTION: Rotate the MPI rktFrm data into
+# ENU coordinates
 
-# --- bookkeeping ---
-# !/usr/bin/env python
-__author__ = "Connor Feltman"
-__date__ = "2022-08-22"
-__version__ = "1.0.0"
 
+# imports
 import numpy as np
-
-from src.my_imports import *
-import time
-start_time = time.time()
-# --- --- --- --- ---
-
-# --- --- --- ---
-# --- TOGGLES ---
-# --- --- --- ---
-justPrintFileNames = False # Just print the names of files
-
-# --- Select the Rocket ---
-# 5 -> ACES II Low Flier - ONLY ONE AVAILABLE
-wRocket = 5
-
-# select which files to convert
-# [] --> all files
-# [#0,#1,#2,...etc] --> only specific files. Follows python indexing. use justPrintFileNames = True to see which files you need.
-wFiles = []
-
-# --- OutputData ---
-outputData = True
-
-# --- --- --- ---
-# --- IMPORTS ---
-# --- --- --- ---
-from src.my_imports import *
-import io
-input_path_modifier = 'L3\\MPI\\'
+from copy import deepcopy
+import spaceToolsLib as stl
+from scipy.interpolate import CubicSpline
 
 
-#######################
-# --- MAIN FUNCTION ---
-#######################
-def MPI_rktFrm_to_ENU(wflyer, justPrintFileNames):
+def MPI_rktFrm_to_ENU():
+    # 1. Load attitude solution (DCM)
+    path_to_attitude = r'C:\Data\ACESII\attitude\low\ACESII_36364_Attitude_Solution.cdf'
+    path_to_MPI = r'C:\Data\ACESII\L1\low\ACESII_36364_l1_MPI_rktFrm.cdf'
+    data_dict_attitude = stl.loadDictFromFile(path_to_attitude)
+    data_dict_MPI1 = stl.loadDictFromFile(path_to_MPI)
 
-    # --- FILE I/O ---
-    rocket_folder_path = DataPaths.ACES_data_folder
-    rocketID = ACESII.payload_IDs[wflyer]
+    # 2. Extract time (seconds) and DCM components
+    time_epoch_attitude = data_dict_attitude[f'Epoch'][0]
+    time_sec_attitude = stl.EpochTo_T0_Rocket(time_epoch_attitude, T0=time_epoch_attitude[0])
+    time_epoch_MPI1 = data_dict_MPI1[f'Epoch_MPI1'][0]
+    time_sec_MPI1 = stl.EpochTo_T0_Rocket(time_epoch_MPI1, T0=time_epoch_attitude[0])
 
-    # Set the paths for the file names
-    data_repository = f'{rocket_folder_path}{input_path_modifier}\\{ACESII.fliers[wflyer]}\\'
-    input_files = glob(data_repository + '*.cdf')
-    input_names = [ifile.replace(data_repository, '') for ifile in input_files]
-    input_names_searchable = [ifile.replace(input_path_modifier.lower() + '_', '').replace('_v00', '') for ifile in input_names]
+    # [DCM elements]
+    a11 = np.array(data_dict_attitude['a11'][0])
+    a12 = np.array(data_dict_attitude['a12'][0])
+    a13 = np.array(data_dict_attitude['a13'][0])
+    a21 = np.array(data_dict_attitude['a21'][0])
+    a22 = np.array(data_dict_attitude['a22'][0])
+    a23 = np.array(data_dict_attitude['a23'][0])
+    a31 = np.array(data_dict_attitude['a31'][0])
+    a32 = np.array(data_dict_attitude['a32'][0])
+    a33 = np.array(data_dict_attitude['a33'][0])
 
-    if justPrintFileNames:
-        for i, file in enumerate(input_files):
-            print('[{:.0f}] {:80s}{:5.1f} MB'.format(i, input_names_searchable[i], round(os.path.getsize(file) / (10 ** 6), 1)))
-        return
+    # 3.  Interps for each DCM element
+    dcm_a11 = CubicSpline(time_sec_attitude, a11)
+    dcm_a12 = CubicSpline(time_sec_attitude, a12)
+    dcm_a13 = CubicSpline(time_sec_attitude, a13)
 
-    print('\n')
-    print(stl.color.UNDERLINE + f'Converting to L3 cdf data' + stl.color.END)
+    dcm_a21 = CubicSpline(time_sec_attitude, a21)
+    dcm_a22 = CubicSpline(time_sec_attitude, a22)
+    dcm_a23 = CubicSpline(time_sec_attitude, a23)
 
-    #######################
-    # --- LOAD THE DATA ---
-    #######################
-    data_dict_attitude = stl.loadDictFromFile(r'C:\Data\ACESII\attitude\low\ACESII_36364_Attitude_Solution.cdf')
-    data_dict_MPI = stl.loadDictFromFile(input_files[0])
-
-    # --- prepare the output ---
-    no_of_MPIs = 4
-    data_dict_output = {f'MPI{j+1}_Epoch':deepcopy(data_dict_MPI[f'MPI{j+1}_Epoch']) for j in range(no_of_MPIs)}
+    dcm_a31 = CubicSpline(time_sec_attitude, a31)
+    dcm_a32 = CubicSpline(time_sec_attitude, a32)
+    dcm_a33 = CubicSpline(time_sec_attitude, a33)
 
 
-    ##################################################################
-    # --- Calculate the plasma density from Ion Saturation Current ---
-    ##################################################################
-    stl.prgMsg('Interpolating Attitude Data onto MPI')
+    # 4. interp DCM as a fxn of time
+    N = len(time_sec_MPI1)
+    dcm_interp=np.zeros(shape=(N,3,3)) #for MPI 1
 
-    # Step 1: Interpolate Attitude DCM data into MPI datasets
-    DCMs = []
-    for i in range(no_of_MPIs):
-        target_epoch = data_dict_MPI[f'MPI{i+1}_Epoch'][0]
-        data_dict_attitude_interp = stl.InterpolateDataDict(InputDataDict=deepcopy(data_dict_attitude),
-                                InputEpochArray=deepcopy(data_dict_attitude['Epoch'][0]),
-                                wKeys=['a11', 'a12', 'a13', 'a21', 'a22', 'a23', 'a31', 'a32', 'a33', 'Epoch'],
-                                targetEpochArray=target_epoch,)
-
-        DCMs.append(np.array(
-            [
-                [[data_dict_attitude_interp['a11'][0][i], data_dict_attitude_interp['a12'][0][i], data_dict_attitude_interp['a13'][0][i]],
-                 [data_dict_attitude_interp['a21'][0][i], data_dict_attitude_interp['a22'][0][i], data_dict_attitude_interp['a23'][0][i]],
-                 [data_dict_attitude_interp['a31'][0][i], data_dict_attitude_interp['a32'][0][i], data_dict_attitude_interp['a33'][0][i]]]
-                for i in range(len(data_dict_attitude_interp['Epoch'][0]))
-            ]
-        )
-        )
-
-    stl.Done(start_time)
-
-    ########################
-    # --- APPLY THE DCMs ---
-    ########################
-    stl.prgMsg('Rotating into ENU coordinates')
-
-    for idx in range(no_of_MPIs):
-
-        # form the velocity vector
-        v_vec_rktFrm = np.array([[data_dict_MPI[f'MPI{i+1}_Vx'][0][j], data_dict_MPI[f'MPI{i+1}_Vy'][0][j], 0] for j in range(len(data_dict_MPI[f'MPI{idx+1}_Epoch'][0]))])
-        wDCM = DCMs[idx]
-
-        # rotate the velocities
-        v_vec_ENU = np.array([np.matmul(wDCM[i], v_vec_rktFrm[i]) for i in range(len(v_vec_rktFrm))])
-
-        data_dict_output = {**data_dict_output,
-                            **{f'MPI{idx + 1}_VE': [v_vec_ENU[:,0],
-                                                    {'LABLAXIS': f'MPI{idx + 1}_VE', 'DEPEND_0': f'MPI{idx + 1}_Epoch',
-                                                     'DEPEND_1': None,
-                                                     'DEPEND_2': None,
-                                                     'FILLVAL': ACESII.epoch_fillVal,
-                                                     'FORMAT': 'E12.2',
-                                                     'UNITS': 'm/s',
-                                                     'VALIDMIN': v_vec_ENU[:,0].min(),
-                                                     'VALIDMAX': v_vec_ENU[:,0].max(),
-                                                     'VAR_TYPE': 'data', 'SCALETYP': 'linear'}],
-                               f'MPI{idx + 1}_VN': [v_vec_ENU[:,1],
-                                                    {'LABLAXIS': f'MPI{idx + 1}_VN', 'DEPEND_0': f'MPI{idx + 1}_Epoch',
-                                                     'DEPEND_1': None,
-                                                     'DEPEND_2': None,
-                                                     'FILLVAL': ACESII.epoch_fillVal,
-                                                     'FORMAT': 'E12.2',
-                                                     'UNITS': 'm/s',
-                                                     'VALIDMIN': v_vec_ENU[:,1].min(),
-                                                     'VALIDMAX': v_vec_ENU[:,1].max(),
-                                                     'VAR_TYPE': 'data', 'SCALETYP': 'linear'}],
-                               f'MPI{idx + 1}_VU': [v_vec_ENU[:, 2],
-                                                    {'LABLAXIS': f'MPI{idx + 1}_VU', 'DEPEND_0': f'MPI{idx + 1}_Epoch',
-                                                     'DEPEND_1': None,
-                                                     'DEPEND_2': None,
-                                                     'FILLVAL': ACESII.epoch_fillVal,
-                                                     'FORMAT': 'E12.2',
-                                                     'UNITS': 'm/s',
-                                                     'VALIDMIN': v_vec_ENU[:, 2].min(),
-                                                     'VALIDMAX': v_vec_ENU[:, 2].max(),
-                                                     'VAR_TYPE': 'data', 'SCALETYP': 'linear'}]
-                               }
-                            }
-
-    stl.Done(start_time)
-
-    # --- --- --- --- --- --- ---
-    # --- WRITE OUT THE DATA ---
-    # --- --- --- --- --- --- ---
-    if outputData:
-
-        stl.prgMsg('Creating output file')
-        fileoutName_fixed = f'ACESII_{rocketID}_l3_MPI_ENU.cdf'
-        outputPath = data_repository + f'\\{fileoutName_fixed}'
-        stl.outputCDFdata(outputPath, data_dict_output)
-        stl.Done(start_time)
+    for i in range(N):
+        dcm_interp[i,0,0] = dcm_a11(time_sec_MPI1[i])
+        dcm_interp[i,0,1] = dcm_a12(time_sec_MPI1[i])
+        dcm_interp[i,0,2] = dcm_a13(time_sec_MPI1[i])
+        dcm_interp[i,1,0] = dcm_a21(time_sec_MPI1[i])
+        dcm_interp[i,1,1] = dcm_a22(time_sec_MPI1[i])
+        dcm_interp[i,1,2] = dcm_a23(time_sec_MPI1[i])
+        dcm_interp[i,2,0] = dcm_a31(time_sec_MPI1[i])
+        dcm_interp[i,2,1] = dcm_a32(time_sec_MPI1[i])
+        dcm_interp[i,2,2] = dcm_a33(time_sec_MPI1[i])
 
 
 
-# --- --- --- ---
-# --- EXECUTE ---
-# --- --- --- ---
-target_files = f'{DataPaths.ACES_data_folder}{input_path_modifier}{ACESII.fliers[wRocket-4]}\*.cdf'
+    # Assume velocity is stored in fields ['Vx','Vy','Vz'] and time in 'Epoch'
+    mpi_vel_vec = np.array([data_dict_MPI1['Vx_rkt_MPI1'][0],data_dict_MPI1['Vy_rkt_MPI1'][0],data_dict_MPI1['Vz_rkt_MPI1'][0]]).T
 
-if len(glob(target_files)) == 0:
-    print(stl.color.RED + 'There are no .txt files in the specified directory' + stl.color.END)
-else:
-    MPI_rktFrm_to_ENU(wRocket-4, justPrintFileNames)
+    # 6. Rotate MPI vectors to ENU, dot product each mpi_vel_vec
+    MPI_ENU = []
+    for i in range(N):
+        vec = mpi_vel_vec[i]
+        matrix = dcm_interp[i]
+        MPI_ENU.append(matrix @ vec)
 
+
+    # 7.  output dictionary
+    example_attrs = {'LABLAXIS': None, 'DEPEND_0': 'time', 'UNITS': None}
+
+    data_dict_output = {
+        'MPI_E': [np.array(MPI_ENU)[:,0], deepcopy(example_attrs)],
+        'MPI_N': [np.array(MPI_ENU)[:,1], deepcopy(example_attrs)],
+        'MPI_U': [np.array(MPI_ENU)[:,2], deepcopy(example_attrs)],
+        'time': [np.array(time_sec_MPI1), deepcopy(example_attrs)],
+        'DCM_INTERP': [np.array(dcm_interp), deepcopy(example_attrs)]
+    }
+
+
+    # --- 8. Output new CDF
+    file_out_path = r'C:\Data\ACESII\L2\low\ACESII_35364_L2_MPI_ENU.cdf'
+    stl.outputCDFdata(outputPath=file_out_path, data_dict=data_dict_output)
+
+
+###EXECUTE###
+MPI_rktFrm_to_ENU()

@@ -34,12 +34,6 @@ class L2toL3_FixedLPToggles:
     outputPath_modifier = 'L3\Langmuir'  # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
     errorPath_modifier = 'calibration\LP_calibration'
 
-    ####################
-    # -- FIXED PROBE ---
-    ####################
-    fixed_Ti_assumed = False  # IF FALSE use IRI model
-    Ti_assumed = 0.1  # assuming an ion temperature (in eV)
-    V_plas_assumed = [1,2]
 
 
 class L2toL3_SweptLPToggles:

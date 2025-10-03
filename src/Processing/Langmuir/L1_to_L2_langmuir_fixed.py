@@ -128,8 +128,6 @@ def L1_to_L2_langmuir_fixed(wflyer, justPrintFileNames):
                                                                  'SCALETYP': 'linear'}]}}
 
 
-
-
     # --- quality assurance ---
     # if wflyer == 0:
     #     for i in range(len(caldCurrent)):
