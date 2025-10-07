@@ -88,7 +88,6 @@ def L1_to_L2_langmuir_swept(wflyer, justPrintFileNames):
 
     # --- prepare the output data ---
     data_dict_output = {}
-
     stl.Done(start_time)
 
     ###################################
@@ -145,7 +144,6 @@ def L1_to_L2_langmuir_swept(wflyer, justPrintFileNames):
     slope = (probe_sweep_voltage_range[1] - probe_sweep_voltage_range[0]) / (max(counted_reduced) - min(counted_reduced))
     intercept = probe_sweep_voltage_range[0]
     step_voltage = slope * deepcopy(data_dict_step['step'][0]) + intercept
-
     data_dict_output = {**data_dict_output, **{'step_voltage': [step_voltage, {'LABLAXIS': 'Probe Voltage', 'DEPEND_0': 'Epoch',
                                                                 'DEPEND_1': None, 'DEPEND_2': None, 'FILLVAL': ACESII.epoch_fillVal,
                                                                 'FORMAT': 'E12.2', 'UNITS': 'Volts',

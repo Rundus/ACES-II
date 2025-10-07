@@ -33,7 +33,7 @@ justPrintFileNames = False # Just print the names of files
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 5
+wRocket = 4
 
 # --- OutputData ---
 outputData = True
@@ -84,7 +84,7 @@ def L2_to_L3_langmuir_fixed(wRocket, justPrintFileNames):
     Te_eV = data_dict_LPpostFlight['Te_DERPA2'][0]
     Ti = Te_eV/data_dict_LPpostFlight['Tr'][0]
     vth_i = np.array(np.sqrt((stl.q0*Ti)/ (data_dict_LPpostFlight['m_eff_i'][0]*2*np.pi)))
-    Phi_plas_minus_absphi_floating_assumed = 1 # ASSUMES a plasma potential 1V above the floating potential
+    Phi_plas_minus_absphi_floating_assumed = 0.5 # ASSUMES a plasma potential 1V above the floating potential
     Phi_probe_minus_phi_plas = -1*(np.abs(data_dict_LPpostFlight['floating_potential'][0]) + Phi_plas_minus_absphi_floating_assumed + np.abs(ACESII.LP_fixed_probe_bias[wRocket-4]))
 
     ni_density_m3 = (-1*fixed_current*(1E-9)) / (stl.q0*ACESII.LP_probe_areas[wRocket-4][0]*vth_i*(1 + Phi_probe_minus_phi_plas/Ti))

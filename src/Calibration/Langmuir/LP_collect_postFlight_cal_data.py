@@ -10,6 +10,9 @@
 # --- bookkeeping ---
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
+
+import numpy as np
+
 from src.my_imports import *
 import time
 start_time = time.time()
@@ -29,8 +32,8 @@ justPrintFileNames = False  # Just print the names of files
 # 5 -> ACES II Low Flier
 wRocket = 5
 showEISCAT_profiles = False
-altitude_cutoff_upleg = [200, 173]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
-altitude_cutoff_downleg = [240, 180]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
+altitude_cutoff_upleg = [350, 166]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
+altitude_cutoff_downleg = [350, 180]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
 titles = ['upleg', 'middle', 'downleg']
 
 # --- OutputData ---
@@ -94,7 +97,7 @@ def LP_collect_postFlight_cal_data(wRocket):
     # --- shorten the dataset ---
     # if wRocket-4 == 0:
     #     low_idx = np.abs(data_dict_LP_current['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 21, 00)).argmin()
-    #     high_idx = np.abs(data_dict_LP_current['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 30)).argmin()
+    #     high_idx = np.abs(data_dict_LP_current['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 29,50)).argmin()
     # elif wRocket-4 ==1 :
     #     low_idx = np.abs(data_dict_LP_current['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 23, 20)).argmin()
     #     high_idx = np.abs(data_dict_LP_current['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 28)).argmin()
@@ -115,14 +118,10 @@ def LP_collect_postFlight_cal_data(wRocket):
 
     # --- MIDDLE BACKGROUND PROFILES (Tromso) ---
     target_times_md = [
-                    dt.datetime(2022, 11, 20, 17, 21, 25),
-                    dt.datetime(2022, 11, 20, 17, 22, 10),
-                       ]
-    # target_times_md = [
-    #     dt.datetime(2022, 11, 20, 17, 22, 10),
-    #     dt.datetime(2022, 11, 20, 17, 23, 25),
-    #     dt.datetime(2022, 11, 20, 17, 26, 10),
-    # ]
+        dt.datetime(2022, 11, 20, 17, 22, 10),
+        dt.datetime(2022, 11, 20, 17, 23, 25),
+        dt.datetime(2022, 11, 20, 17, 26, 10),
+    ]
 
     # --- DOWNLEG BACKGROUND PROFILES (Svalbard) ---
     # target_times_dl = [
@@ -130,6 +129,7 @@ def LP_collect_postFlight_cal_data(wRocket):
     #                    dt.datetime(2022, 11, 20, 17, 27, 25),
     #                    dt.datetime(2022, 11, 20, 17, 28, 10),
     #                    ]
+
     target_times_dl = [
         dt.datetime(2022, 11, 20, 17, 21, 25),
         dt.datetime(2022, 11, 20, 17, 22, 10),
@@ -138,6 +138,8 @@ def LP_collect_postFlight_cal_data(wRocket):
     target_times_collection = [target_times_ul, target_times_md, target_times_dl]
     # data_dict_EISCAT = [deepcopy(data_dict_EISCAT_tromso),deepcopy(data_dict_EISCAT_tromso),deepcopy(data_dict_EISCAT_svalbard)]
     data_dict_EISCAT = [deepcopy(data_dict_EISCAT_tromso), deepcopy(data_dict_EISCAT_tromso), deepcopy(data_dict_EISCAT_tromso)]
+
+
     Ti_profiles_val = []
     Ti_profiles_alt = []
     Tr_profiles_val = []
@@ -226,28 +228,31 @@ def LP_collect_postFlight_cal_data(wRocket):
     # --- Break the LP data into three sections ---
 
     # Interpolate the Altitude
-    T0 = dt.datetime(2022, 11, 20, 17, 20)
-    T0_LP_current = stl.EpochTo_T0_Rocket(data_dict_LP_current['Epoch'][0], T0=T0)
+    T0 = dt.datetime(2022, 11, 20, 17, 19)
+    T0_LP_current = np.array(stl.EpochTo_T0_Rocket(data_dict_LP_current['Epoch'][0], T0=T0),dtype='float64')
     T0_attitude = stl.EpochTo_T0_Rocket(data_dict_attitude['Epoch'][0], T0=T0)
-    cs1 = CubicSpline(T0_attitude, data_dict_attitude['Alt'][0]/stl.m_to_km)
-    alt_langmuir = cs1(T0_LP_current)
+    alt_langmuir = np.interp(np.array(T0_LP_current,dtype='float64'), np.array(T0_attitude,dtype='float64'), np.array(data_dict_attitude['Alt'][0]/stl.m_to_km,dtype='float64'))
 
     # Interpolate the LP_swept Floating Potential
     good_idxs = np.where(np.isnan(data_dict_payload_potential['floating_potential'][0])==False)
-    T0_floating = stl.EpochTo_T0_Rocket(data_dict_payload_potential['floating_Epoch'][0][good_idxs], T0=T0)
-    csF = CubicSpline(T0_floating, data_dict_payload_potential['floating_potential'][0][good_idxs])
-    floatingPotential_langmuir = csF(T0_LP_current)
+    T0_floating = stl.EpochTo_T0_Rocket(data_dict_payload_potential['Epoch'][0][good_idxs], T0=T0)
+    floatingPotential_langmuir = np.interp(T0_LP_current, T0_floating, data_dict_payload_potential['floating_potential'][0][good_idxs])
 
 
     # Interpolate the DERPA Te Data
 
     # 1
     T0_DERPA1 = stl.EpochTo_T0_Rocket(data_dict_DERPA1['Epoch'][0],T0=T0)
-    T0_DERPA2 = stl.EpochTo_T0_Rocket(data_dict_DERPA2['Epoch'][0],T0=T0)
-    csD1 = CubicSpline(T0_DERPA1,data_dict_DERPA1['temperature'][0])
-    csD2 = CubicSpline(T0_DERPA2, data_dict_DERPA2['temperature'][0])
-    Te_DERPA1_langmuir = csD1(T0_LP_current)
-    Te_DERPA2_langmuir = csD2(T0_LP_current)
+    Temp_DERPA1 = data_dict_DERPA1['temperature'][0]
+    Temp_DERPA1[Temp_DERPA1<1E-2] = 0
+    bad_idxes = np.where(Temp_DERPA1==0)
+    Te_DERPA1_langmuir = np.interp(T0_LP_current, np.delete(T0_DERPA1,bad_idxes), np.delete(Temp_DERPA1,bad_idxes))
+
+    T0_DERPA2 = stl.EpochTo_T0_Rocket(data_dict_DERPA2['Epoch'][0], T0=T0)
+    Temp_DERPA2 = data_dict_DERPA2['temperature'][0]
+    Temp_DERPA2[Temp_DERPA2 < 1E-2] = 0
+    bad_idxes = np.where(Temp_DERPA2 == 0)
+    Te_DERPA2_langmuir = np.interp(T0_LP_current, np.delete(T0_DERPA2, bad_idxes), np.delete(Temp_DERPA2, bad_idxes))
 
     # first find the peak altitude, beak datasets into upleg, middle and downleg
     max_alt_idx = np.abs(alt_langmuir- np.max(alt_langmuir)).argmin()

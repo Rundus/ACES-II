@@ -7,12 +7,9 @@
 # --- IMPORTS ---
 # --- --- --- ---
 import spaceToolsLib as stl
-from copy import copy
 from glob import glob
 import numpy as np
-import io
 import time
-import datetime as dt
 from copy import deepcopy
 
 # Time your code
@@ -45,7 +42,7 @@ def MPI_instrFrm_to_rktFrm():
         Vx = data_dict[f'Vx_rkt_MPI{idx+1}'][0]
         Vy = data_dict[f'Vy_rkt_MPI{idx + 1}'][0]
         Vz = np.zeros(shape=len(Vx))
-        vec_instr = np.array([Vx,Vy,Vz]).T
+        vec_instr = np.array([Vx, Vy, Vz]).T
 
         if idx == 0: # MPI1
             R1 = stl.Rx(90)
