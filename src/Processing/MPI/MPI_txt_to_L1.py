@@ -60,8 +60,8 @@ def txt_raw_MPI_Data_to_cdf():
 
         data_dict_output = {**data_dict_output,
                             **{f'Epoch_MPI{counter}':[np.array(Epoch), {'LABLAXIS':'Epoch','UNITS':None,'DEPEND_0':f'Epoch_MPI{counter}'}],
-                               f'Vx_rkt_MPI{counter}':[np.array(temp_data[1]), {'LABLAXIS':'Vx in rocket frame','UNITS':'m/s','DEPEND_0':f'Epoch_MPI{counter}'}],
-                               f'Vy_rkt_MPI{counter}':[np.array(temp_data[2]), {'LABLAXIS':'Vy in rocket frame','UNITS':'m/s','DEPEND_0':f'Epoch_MPI{counter}'}]}
+                               f'Vx_instr_MPI{counter}':[np.array(temp_data[1]), {'LABLAXIS':'Vx in instr frame','UNITS':'m/s','DEPEND_0':f'Epoch_MPI{counter}'}],
+                               f'Vy_instr_MPI{counter}':[np.array(temp_data[2]), {'LABLAXIS':'Vy in instr frame','UNITS':'m/s','DEPEND_0':f'Epoch_MPI{counter}'}]}
                             }
     stl.Done(start_time)
 

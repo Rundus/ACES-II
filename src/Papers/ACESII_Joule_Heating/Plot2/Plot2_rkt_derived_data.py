@@ -72,14 +72,18 @@ data_dict_Lshell_low = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\l
 data_dict_Lshell_high = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\high\ACESII_36359_Lshell.cdf')
 
 # DERPA Temperature Data
-data_dict_DERPA1_high = stl.loadDictFromFile('C:\Data\ACESII\L2\high\ACESII_36359_l2_ERPA1.cdf')
-data_dict_DERPA2_high = stl.loadDictFromFile('C:\Data\ACESII\L2\high\ACESII_36359_l2_ERPA2.cdf')
-data_dict_DERPA1_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_ERPA1.cdf')
-data_dict_DERPA2_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_ERPA2.cdf')
+data_dict_DERPA1_high = stl.loadDictFromFile('C:\Data\ACESII\L3\DERPA\high\ACESII_36359_l3_ERPA1_fullCal.cdf')
+data_dict_DERPA2_high = stl.loadDictFromFile('C:\Data\ACESII\L3\DERPA\high\ACESII_36359_l3_ERPA2_fullCal.cdf')
+data_dict_DERPA1_low = stl.loadDictFromFile('C:\Data\ACESII\L3\DERPA\low\ACESII_36364_l3_ERPA1_fullCal.cdf')
+data_dict_DERPA2_low = stl.loadDictFromFile('C:\Data\ACESII\L3\DERPA\low\ACESII_36364_l3_ERPA2_fullCal.cdf')
+
+# EISCAT calibration data
+data_dict_EISCAT_cal_high = stl.loadDictFromFile('C:\Data\ACESII\calibration\LP_postFlight_calibration\high\ACESII_36359_postFlight_cal.cdf')
+data_dict_EISCAT_cal_low = stl.loadDictFromFile('C:\Data\ACESII\calibration\LP_postFlight_calibration\low\ACESII_36364_postFlight_cal.cdf')
 
 # Langmuir Probe Temperature Data
-data_dict_LP_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\low\*langmuir_fixed*')[0])
-data_dict_LP_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed*')[0])
+data_dict_LP_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\low\*langmuir_fixed_fullCal*')[0])
+data_dict_LP_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed_fullCal*')[0])
 
 # Load MPI Data
 # data_dict_MPI_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed*')[0])
@@ -229,12 +233,14 @@ ax[axNo].set_ylim(-7, 12)
 
 # --- HF Electron Temperatue (DERPA/LP) ---
 axNo +=1
+ax[axNo].plot(data_dict_EISCAT_cal_high['L-Shell'][0], data_dict_EISCAT_cal_high['Te'][0],color='tab:purple', linewidth=Plot_LineWidth, label='EISCAT Background $T_{e}$')
 ax[axNo].plot(data_dict_DERPA1_high['L-Shell'][0],data_dict_DERPA1_high['temperature'][0], color='tab:red', linewidth=Plot_LineWidth, label='ERPA1 $T_{e}$')
 ax[axNo].plot(data_dict_DERPA2_high['L-Shell'][0],data_dict_DERPA2_high['temperature'][0], color='tab:blue', linewidth=Plot_LineWidth, label='ERPA2 $T_{e}$')
 ax[axNo].set_ylabel('Temperature\n[eV]', fontsize=Label_FontSize,labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='both', labelsize=Tick_FontSize, length=Tick_Length, width=Tick_Width)
 leg=ax[axNo].legend(fontsize=Legend_FontSize,loc='upper right')
 ax[axNo].set_ylim(0.05,0.5)
+
 
 
 # --- BREAK AXIS ---
@@ -257,6 +263,7 @@ ax[axNo].set_ylim(-7, 7)
 
 # --- LF Electron Temperatue (DERPA/LP) ---
 axNo +=1
+ax[axNo].plot(data_dict_EISCAT_cal_low['L-Shell'][0], data_dict_EISCAT_cal_low['Te'][0],color='tab:purple', linewidth=Plot_LineWidth, label='EISCAT Background $T_{e}$')
 ax[axNo].plot(data_dict_DERPA1_low['L-Shell'][0],data_dict_DERPA1_low['temperature'][0], color='tab:red', linewidth=Plot_LineWidth, label='ERPA1 $T_{e}$')
 ax[axNo].plot(data_dict_DERPA2_low['L-Shell'][0],data_dict_DERPA2_low['temperature'][0], color='tab:blue', linewidth=Plot_LineWidth, label='ERPA2 $T_{e}$')
 ax[axNo].set_ylabel('Temperature\n[eV]', fontsize=Label_FontSize,labelpad=Label_Padding)

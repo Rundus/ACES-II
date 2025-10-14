@@ -33,7 +33,7 @@ justPrintFileNames = False # Just print the names of files
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # --- OutputData ---
 outputData = True
@@ -42,6 +42,7 @@ outputData = True
 # --- IMPORTS ---
 # --- --- --- ---
 from src.Processing.Langmuir.toggles import L2toL3_FixedLPToggles as fToggles
+
 
 #######################
 # --- MAIN FUNCTION ---
@@ -81,7 +82,7 @@ def L2_to_L3_langmuir_fixed(wRocket, justPrintFileNames):
 
     stl.prgMsg('Calculating Fixed ni')
     fixed_current = data_dict['fixed_current'][0]  # note: current is in Nano Amps
-    Te_eV = data_dict_LPpostFlight['Te_DERPA2'][0]
+    Te_eV = data_dict_LPpostFlight['Te_DERPA2'][0] # USE DERPA 2, it's better
     Ti = Te_eV/data_dict_LPpostFlight['Tr'][0]
     vth_i = np.array(np.sqrt((stl.q0*Ti)/ (data_dict_LPpostFlight['m_eff_i'][0]*2*np.pi)))
     Phi_plas_minus_absphi_floating_assumed = 0.5 # ASSUMES a plasma potential 1V above the floating potential

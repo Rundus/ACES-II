@@ -25,11 +25,11 @@ start_time = time.time()
 # --- Select the Rocket ---
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 5
+wRocket = 4
 wSweeps = [22, 23]
 
 # --- DATA OUTPUT ---
-plot_peaks = False
+plot_peaks = True
 plot_individual_sweeps = False
 outputData = True
 
@@ -186,6 +186,8 @@ def L2_to_floating_potential_swept(wRocket):
         data_dict_output = {
                             'Epoch':[np.array(sweeps_epoch),deepcopy(data_dict_LP_currents['Epoch'][1])],
                             'floating_potential':[np.array(floating_potential), {'DEPEND_0':'Epoch','UNITS':'Volts','LABLAXIS':'|Floating Potential|','VAR_TYPE':'data'}],
+                            'sweeps_voltage' : [np.array(sweeps_voltage),{'UNITS':'V','LABL_AXIS':'Voltage','VAR_TYPE':'data'}],
+                            'sweeps_current': [np.array(sweeps_current),{'UNITS':'nA','LABL_AXIS':'Current','VAR_TYPE':'data'}],
                             }
 
         stl.prgMsg('Creating output file')

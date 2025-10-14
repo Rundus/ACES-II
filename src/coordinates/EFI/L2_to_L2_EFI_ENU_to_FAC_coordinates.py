@@ -1,4 +1,4 @@
-# --- L2_to_L2_EFI_FAC_to_auroral_coordinates.py ---
+# --- L2_to_L2_EFI_ENU_to_FAC_coordinates.py ---
 # Description: convert EFI ENU coordinates to FAC and output as L2 data
 
 

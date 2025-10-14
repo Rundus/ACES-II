@@ -1,4 +1,4 @@
-# --- L2_to_L2_EFI_auroral_to_ENU_coordinates.py ---
+# --- L2_to_L2_EFI_ENU_auroral_coordinates.py ---
 # Description: convert EFI ENU coordinates to auroral and output as L2 data
 
 

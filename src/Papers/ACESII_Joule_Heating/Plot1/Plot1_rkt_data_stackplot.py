@@ -40,7 +40,7 @@ B_limits = [-1500, 3000]
 cbarMin, cbarMax = 1E8, 1E11
 cbar_TickLabelSize = 14
 # LP_limit = [0,2.75]
-LP_limit = [1E4, 3E5]
+LP_limit = [1E4, 7E5]
 my_cmap = stl.apl_rainbow_black0_cmap()
 my_cmap.set_bad(color=(0,0,0))
 
@@ -71,7 +71,7 @@ data_dict_BField_high = stl.loadDictFromFile(r'C:\Data\ACESII\L2\high\ACESII_363
 data_dict_BField_low = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_RingCore_auroral_median_filter.cdf')
 
 # E-Field Data
-data_dict_Efield_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_E_Field_auroral_fullCal.cdf')
+data_dict_Efield_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_EFI_auroral.cdf')
 
 # EEPAA Particle Data
 data_dict_flux_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Energy_Flux\low\ACESII_36364_l3_eepaa_flux.cdf')[0])
@@ -82,8 +82,12 @@ data_dict_Lshell_low = stl.loadDictFromFile(glob('C:\Data\ACESII\coordinates\Lsh
 data_dict_Lshell_high = stl.loadDictFromFile(glob('C:\Data\ACESII\coordinates\Lshell\high\ACESII_36359_Lshell.cdf')[0])
 
 # Langmuir Probe Density Data
-data_dict_LP_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\low\*langmuir_fixed*')[0])
-data_dict_LP_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\high\*langmuir_fixed*')[0])
+data_dict_LP_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\low\ACESII_36364_l3_langmuir_fixed_fullCal.cdf')[0])
+data_dict_LP_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\high\ACESII_36359_l3_langmuir_fixed_fullCal.cdf')[0])
+
+# EISCAT calibration data
+data_dict_EISCAT_cal_high = stl.loadDictFromFile('C:\Data\ACESII\calibration\LP_postFlight_calibration\high\ACESII_36359_postFlight_cal.cdf')
+data_dict_EISCAT_cal_low = stl.loadDictFromFile('C:\Data\ACESII\calibration\LP_postFlight_calibration\low\ACESII_36364_postFlight_cal.cdf')
 stl.Done(start_time)
 
 
@@ -252,7 +256,8 @@ filtered = stl.butterFilter().butter_filter(data= data_dict_LP_high['ni'][0]/LP_
                                                               order=4
                                                               )
 
-ax[axNo].plot(data_dict_LP_high['L-Shell'][0], filtered,color=colorChoice, linewidth=Plot_LineWidth+1)
+ax[axNo].plot(data_dict_EISCAT_cal_high['L-Shell'][0], data_dict_EISCAT_cal_high['ne'][0]/(np.power(stl.cm_to_m,3)),color='tab:purple', linewidth=Plot_LineWidth+1, label='EISCAT Background n$_{e}$')
+ax[axNo].plot(data_dict_LP_high['L-Shell'][0], filtered/(np.power(stl.cm_to_m,3)),color=colorChoice, linewidth=Plot_LineWidth+1)
 ax[axNo].set_ylabel('LP\n[cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize-3, length=Tick_Length, width=Tick_Width)
 ax[axNo].tick_params(axis='y', which='minor', colors='black', labelsize=Tick_FontSize - 6, length=Tick_Length-2, width=Tick_Width)
@@ -264,6 +269,7 @@ ax[axNo].set_yscale('log')
 ax[axNo].xaxis.set_tick_params(labelbottom=True)
 ax[axNo].set_xlabel('L-Shell \n Alt [km]', fontsize=Tick_FontSize-2, weight='bold')
 ax[axNo].xaxis.set_label_coords(-0.085, -0.26)
+ax[axNo].legend()
 
 # --- BREAK AXIS ---
 axNo +=1
@@ -315,7 +321,8 @@ filtered= stl.butterFilter().butter_filter(data= data_dict_LP_low['ni'][0]/LP_sc
                                                               filtertype='lowpass',
                                                               order=4
                                                               )
-ax[axNo].plot(data_dict_LP_low['L-Shell'][0],filtered, color=colorChoice, linewidth=Plot_LineWidth+1)
+ax[axNo].plot(data_dict_EISCAT_cal_low['L-Shell'][0], data_dict_EISCAT_cal_low['ne'][0]/(np.power(stl.cm_to_m,3)),color='tab:purple', linewidth=Plot_LineWidth+1, label='EISCAT Background n$_{e}$')
+ax[axNo].plot(data_dict_LP_low['L-Shell'][0],filtered/(np.power(stl.cm_to_m,3)), color=colorChoice, linewidth=Plot_LineWidth+1)
 # ax[axNo].set_ylabel('[10$^{5}$ cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
 ax[axNo].set_ylabel('LP\n[cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize-3, length=Tick_Length, width=Tick_Width)
@@ -327,6 +334,7 @@ ax[axNo].set_xlabel('L-Shell \n Alt [km]', fontsize=Tick_FontSize-2, weight='bol
 ax[axNo].xaxis.set_label_coords(-0.085, -0.26)
 ax[axNo].set_yscale('log')
 ax[axNo].minorticks_on()
+ax[axNo].legend()
 
 # # --- get L-Shell labels and Alt Labels together ---
 xTickLabels = ax[axNo].axes.get_xticklabels()

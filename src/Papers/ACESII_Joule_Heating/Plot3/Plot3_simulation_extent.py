@@ -134,8 +134,8 @@ ax.minorticks_on()
 # plot the trajectory over everything
 geoLat_km = [(geoLat[0]-geoLat[0][0])*111,(geoLat[1]-geoLat[1][0])*111]
 
-ax.plot(geoLat_km[0], geoAlt[0]/1000, color=trajColors[0], label='36.359',linewidth=Plot_lineThickness)  # High
-ax.plot(geoLat_km[1], geoAlt[1]/1000, color=trajColors[1], label='36.364',linewidth=Plot_lineThickness)  # Low
+ax.plot(geoLat_km[0], geoAlt[0]/1000, color=trajColors[0], label='ACES-II 36.359',linewidth=Plot_lineThickness)  # High
+ax.plot(geoLat_km[1], geoAlt[1]/1000, color=trajColors[1], label='ACES-II 36.364',linewidth=Plot_lineThickness)  # Low
 
 
 

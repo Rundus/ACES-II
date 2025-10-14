@@ -1,4 +1,4 @@
-# --- LP_collect_postFlight_cal_data.py ---
+# --- LP_postFlight_cal_collect_data.py ---
 # Desciption: Determine the data which will be used to calibrate
 # the Fixed Langmuir Probes:
 # (1) EISCAT density profiles
@@ -32,8 +32,8 @@ justPrintFileNames = False  # Just print the names of files
 # 5 -> ACES II Low Flier
 wRocket = 5
 showEISCAT_profiles = False
-altitude_cutoff_upleg = [350, 166]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
-altitude_cutoff_downleg = [350, 180]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
+altitude_cutoff_upleg = [100, 166]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
+altitude_cutoff_downleg = [200, 183]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
 titles = ['upleg', 'middle', 'downleg']
 
 # --- OutputData ---
@@ -75,6 +75,10 @@ def LP_collect_postFlight_cal_data(wRocket):
     # load the trajectory data
     data_path = glob(rf'C:\Data\ACESII\trajectories\{ACESII.fliers[wRocket - 4]}\\*_auroral.cdf*')[0]
     data_dict_traj = stl.loadDictFromFile(data_path)
+
+    # load the L-Shell data
+    data_path = glob(rf'C:\Data\ACESII\coordinates\Lshell\{ACESII.fliers[wRocket - 4]}\\*.cdf*')[0]
+    data_dict_LShell = stl.loadDictFromFile(data_path)
 
     # load the simulation m_eff data
     data_path = glob(rf'C:\Data\physicsModels\ionosphere\plasma_environment\\plasma_environment.cdf')[0]
@@ -233,6 +237,10 @@ def LP_collect_postFlight_cal_data(wRocket):
     T0_attitude = stl.EpochTo_T0_Rocket(data_dict_attitude['Epoch'][0], T0=T0)
     alt_langmuir = np.interp(np.array(T0_LP_current,dtype='float64'), np.array(T0_attitude,dtype='float64'), np.array(data_dict_attitude['Alt'][0]/stl.m_to_km,dtype='float64'))
 
+    # Interpolate the L-Shell
+    T0_LShell  = stl.EpochTo_T0_Rocket(data_dict_LShell['Epoch'][0],T0=T0)
+    LShell_langmuir = np.interp(T0_LP_current, T0_LShell,data_dict_LShell['L-Shell'][0])
+
     # Interpolate the LP_swept Floating Potential
     good_idxs = np.where(np.isnan(data_dict_payload_potential['floating_potential'][0])==False)
     T0_floating = stl.EpochTo_T0_Rocket(data_dict_payload_potential['Epoch'][0][good_idxs], T0=T0)
@@ -243,16 +251,22 @@ def LP_collect_postFlight_cal_data(wRocket):
 
     # 1
     T0_DERPA1 = stl.EpochTo_T0_Rocket(data_dict_DERPA1['Epoch'][0],T0=T0)
+    if wRocket-4 == 0:
+        low_idx = np.abs(data_dict_DERPA1['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 21, 37)).argmin()
+        low_val = 0.09
+    elif wRocket-4 == 1:
+        low_idx = np.abs(data_dict_DERPA1['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 23, 50)).argmin()
+        low_val = 0.06
+
     Temp_DERPA1 = data_dict_DERPA1['temperature'][0]
-    Temp_DERPA1[Temp_DERPA1<1E-2] = 0
-    bad_idxes = np.where(Temp_DERPA1==0)
-    Te_DERPA1_langmuir = np.interp(T0_LP_current, np.delete(T0_DERPA1,bad_idxes), np.delete(Temp_DERPA1,bad_idxes))
+    Temp_DERPA1[:low_idx] = low_val
+    Te_DERPA1_langmuir = np.interp(T0_LP_current, T0_DERPA1, Temp_DERPA1)
 
     T0_DERPA2 = stl.EpochTo_T0_Rocket(data_dict_DERPA2['Epoch'][0], T0=T0)
     Temp_DERPA2 = data_dict_DERPA2['temperature'][0]
-    Temp_DERPA2[Temp_DERPA2 < 1E-2] = 0
-    bad_idxes = np.where(Temp_DERPA2 == 0)
-    Te_DERPA2_langmuir = np.interp(T0_LP_current, np.delete(T0_DERPA2, bad_idxes), np.delete(Temp_DERPA2, bad_idxes))
+    Temp_DERPA2[:low_idx] = low_val
+    Te_DERPA2_langmuir = np.interp(T0_LP_current, T0_DERPA2, Temp_DERPA2)
+
 
     # first find the peak altitude, beak datasets into upleg, middle and downleg
     max_alt_idx = np.abs(alt_langmuir- np.max(alt_langmuir)).argmin()
@@ -303,6 +317,10 @@ def LP_collect_postFlight_cal_data(wRocket):
     ne_interp = [val for sublist in ne_interp for val in sublist]
     m_eff_i_interp = [val for sublist in m_eff_i_interp for val in sublist]
 
+
+
+
+
     # store everything in the output data dict
     data_dict_output = {**data_dict_output,
                         **{
@@ -315,7 +333,8 @@ def LP_collect_postFlight_cal_data(wRocket):
                             'ne': [np.array(ne_interp), {'DEPEND_0': 'Epoch', 'UNITS': 'm^-3'}],
                             'Alt': [alt_langmuir,{'DEPEND_0': 'Epoch', 'UNITS': 'km'}],
                             'm_eff_i': [np.array(m_eff_i_interp),{'DEPEND_0': 'Epoch', 'UNITS': 'kg'}],
-                            'floating_potential' : [np.array(floatingPotential_langmuir),{'DEPEND_0': 'Epoch', 'UNITS': 'Volts'}]
+                            'floating_potential' : [np.array(floatingPotential_langmuir),{'DEPEND_0': 'Epoch', 'UNITS': 'Volts'}],
+                            'L-Shell': [np.array(LShell_langmuir),deepcopy(data_dict_LShell['L-Shell'][1])]
                            }
                         }
 

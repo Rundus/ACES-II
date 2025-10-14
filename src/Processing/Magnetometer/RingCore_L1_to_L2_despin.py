@@ -123,7 +123,6 @@ def RingCore_L1_to_L2_Despin(wRocket, wFile, rocketFolderPath, justPrintFileName
     B_CHAOS_rkt = np.array([np.matmul(DCMinv[i], B_CHAOS_ENU_attitude[i]) for i in range(len(data_dict_attitude['Epoch'][0]))])
     stl.Done(start_time)
 
-
     ##################################################
     # --- Find Time offset between CHAOS and B_rkt ---
     ##################################################
