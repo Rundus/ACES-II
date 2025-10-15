@@ -70,7 +70,7 @@ def EFI_rkt_to_ENU_despin(wRocket):
     stl.prgMsg('De-spinning EFI data')
 
     EFI_rkt_vec = np.array([data_dict_EFI['E_x'][0], data_dict_EFI['E_y'][0], data_dict_EFI['E_z'][0]]).T
-    vxB_rkt_vec = np.array([data_dict_cal['vxB_X'][0], data_dict_cal['vxB_X'][0], data_dict_cal['vxB_Z'][0]]).T
+    vxB_rkt_vec = np.array([data_dict_cal['vxB_X'][0], data_dict_cal['vxB_Y'][0], data_dict_cal['vxB_Z'][0]]).T
 
     # Apply the DCM (rkt-->to_ENU)
     EFI_ENU_vec = np.array([data_dict_cal['DCM'][0][idx]@vec for idx,vec in enumerate(EFI_rkt_vec)])

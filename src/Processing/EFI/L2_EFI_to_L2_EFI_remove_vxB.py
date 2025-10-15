@@ -65,7 +65,8 @@ def L2_EFI_to_L2_EFI_remove_vxB(wRocket):
     #################################
     stl.prgMsg('Correcting E=E-vxB')
     E_Field = np.array([data_dict_EFI['E_E'][0],data_dict_EFI['E_N'][0],data_dict_EFI['E_Up'][0]]).T
-    vxB = np.array([data_dict_vxB['vxB_E'][0],data_dict_vxB['vxB_N'][0],data_dict_vxB['vxB_Up'][0]]).T
+    # vxB = np.array([data_dict_vxB['vxB_E'][0],data_dict_vxB['vxB_N'][0],data_dict_vxB['vxB_Up'][0]]).T # Note, this vector is already -vxB is is NOT |vxB|
+    vxB = np.array([data_dict_EFI['vxB_E'][0], data_dict_EFI['vxB_N'][0], data_dict_EFI['vxB_Up'][0]]).T  # Note, this vector is already -vxB is is NOT |vxB|
 
     E_Field_corrected = E_scale*E_Field - vxB
     E_mag = np.array([np.linalg.norm(vec) for vec in E_Field_corrected])

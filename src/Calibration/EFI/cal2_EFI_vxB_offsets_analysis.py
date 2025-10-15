@@ -32,7 +32,7 @@ E_field_scale = 1
 wRocket = 5
 
 # --- OutputData ---
-outputData = True
+outputData = False
 filter_data = True
 plot_filtered_data = False
 plot_fits = True
@@ -76,8 +76,8 @@ def EFI_vxB_offsets_analysis(wRocket):
         filterType = 'bandpass'
         fs = 1E9/(pycdf.lib.datetime_to_tt2000(data_dict_EFI['Epoch'][0][200000+1]) - pycdf.lib.datetime_to_tt2000(data_dict_EFI['Epoch'][0][200000]) )
         order = 2
-        fs_cutoff_low = 0.01
-        fs_cutoff_high = 10
+        fs_cutoff_low = 0.4
+        fs_cutoff_high = 1.5
 
         E_filtered = [[], [], []]
         for idx, key in enumerate(['X', 'Y', 'Z']):
@@ -148,7 +148,8 @@ def EFI_vxB_offsets_analysis(wRocket):
 
 
     # [2] Limit peak data starting from T_start
-    T_start_idx = np.abs(data_dict_EFI['Epoch'][0] - dt.datetime(2022, 11, 20, 17, 23, 40)).argmin()
+    start_datetime = dt.datetime(2022, 11, 20, 17, 24, 00, 500000)
+    T_start_idx = np.abs(data_dict_EFI['Epoch'][0] - start_datetime).argmin()
 
     for i in range(2): # Shorten the peaks/data to only indices above T_start_idx
         for idx, key in enumerate(['X', 'Y', 'Z']):
@@ -199,6 +200,7 @@ def EFI_vxB_offsets_analysis(wRocket):
         return A*x+B
     params_1, cov = curve_fit(fitFunc, stl.EpochTo_T0_Rocket(deltaT_epoch[1],T0=T0), np.array(deltaT[1]))
     params_2, cov = curve_fit(fitFunc, stl.EpochTo_T0_Rocket(deltaT_epoch[2],T0=T0), np.array(deltaT[2]))
+    rogers_values = [0.3842, 0.37736]
     stl.Done(start_time)
 
     # ---------------
@@ -226,14 +228,14 @@ def EFI_vxB_offsets_analysis(wRocket):
             # figure configuration
             ax[idx].set_ylabel(f'{key}-Axis [V/m]')
             ax[idx].set_ylim(-0.15, 0.15)
-            ax[idx].set_xlim(dt.datetime(2022, 11, 20, 17, 24), dt.datetime(2022, 11, 20, 17, 25))
+            ax[idx].set_xlim(start_datetime - dt.timedelta(seconds=4), start_datetime+dt.timedelta(seconds=30))
             ax[idx].legend()
 
         ax[2].plot(deltaT_epoch[1], np.array(deltaT[1])*time_scale, label='Y', color='tab:blue')
-        ax[2].plot(deltaT_epoch[1], fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[1], T0=T0), *params_1)*time_scale, label='Y', color='tab:blue', alpha=0.5, linestyle='--')
+        ax[2].plot(deltaT_epoch[1], fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[1], T0=T0), *params_1)*time_scale, label=f'Y [{round(params_1[0],6)}, {round(params_1[1],6)}]', color='tab:blue', alpha=0.5, linestyle='--')
 
         ax[2].plot(deltaT_epoch[2], np.array(deltaT[2])*time_scale, label='Z', color='tab:red')
-        ax[2].plot(deltaT_epoch[2], fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[2], T0=T0), *params_2)*time_scale, label='Y', color='tab:red', alpha=0.5, linestyle='--')
+        ax[2].plot(deltaT_epoch[2], fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[2], T0=T0), *params_2)*time_scale, label=f'Z [{round(params_2[0],6)}, {round(params_2[1],6)}]', color='tab:red', alpha=0.5, linestyle='--')
 
         ax[2].grid(which='both')
         ax[2].set_ylabel('Peaks $\Delta$T [ms]\nT_vxB - T_E')
@@ -248,10 +250,12 @@ def EFI_vxB_offsets_analysis(wRocket):
     Epoch_T0 = np.array(stl.EpochTo_T0_Rocket(data_dict_EFI['Epoch'][0], T0=T0))
 
     # Interpolate the (Epoch_new, vxB_component) data on the OLD timebase
-    Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_1)
+    # Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_1)
+    Epoch_new = Epoch_T0 - rogers_values[0]
     vxB_Y_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['vxB_Y'][0])
 
-    Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_2)
+    # Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_2)
+    Epoch_new = Epoch_T0 - rogers_values[1]
     vxB_Z_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['vxB_Z'][0])
 
     vxB_X_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['vxB_X'][0])

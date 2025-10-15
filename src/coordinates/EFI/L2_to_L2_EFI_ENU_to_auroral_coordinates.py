@@ -1,7 +1,5 @@
-# --- L2_to_L2_EFI_ENU_auroral_coordinates.py ---
+# --- L2_to_L2_EFI_ENU_to_auroral_coordinates.py ---
 # Description: convert EFI ENU coordinates to auroral and output as L2 data
-
-
 
 # --- bookkeeping ---
 # !/usr/bin/env python
@@ -11,8 +9,6 @@ __version__ = "1.0.0"
 from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
-
-
 
 # --- --- --- ---
 # --- TOGGLES ---
@@ -24,13 +20,6 @@ from scipy.interpolate import CubicSpline
 # 5 -> ACES-II Low Flier
 wRocket = 5
 wFiles = [0]
-remove_AC_flucuations = False
-order= 4
-freq_cutoff = 0.35
-Plot_removed_AC = False
-
-detrend_data = True
-Plot_detrend = True
 outputData = True
 
 
@@ -39,11 +28,11 @@ outputData = True
 # --- --- --- ---
 # none
 
-def L2_to_L2_EFI_auroral_to_ENU_coordinates(wRocket):
+def L2_to_L2_EFI_ENU_auroral_coordinates(wRocket):
 
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
-    data_dict_EFI = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*E_Field_auroral_fullCal.cdf*')[0])
+    data_dict_EFI = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*ACESII_36364_l2_EFI_ENU_fullCal.cdf*')[0])
     data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_ENU.cdf*')[0])
     data_dict_transform_auroral = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_auroral.cdf*')[0])
     data_dict_LShell = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\Lshell\\{ACESII.fliers[wRocket - 4]}\\*Lshell.cdf*')[0])
@@ -51,16 +40,17 @@ def L2_to_L2_EFI_auroral_to_ENU_coordinates(wRocket):
 
     # --- prepare the output ---
     data_dict_output = {
-        'E_East' : [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_N'][1]],
-        'E_North': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_T'][1]],
-        'E_Up': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_p'][1]],
-        'E_mag':deepcopy(data_dict_EFI['Emag']),
+        'E_N' : [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_EFI['E_E'][1])],
+        'E_T': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_EFI['E_N'][1])],
+        'E_p': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_EFI['E_Up'][1])],
+        '|E|':deepcopy(data_dict_EFI['|E|']),
         'Epoch':deepcopy(data_dict_EFI['Epoch'])
     }
 
     ###########################################
-    # --- Interpolate trasnformation matrix ---
+    # --- Interpolate transformation matrix ---
     ###########################################
+    stl.prgMsg('Interpolating Transformation Matricies')
     Epoch_EFI_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_EFI['Epoch'][0]])
     Epoch_ENU_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_ENU['Epoch'][0]])
     Epoch_auroral_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_auroral['Epoch'][0]])
@@ -90,28 +80,31 @@ def L2_to_L2_EFI_auroral_to_ENU_coordinates(wRocket):
          [data_dict_transform_auroral['a31'][0][i], data_dict_transform_auroral['a32'][0][i], data_dict_transform_auroral['a33'][0][i]]]
         for i in range(len(data_dict_EFI['Epoch'][0]))
     ])
+    stl.Done(start_time)
 
     ###################################
     # --- Transform the Coordinates ---
     ###################################
+    stl.prgMsg('Transforming Coordinates')
 
     # form the EFI ENU vector
-    EFI_auroral = np.array([data_dict_EFI['E_N'][0],data_dict_EFI['E_T'][0],data_dict_EFI['E_p'][0]]).T
-    EFI_ECEF = np.array([np.matmul(ECEF_to_auroral_matrix[i].T, vec) for i, vec in enumerate(EFI_auroral)])
-    EFI_ENU = np.array([np.matmul(ECEF_to_ENU_matrix[i], vec) for i, vec in enumerate(EFI_ECEF)])
+    EFI_ENU = np.array([data_dict_EFI['E_E'][0], data_dict_EFI['E_N'][0], data_dict_EFI['E_Up'][0]]).T
+    EFI_ECEF = np.array([np.matmul(ECEF_to_ENU_matrix[i].T, vec) for i, vec in enumerate(EFI_ENU)])
+    EFI_auroral = np.array([np.matmul(ECEF_to_auroral_matrix[i], vec) for i, vec in enumerate(EFI_ECEF)])
 
-    data_dict_output['E_East'][0] = EFI_ENU[:, 0]
-    data_dict_output['E_East'][1]['LABLAXIS'] = 'E_East'
+    data_dict_output['E_N'][0] = EFI_auroral[:, 0]
+    data_dict_output['E_N'][1]['LABLAXIS'] = 'Arc Normal E-Field'
 
-    data_dict_output['E_North'][0] = EFI_ENU[:, 1]
-    data_dict_output['E_North'][1]['LABLAXIS'] = 'E_North'
+    data_dict_output['E_T'][0] = EFI_auroral[:, 1]
+    data_dict_output['E_T'][1]['LABLAXIS'] = 'Arc Tangent E-Field'
 
-    data_dict_output['E_Up'][0] = EFI_ENU[:, 2]
-    data_dict_output['E_Up'][1]['LABLAXIS'] = 'E_Up'
+    data_dict_output['E_p'][0] = EFI_auroral[:, 2]
+    data_dict_output['E_p'][1]['LABLAXIS'] = 'Field Aligned E-Field'
 
-    vec = np.array([data_dict_output['E_East'][0], data_dict_output['E_North'][0], data_dict_output['E_Up'][0]]).T
+    vec = np.array([data_dict_output['E_N'][0], data_dict_output['E_T'][0], data_dict_output['E_p'][0]]).T
     data_dict_output = {**data_dict_output,
-                        **{'|E|': [np.array([np.linalg.norm([v]) for v in vec]), deepcopy(data_dict_EFI['E_mag'][1])]}}
+                        **{'|E|': [np.array([np.linalg.norm([v]) for v in vec]), deepcopy(data_dict_EFI['|E|'][1])]}}
+    stl.Done(start_time)
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -120,7 +113,7 @@ def L2_to_L2_EFI_auroral_to_ENU_coordinates(wRocket):
     if outputData:
         stl.prgMsg('Creating output file')
 
-        fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l2_E_Field_ENU_fullCal.cdf'
+        fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l2_EFI_auroral_fullCal.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output, instrNam='EFI')
         stl.Done(start_time)
@@ -134,4 +127,4 @@ def L2_to_L2_EFI_auroral_to_ENU_coordinates(wRocket):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-L2_to_L2_EFI_auroral_to_ENU_coordinates(wRocket)
+L2_to_L2_EFI_ENU_auroral_coordinates(wRocket)

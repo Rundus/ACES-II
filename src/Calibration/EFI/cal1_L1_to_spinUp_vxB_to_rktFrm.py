@@ -9,8 +9,6 @@
 __author__ = "Connor Feltman"
 
 import matplotlib.pyplot as plt
-import numpy as np
-import spaceToolsLib
 
 from src.my_imports import *
 import time
@@ -89,13 +87,14 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
     # Attempt 1: Interpolate the DCM onto EFI timebase.
     stl.prgMsg('Interpolating DCM')
     T0 = dt.datetime(2022, 11, 20, 17, 20)
-    T0_EFI = stl.EpochTo_T0_Rocket(data_dict_EFI['Epoch'][0],T0=T0)
-    T0_attitude = stl.EpochTo_T0_Rocket(data_dict_attitude['Epoch'][0],T0=T0)
+    T0_EFI = stl.EpochTo_T0_Rocket(data_dict_EFI['Epoch'][0], T0=T0)
+    T0_attitude = stl.EpochTo_T0_Rocket(data_dict_attitude['Epoch'][0], T0=T0)
     DCM_rkt_to_ENU = np.zeros(shape=(len(data_dict_EFI['Epoch'][0]), 3, 3))
     for i in range(1, 4):
         for j in range(1, 4):
-            cs = CubicSpline(T0_attitude, data_dict_attitude[f'a{i}{j}'][0])
-            DCM_rkt_to_ENU[:, i - 1, j - 1] = cs(T0_EFI)
+            cs = CubicSpline(T0_attitude, data_dict_attitude[f'a{j}{i}'][0])
+            DCM_rkt_to_ENU[:, j - 1, i - 1] = cs(T0_EFI)
+
     DCM_ENU_to_rkt = np.array([mat.T for mat in DCM_rkt_to_ENU])
     stl.Done(start_time)
 
@@ -136,17 +135,22 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
     stl.prgMsg('Rotating Trajectory into RktFrm')
     V_rkt_ECEF = np.array([data_dict_traj['ECEFXVEL'][0], data_dict_traj['ECEFYVEL'][0], data_dict_traj['ECEFZVEL'][0]]).T
     ENU_to_ECEF = np.array([stl.ENUtoECEF(Lat=data_dict_traj['Lat'][0][i], Long=data_dict_traj['Long'][0][i]) for i in range(len(V_rkt_ECEF))])
-    V_rkt_ENU = np.array([ENU_to_ECEF[i]@V_rkt_ECEF[i] for i in range(len(V_rkt_ECEF))])
-    V_rkt_rktFrm = np.array([DCM_ENU_to_rkt[i]@V_rkt_ENU[i] for i in range(len(V_rkt_ECEF))])
+    V_rkt_ENU = np.array([np.matmul(ENU_to_ECEF[i], V_rkt_ECEF[i]) for i in range(len(V_rkt_ECEF))])
+    V_rkt_rktFrm = np.array([np.matmul(DCM_ENU_to_rkt[i], V_rkt_ENU[i]) for i in range(len(V_rkt_ECEF))])
     stl.Done(start_time)
 
     # Calculate vxB in rocket Coordinates
     stl.prgMsg('Calculating vxB')
     B = 1E-9*(np.array([data_dict_mag['Bx'][0], data_dict_mag['By'][0], data_dict_mag['Bz'][0]]).T)
-    vxB_ENU = -1*np.array([np.cross(V_rkt_ENU[i], B_ENU[i]) for i in range(len(V_rkt_ENU))])
-    vxB = -1*np.array([np.cross(V_rkt_rktFrm[i], B[i]) for i in range(len(V_rkt_ECEF))])
+
+    vxB_ENU = np.array([np.cross(V_rkt_ENU[i], B_ENU[i]) for i in range(len(V_rkt_ENU))])
+
+    vxB = np.array([np.cross(V_rkt_rktFrm[i], B[i]) for i in range(len(V_rkt_ECEF))])
+
     vxB_mag = np.array([np.linalg.norm(vxB[i]) for i in range(len(V_rkt_ECEF))])
-    E = np.array([data_dict_EFI['E_x'][0], data_dict_EFI['E_x'][0], data_dict_EFI['E_z'][0]]).T
+
+    E = np.array([data_dict_EFI['E_x'][0], data_dict_EFI['E_y'][0], data_dict_EFI['E_z'][0]]).T
+
     E_mag = np.array([np.linalg.norm(E[i]) for i in range(len(V_rkt_ECEF))])
     stl.Done(start_time)
 
