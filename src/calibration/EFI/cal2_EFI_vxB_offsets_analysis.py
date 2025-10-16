@@ -50,7 +50,7 @@ from scipy.interpolate import CubicSpline
 #######################
 # --- MAIN FUNCTION ---
 #######################
-def EFI_vxB_offsets_analysis(wRocket):
+def cal2_EFI_vxB_offsets_analysis(wRocket):
 
     # --- FILE I/O ---
     data_folder_path = rf'{DataPaths.ACES_data_folder}\\calibration\\\EFI_cal1_spin_vxB_into_rktFrm_calibration\\{ACESII.fliers[wRocket-4]}\\'
@@ -59,7 +59,7 @@ def EFI_vxB_offsets_analysis(wRocket):
     input_files = glob(data_folder_path + '*vxB_rktFrm.cdf*')
 
     # --- get the data from the L2 file ---
-    stl.prgMsg(f'Loading data from L1 Files')
+    stl.prgMsg(f'Loading data Files')
     data_dict_EFI = stl.loadDictFromFile(input_files[0])
     stl.Done(start_time)
 
@@ -71,6 +71,8 @@ def EFI_vxB_offsets_analysis(wRocket):
     ################################################################
 
     # low-pass butterworth filter the EFI data before finding peaks
+
+
     if filter_data:
         stl.prgMsg('Filtering Data')
         filterType = 'bandpass'
@@ -107,7 +109,6 @@ def EFI_vxB_offsets_analysis(wRocket):
         data_dict_EFI['E_Z'][0] = deepcopy(np.array(E_filtered[2]))
         stl.Done(start_time)
 
-
     # Find the peaks in the EFI data
     stl.prgMsg('Finding Peaks')
     peaks_EFI = [[[], []], [[], []], [[], []]] # stores the high and low peaks of the EFI
@@ -119,14 +120,14 @@ def EFI_vxB_offsets_analysis(wRocket):
 
     for i in range(2):
         # Find the peaks in the EFI data
-        peaks_EFI[0][i], _ = find_peaks(x=np.power(-1,(i + 2)) *data_dict_EFI['E_X'][0], **peak_params)
-        peaks_EFI[1][i], _ = find_peaks(x=np.power(-1,(i + 2)) *data_dict_EFI['E_Y'][0], **peak_params)
-        peaks_EFI[2][i], _ = find_peaks(x=np.power(-1,(i + 2)) *data_dict_EFI['E_Z'][0], **peak_params)
+        peaks_EFI[0][i], _ = find_peaks(x=np.power(-1, (i + 2))*data_dict_EFI['E_X'][0], **peak_params)
+        peaks_EFI[1][i], _ = find_peaks(x=np.power(-1, (i + 2))*data_dict_EFI['E_Y'][0], **peak_params)
+        peaks_EFI[2][i], _ = find_peaks(x=np.power(-1, (i + 2))*data_dict_EFI['E_Z'][0], **peak_params)
 
         # Find the peaks in the vxB data
-        peaks_vxB[0][i], _ = find_peaks(x=np.power(-1,(i + 2)) *data_dict_EFI['vxB_X'][0], **peak_params)
-        peaks_vxB[1][i], _ = find_peaks(x=np.power(-1,(i + 2)) *data_dict_EFI['vxB_Y'][0], **peak_params)
-        peaks_vxB[2][i], _ = find_peaks(x=np.power(-1,(i + 2)) *data_dict_EFI['vxB_Z'][0], **peak_params)
+        peaks_vxB[0][i], _ = find_peaks(x=np.power(-1, (i + 2))*(data_dict_EFI['vxB_X'][0]), **peak_params)
+        peaks_vxB[1][i], _ = find_peaks(x=np.power(-1, (i + 2))*(data_dict_EFI['vxB_Y'][0]), **peak_params)
+        peaks_vxB[2][i], _ = find_peaks(x=np.power(-1, (i + 2))*(data_dict_EFI['vxB_Z'][0]), **peak_params)
 
     stl.Done(start_time)
 
@@ -137,15 +138,14 @@ def EFI_vxB_offsets_analysis(wRocket):
     peak_times_vxB = [[[], []], [[], []], [[], []]]  # stores the high and low peaks of the EFI
     for i in range(2):
         for idx, key in enumerate(['X', 'Y', 'Z']):
+            if key !='X':
+                # EFI
+                times = data_dict_EFI['Epoch'][0][peaks_EFI[idx][i]]
+                peak_times_EFI[idx][i] = stl.EpochTo_T0_Rocket(times, T0=T0)
 
-            # EFI
-            times = data_dict_EFI['Epoch'][0][peaks_EFI[idx][i]]
-            peak_times_EFI[idx][i] = stl.EpochTo_T0_Rocket(times, T0=T0)
-
-            # vxB
-            times = data_dict_EFI['Epoch'][0][peaks_vxB[idx][i]]
-            peak_times_vxB[idx][i] = stl.EpochTo_T0_Rocket(times, T0=T0)
-
+                # vxB
+                times = data_dict_EFI['Epoch'][0][peaks_vxB[idx][i]]
+                peak_times_vxB[idx][i] = stl.EpochTo_T0_Rocket(times, T0=T0)
 
     # [2] Limit peak data starting from T_start
     start_datetime = dt.datetime(2022, 11, 20, 17, 24, 00, 500000)
@@ -154,15 +154,17 @@ def EFI_vxB_offsets_analysis(wRocket):
     for i in range(2): # Shorten the peaks/data to only indices above T_start_idx
         for idx, key in enumerate(['X', 'Y', 'Z']):
 
-            # EFI
-            finder_idxs =np.where(peaks_EFI[idx][i] > T_start_idx)
-            peaks_EFI[idx][i] = peaks_EFI[idx][i][finder_idxs]
-            peak_times_EFI[idx][i] = peak_times_EFI[idx][i][finder_idxs]
+            if key !='X':
 
-            # vxB
-            finder_idxs = np.where(peaks_vxB[idx][i] > T_start_idx)
-            peaks_vxB[idx][i] = peaks_vxB[idx][i][finder_idxs]
-            peak_times_vxB[idx][i] = peak_times_vxB[idx][i][finder_idxs]
+                # EFI
+                finder_idxs =np.where(peaks_EFI[idx][i] > T_start_idx)
+                peaks_EFI[idx][i] = peaks_EFI[idx][i][finder_idxs]
+                peak_times_EFI[idx][i] = peak_times_EFI[idx][i][finder_idxs]
+
+                # vxB
+                finder_idxs = np.where(peaks_vxB[idx][i] > T_start_idx)
+                peaks_vxB[idx][i] = peaks_vxB[idx][i][finder_idxs]
+                peak_times_vxB[idx][i] = peak_times_vxB[idx][i][finder_idxs]
 
     # [3] Find the time delay between subsequent peaks in the X-Y data
     # Note: we need the vxB peak times since our linear trend needs to be correct the vxB time, i.e. (time correction) = (slope)*vxB_time + intercept
@@ -221,7 +223,7 @@ def EFI_vxB_offsets_analysis(wRocket):
 
             # vxB
             yData = data_dict_EFI[f'vxB_{key}'][0]
-            ax[idx].plot(xData, data_dict_EFI[f'vxB_{key}'][0], color='tab:red', label=f'vxB_{key}')
+            ax[idx].plot(xData, yData, color='tab:red', label=f'vxB_{key}')
             ax[idx].scatter(xData[peaks_vxB[dat_idx][0]], yData[peaks_vxB[dat_idx][0]], s=40, color='green')
             ax[idx].scatter(xData[peaks_vxB[dat_idx][1]], yData[peaks_vxB[dat_idx][1]], s=40, color='purple')
 
@@ -249,15 +251,17 @@ def EFI_vxB_offsets_analysis(wRocket):
     # Apply the fit functions to the vxB data - shift the vxB data backward in time to match the EFI data
     Epoch_T0 = np.array(stl.EpochTo_T0_Rocket(data_dict_EFI['Epoch'][0], T0=T0))
 
-    # Interpolate the (Epoch_new, vxB_component) data on the OLD timebase
-    # Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_1)
-    Epoch_new = Epoch_T0 - rogers_values[0]
+    # --- Interpolate the (Epoch_new, vxB_component) data on the OLD timebase ---
+
+    # Y-Axis
+    Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_1)
     vxB_Y_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['vxB_Y'][0])
 
-    # Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_2)
-    Epoch_new = Epoch_T0 - rogers_values[1]
+    # Z-Axis
+    Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_2)
     vxB_Z_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['vxB_Z'][0])
 
+    # X-Axis
     vxB_X_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['vxB_X'][0])
     vxB = np.array([vxB_X_new, vxB_Y_new, vxB_Z_new]).T
 
@@ -265,11 +269,8 @@ def EFI_vxB_offsets_analysis(wRocket):
     DCM_new = np.zeros(shape=(len(data_dict_EFI['DCM'][0]), 3, 3))
     for idx1 in range(3):
         for idx2 in range(3):
-            cs = CubicSpline(Epoch_new, data_dict_EFI['DCM'][0][:,idx1,idx2])
-            DCM_new[:, idx1, idx2] = cs(Epoch_T0)
-
+            DCM_new[:, idx1, idx2] = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['DCM'][0][:,idx1,idx2])
     stl.Done(start_time)
-
 
     # --- Adjust the vxB timebase with the determine time offset ---
 
@@ -283,18 +284,17 @@ def EFI_vxB_offsets_analysis(wRocket):
                             'Epoch': deepcopy(data_dict_EFI['Epoch']),
                             'Epoch_EFI_T0': [Epoch_T0, deepcopy(data_dict_EFI['Epoch'][1])],
                             'Y_fitParams': [np.array([params_1]), {}],
-                            'Z_fitParams': [np.array([params_1]), {}],
+                            'Z_fitParams': [np.array([params_2]), {}],
                             'deltaT_Y': [deltaT_epoch[1], {}],
                             'deltaT_Z': [deltaT_epoch[2], {}],
-                            'Y_fit': [np.array(fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[2], T0=T0), *params_1)), {'DEPEND_0':'deltaT_Y'}],
+                            'Y_fit': [np.array(fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[1], T0=T0), *params_1)), {'DEPEND_0':'deltaT_Y'}],
                             'Z_fit': [np.array(fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[2], T0=T0), *params_2)), {'DEPEND_0':'deltaT_Z'}],
                             'vxB_X': deepcopy(data_dict_EFI['vxB_X']),
-                            'vxB_Y': [vxB_Y_new, deepcopy(data_dict_EFI['vxB_Y'][1]), deepcopy(data_dict_EFI['vxB_Y'][1])],
-                            'vxB_Z': [vxB_Z_new, deepcopy(data_dict_EFI['vxB_Z'][1]), deepcopy(data_dict_EFI['vxB_Z'][1])],
+                            'vxB_Y': [vxB_Y_new, deepcopy(data_dict_EFI['vxB_Y'][1])],
+                            'vxB_Z': [vxB_Z_new, deepcopy(data_dict_EFI['vxB_Z'][1])],
                             '|vxB|': [np.array([np.linalg.norm(vxB[i]) for i in range(len(vxB))]), deepcopy(data_dict_EFI['|vxB|'][1])],
-                            'DCM': [np.array(DCM_new), deepcopy(data_dict_EFI['DCM'][1])]
+                            'DCM': [np.array(data_dict_EFI['DCM'][0]), deepcopy(data_dict_EFI['DCM'][1])]
                             }
-
 
         fileoutName = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_l1_EFI_vxB_rktFrm.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}\calibration\EFI_cal2_timing_offset_calibration\\{ACESII.fliers[wRocket-4]}\\'+ fileoutName
@@ -306,5 +306,5 @@ def EFI_vxB_offsets_analysis(wRocket):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-EFI_vxB_offsets_analysis(wRocket)
+cal2_EFI_vxB_offsets_analysis(wRocket)
 

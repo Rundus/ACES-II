@@ -320,7 +320,7 @@ def csv_to_cdf_LPcal(wRocket, rocketFolderPath, justPrintFileNames):
         # fit the averaged dataset with a linear line
 
         if AverageCalCurves:
-            prgMsg('Averaging Calibration Curves')
+            prgMsg('Averaging calibration Curves')
 
             cali_dict['ni_knownI'] = np.array([np.log(-1*cur) for cur in cali_dict['ni_knownI']])
             cali_dict['ne_knownI'] = np.array([np.log(cur) for cur in cali_dict['ne_knownI']])

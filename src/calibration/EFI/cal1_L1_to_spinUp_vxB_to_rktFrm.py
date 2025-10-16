@@ -58,11 +58,11 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
 
     # get the ACES-II ECEF trajectory files
     data_folder_path = rf'{DataPaths.ACES_data_folder}\trajectories\\{ACESII.fliers[wRocket - 4]}\\'
-    input_files_traj = glob(data_folder_path + '*ECEF.cdf*')[0]
+    input_files_traj = glob(data_folder_path + '*ENU.cdf*')[0]
 
     # get the ACES-II RingCore Data
     data_folder_path = rf'{DataPaths.ACES_data_folder}\L1\\{ACESII.fliers[wRocket - 4]}\\'
-    input_files_mag = glob(data_folder_path + '*RingCore_rktFrm.cdf*')[0]
+    input_files_mag = glob(data_folder_path + '*RingCore_rktFrm.cdf*')[0] # units: nT
 
     if justPrintFileNames:
         for i, file in enumerate(input_files):
@@ -92,8 +92,8 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
     DCM_rkt_to_ENU = np.zeros(shape=(len(data_dict_EFI['Epoch'][0]), 3, 3))
     for i in range(1, 4):
         for j in range(1, 4):
-            cs = CubicSpline(T0_attitude, data_dict_attitude[f'a{j}{i}'][0])
-            DCM_rkt_to_ENU[:, j - 1, i - 1] = cs(T0_EFI)
+            cs = CubicSpline(T0_attitude, data_dict_attitude[f'a{i}{j}'][0])
+            DCM_rkt_to_ENU[:, i - 1, j - 1] = cs(T0_EFI)
 
     DCM_ENU_to_rkt = np.array([mat.T for mat in DCM_rkt_to_ENU])
     stl.Done(start_time)
@@ -106,52 +106,45 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
                       times=data_dict_traj['Epoch'][0])
     stl.Done(start_time)
 
-
-    # Interpolate the trajectory Velocity (ECEF)
+    # Interpolate the trajectory Velocity (ENU) and B-Field onto EFI timebase
     stl.prgMsg('Interpolating Trajectory')
     T0_traject = stl.EpochTo_T0_Rocket(data_dict_traj['Epoch'][0], T0=T0)
-    for key in ['ECEFXVEL', 'ECEFYVEL', 'ECEFZVEL', 'Lat', 'Long', 'Alt']:
+    for key in ['E_VEL', 'N_VEL', 'U_VEL', 'Lat', 'Long', 'Alt']:
         cs = CubicSpline(T0_traject, data_dict_traj[key][0])
         data_dict_traj[key][0] = cs(T0_EFI)
     stl.Done(start_time)
 
-    # Interpolate the B-Field onto EFI timebase
     stl.prgMsg('Interpolating B')
-    # CHAOS ENU coordinates
-    B_ENU_new = [[],[],[]]
+    temp_ENU_new = [[],[],[]] # CHAOS ENU coordinates
     for idx in range(3):
-        cs = CubicSpline(T0_traject, B_ENU[:, idx])
-        B_ENU_new[idx] = cs(T0_EFI)
-    B_ENU = (1E-9)*np.array(B_ENU_new).T
+        temp_ENU_new[idx] = np.interp(T0_EFI,T0_traject, B_ENU[:, idx])
+    B_ENU = (1E-9)*(np.array(temp_ENU_new).T)
 
     # RingCore rkt XYZ coordinates
     T0_mag = stl.EpochTo_T0_Rocket(data_dict_mag['Epoch'][0], T0=T0)
     for key in ['Bx', 'By', 'Bz']:
-        cs = CubicSpline(T0_mag, data_dict_mag[key][0])
-        data_dict_mag[key][0] = cs(T0_EFI)
-    stl.Done(start_time)
+        data_dict_mag[key][0] = np.interp(T0_EFI,T0_mag, data_dict_mag[key][0])
 
     # Rotate the Trajectory velocity in ENU
-    stl.prgMsg('Rotating Trajectory into RktFrm')
-    V_rkt_ECEF = np.array([data_dict_traj['ECEFXVEL'][0], data_dict_traj['ECEFYVEL'][0], data_dict_traj['ECEFZVEL'][0]]).T
-    ENU_to_ECEF = np.array([stl.ENUtoECEF(Lat=data_dict_traj['Lat'][0][i], Long=data_dict_traj['Long'][0][i]) for i in range(len(V_rkt_ECEF))])
-    V_rkt_ENU = np.array([np.matmul(ENU_to_ECEF[i], V_rkt_ECEF[i]) for i in range(len(V_rkt_ECEF))])
-    V_rkt_rktFrm = np.array([np.matmul(DCM_ENU_to_rkt[i], V_rkt_ENU[i]) for i in range(len(V_rkt_ECEF))])
+    V_rkt_ENU = np.array([data_dict_traj['E_VEL'][0], data_dict_traj['N_VEL'][0], data_dict_traj['U_VEL'][0]]).T
+    V_rkt_rktFrm = np.array([np.matmul(DCM_ENU_to_rkt[i], V_rkt_ENU[i]) for i in range(len(V_rkt_ENU))])
     stl.Done(start_time)
 
     # Calculate vxB in rocket Coordinates
     stl.prgMsg('Calculating vxB')
-    B = 1E-9*(np.array([data_dict_mag['Bx'][0], data_dict_mag['By'][0], data_dict_mag['Bz'][0]]).T)
+    # B = (1E-9) * (np.array([data_dict_mag['Bx'][0], data_dict_mag['By'][0], data_dict_mag['Bz'][0]]).T)
+    B_rkt = np.array([np.matmul(DCM_ENU_to_rkt[i], B_ENU[i]) for i in range(len(T0_EFI))])
+    vxB_rkt = np.array([np.cross(V_rkt_rktFrm[i], B_rkt[i]) for i in range(len(T0_EFI))])
+    vxB_mag_rkt = np.array([np.linalg.norm(vxB_rkt[i]) for i in range(len(T0_EFI))])
 
-    vxB_ENU = np.array([np.cross(V_rkt_ENU[i], B_ENU[i]) for i in range(len(V_rkt_ENU))])
+    # Calculate vxB in ENU coordinates (diagnostic)
+    vxB_ENU = np.array([np.cross(V_rkt_ENU[i], B_ENU[i]) for i in range(len(T0_EFI))])
+    vxB_mag_ENU = np.array([np.linalg.norm(vxB_ENU[i]) for i in range(len(T0_EFI))])
 
-    vxB = np.array([np.cross(V_rkt_rktFrm[i], B[i]) for i in range(len(V_rkt_ECEF))])
-
-    vxB_mag = np.array([np.linalg.norm(vxB[i]) for i in range(len(V_rkt_ECEF))])
-
+    # Calculate |E|, |B| (diagnostic)
     E = np.array([data_dict_EFI['E_x'][0], data_dict_EFI['E_y'][0], data_dict_EFI['E_z'][0]]).T
-
-    E_mag = np.array([np.linalg.norm(E[i]) for i in range(len(V_rkt_ECEF))])
+    E_mag = np.array([np.linalg.norm(E[i]) for i in range(len(T0_EFI))])
+    B_mag = np.array([np.linalg.norm(B_rkt[i]) for i in range(len(T0_EFI))])
     stl.Done(start_time)
 
     data_dict_output = {**data_dict_output,
@@ -160,21 +153,19 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
                             'vxB_E': [np.array(vxB_ENU[:, 0]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': 'vxB_E'}],
                             'vxB_N': [np.array(vxB_ENU[:, 1]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': 'vxB_N'}],
                             'vxB_Up': [np.array(vxB_ENU[:, 2]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': 'vxB_Up'}],
-                            'vxB_X': [np.array(vxB[:, 0]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS':'vxB_X'}],
-                            'vxB_Y': [np.array(vxB[:, 1]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS':'vxB_Y'}],
-                            'vxB_Z': [np.array(vxB[:, 2]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS':'vxB_Z'}],
-                            '|vxB|': [np.array(vxB_mag), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS':'|vxB|'}],
+                            'vxB_X': [np.array(vxB_rkt[:, 0]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS':'vxB_X'}],
+                            'vxB_Y': [np.array(vxB_rkt[:, 1]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS':'vxB_Y'}],
+                            'vxB_Z': [np.array(vxB_rkt[:, 2]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS':'vxB_Z'}],
+                            '|vxB|_rkt': [np.array(vxB_mag_rkt), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS':'|vxB|'}],
+                            '|vxB|_ENU': [np.array(vxB_mag_ENU), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': '|vxB|'}],
                             'E_X': deepcopy(data_dict_EFI['E_x']),
                             'E_Y': deepcopy(data_dict_EFI['E_y']),
                             'E_Z': deepcopy(data_dict_EFI['E_z']),
                             '|E|': [np.array(E_mag), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m','LABLAXIS':'|E|'}],
                             'DCM': [DCM_rkt_to_ENU, {'LABLAXIS':'DCM_rkt_to_ENU'}],
+                            '|B|': [np.array(B_mag), {'DEPEND_0': 'Epoch', 'UNITS': 'T','LABLAXIS':'|B|'}],
                         }
                         }
-
-
-    # Include the DCM elements in the data_dict_output
-    data_dict_output
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---

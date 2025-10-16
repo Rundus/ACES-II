@@ -48,8 +48,8 @@ def L2_EFI_to_L2_EFI_remove_vxB(wRocket):
 
     # get the EFI files
     stl.prgMsg('Loading EFI Data')
-    data_folder_path = rf'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\'
-    input_files = glob(data_folder_path + '*_l2_EFI_ENU_withVxB.cdf*')
+    data_folder_path = rf'C:\Data\ACESII\calibration\EFI_cal3_depsin_EFI\\{ACESII.fliers[wRocket - 4]}\\'
+    input_files = glob(data_folder_path + '*EFI_ENU_withVxB.cdf*')
     data_dict_EFI = stl.loadDictFromFile(input_files[0])
     stl.Done(start_time)
 
@@ -64,10 +64,8 @@ def L2_EFI_to_L2_EFI_remove_vxB(wRocket):
     # --- SUBTRACT THE vxB effect ---
     #################################
     stl.prgMsg('Correcting E=E-vxB')
-    E_Field = np.array([data_dict_EFI['E_E'][0],data_dict_EFI['E_N'][0],data_dict_EFI['E_Up'][0]]).T
-    # vxB = np.array([data_dict_vxB['vxB_E'][0],data_dict_vxB['vxB_N'][0],data_dict_vxB['vxB_Up'][0]]).T # Note, this vector is already -vxB is is NOT |vxB|
-    vxB = np.array([data_dict_EFI['vxB_E'][0], data_dict_EFI['vxB_N'][0], data_dict_EFI['vxB_Up'][0]]).T  # Note, this vector is already -vxB is is NOT |vxB|
-
+    E_Field = np.array([data_dict_EFI['E_E'][0], data_dict_EFI['E_N'][0], data_dict_EFI['E_Up'][0]]).T
+    vxB = np.array([data_dict_vxB['vxB_E'][0], data_dict_vxB['vxB_N'][0], data_dict_vxB['vxB_Up'][0]]).T
     E_Field_corrected = E_scale*E_Field - vxB
     E_mag = np.array([np.linalg.norm(vec) for vec in E_Field_corrected])
     stl.Done(start_time)
@@ -78,7 +76,7 @@ def L2_EFI_to_L2_EFI_remove_vxB(wRocket):
     # store everything
     data_dict_output = {**data_dict_output,
                         **{
-                            'E_E': [E_Field_corrected[:, 0], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_East'}],
+                            'E_E': [-1*E_Field_corrected[:, 0], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_East'}],
                             'E_N': [E_Field_corrected[:, 1], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_North'}],
                             'E_Up': [E_Field_corrected[:, 2], {'DEPEND_0':'Epoch','UNITS': 'V/m','LABLAXIS':'E_up'}],
                             '|E|': [E_mag, {'DEPEND_0': 'Epoch', 'UNITS':'V/m',  'LABLAXIS':'|E|'}],

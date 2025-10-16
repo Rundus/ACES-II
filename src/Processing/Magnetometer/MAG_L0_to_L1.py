@@ -49,7 +49,7 @@ modifier = ''
 inputPath_modifier = 'L0' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
 outputPath_modifier = 'L1' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
-# Calibration Toggles
+# calibration Toggles
 applyScales = True
 applyFifthOrderCal = True
 applyRotateToRocket = True

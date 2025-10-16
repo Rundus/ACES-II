@@ -1,4 +1,4 @@
-# --- traj_to_auroral_coordinates.py ---
+# --- traj_ECEF_to_auroral.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: input the payload trajectory files and convert the ECEF velocities, positions into auroral coordinates (T,N,p)
 # as well as determine the gradient in the distances

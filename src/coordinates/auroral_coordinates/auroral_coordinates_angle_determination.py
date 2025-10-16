@@ -39,9 +39,9 @@ input_file_path = 'C:\Data\ACESII\L2\low'
 outputData = False
 
 # --- Plots ---
-plot_detrend = False
+plot_interactive_slider = True
 plot_best_fit_rotation = True
-plot_interactive_slider = False
+
 
 # --- --- --- ---
 # --- IMPORTS ---
@@ -51,13 +51,10 @@ from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
-
-
-
 #######################
 # --- MAIN FUNCTION ---
 #######################
-def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
+def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 
     # --- FILE I/O ---
     rocket_folder_path = DataPaths.ACES_data_folder
@@ -67,7 +64,7 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
 
     # Set the paths for the file names
     data_repository = f'{input_file_path}\\'
-    input_files = glob(data_repository+'*E_Field_FAC_fullCal.cdf*')
+    input_files = glob(data_repository+'*EFI_FAC_fullCal.cdf*')
     input_names = [ifile.replace(data_repository, '') for ifile in input_files]
 
     if justPrintFileNames:
@@ -78,7 +75,7 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
     # --- get the data from the L2 file ---
     stl.prgMsg(f'Loading data')
     data_dict_EFI = stl.loadDictFromFile(input_files[wFile])
-    data_dict_LShell = stl.loadDictFromFile('C:\Data\ACESII\science\L_shell\low\ACESII_36364_Lshell.cdf')
+    data_dict_LShell = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\low\ACESII_36364_Lshell.cdf')
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -87,7 +84,7 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
     ####################################
     # --- [1] Savgol Filter the Data ---
     ####################################
-    for key in ['E_e','E_r','E_p']:
+    for key in ['E_e', 'E_r', 'E_p']:
         data_dict_EFI[key][0] = savgol_filter(x=data_dict_EFI[key][0],
                                             window_length=500,
                                             polyorder=3)
@@ -108,10 +105,8 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
     time_LShell = stl.EpochTo_T0_Rocket(data_dict_LShell['Epoch'][0], T0=T0)
     cs = CubicSpline(x=time_LShell, y=data_dict_LShell['L-Shell'][0])
     Lshell_EFI = cs(time_EFI)
-
     low_idx = np.abs(Lshell_EFI - L_Shell_range[0]).argmin()
     high_idx = np.abs(Lshell_EFI - L_Shell_range[1]).argmin()
-
     stl.Done(start_time)
 
     # Reduce data only to the Auroral regions
@@ -121,18 +116,17 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
     # Form the E-Field vector
     E_Field = np.array([data_dict_EFI['E_r'][0], data_dict_EFI['E_e'][0], data_dict_EFI['E_p'][0]]).T
 
-
     ###########################################################
     # --- [3] Rotate E-East until Maximum in hodogram slope ---
     ###########################################################
 
     # define set of rotations and calculate deviation from fitted line
     stl.prgMsg('Rotating Fields')
-    N = 100
+    N = 5
     angles = np.linspace(-20, 20, N)
 
     # fit a linear line to the E_e compoennt
-    def fitFunc(x,a,b):
+    def fitFunc(x, a, b):
         return a*x+b
 
     rotation_statistics = np.zeros(shape=(N, 3))
@@ -142,9 +136,9 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
         rotated = np.array([np.matmul(stl.Rz(ang), vec) for vec in E_Field])
 
         # sort the hodogram data based on E_e
-        E_e_rotated, E_r_rotated = zip(*sorted(zip(rotated[:,1],rotated[:,0])))
+        E_e_rotated, E_r_rotated = zip(*sorted(zip(rotated[:, 1], rotated[:, 0])))
 
-        params, cov = curve_fit(fitFunc,xdata=E_e_rotated,ydata=E_r_rotated)
+        params, cov = curve_fit(fitFunc, xdata=E_e_rotated, ydata=E_r_rotated)
 
         rotation_statistics[idx][0] = ang
         rotation_statistics[idx][1] = params[0]
@@ -153,45 +147,45 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
 
     best_fit_idx = np.abs(rotation_statistics[:, 1]).argmax()
     best_angle = rotation_statistics[:, 0][best_fit_idx]
-    best_slope= rotation_statistics[:, 1][best_fit_idx]
+    best_slope = rotation_statistics[:, 1][best_fit_idx]
     best_intercept = rotation_statistics[:, 2][best_fit_idx]
 
-    choice_idx = np.abs(rotation_statistics[:,0]-(-9)).argmin()
-    print(rotation_statistics[:,1][choice_idx],rotation_statistics[:,2][choice_idx])
+    choice_idx = np.abs(rotation_statistics[:, 0]-(-9)).argmin()
+    print(rotation_statistics[:, 1][choice_idx],rotation_statistics[:, 2][choice_idx])
     print(best_slope,best_intercept)
     yData_rotated = np.array([np.matmul(stl.Rz(best_angle), vec) for vec in np.array([data_dict_EFI['E_r'][0], data_dict_EFI['E_e'][0], data_dict_EFI['E_p'][0]]).T])
 
     if plot_interactive_slider:
         from matplotlib.widgets import Slider
         fig, ax = plt.subplots(2)
-        ax[0].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_e'][0], color='tab:blue', label='E_e')
+        ax[0].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_r'][0], color='tab:blue', label='E_r')
         # ax[0].plot(data_dict_EFI['Epoch'][0], yData_fit, color='tab:red', label='E_e_fit')
-        line1, = ax[0].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_e'][0], color='tab:purple', label='E_e_rotated')
+        line1_r, = ax[0].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_r'][0], color='tab:purple', label='E_r_rotated')
         ax[0].legend()
-        ax[0].set_ylim(-0.06, 0.03)
-        ax[0].set_ylabel('E_e')
+        ax[0].set_ylim(-0.15, 0.15)
+        ax[0].set_ylabel('E_r')
 
-        ax[1].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_r'][0], color='tab:blue', label='Non-rotated E_r')
-        line2, = ax[1].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_r'][0], color='tab:purple', label='E_r_rotated')
+        ax[1].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_e'][0], color='tab:blue', label='Non-rotated E_e')
+        line2_e, = ax[1].plot(data_dict_EFI['Epoch'][0], data_dict_EFI['E_e'][0], color='tab:purple', label='E_e_rotated')
         ax[1].axhline(y=0, color='black')
         ax[1].legend()
-        ax[1].set_ylim(-0.06, 0.15)
-        ax[1].set_ylabel('E_r')
+        ax[1].set_ylim(-0.15, 0.15)
+        ax[1].set_ylabel('E_e')
 
         # Slider
         axrot = fig.add_axes([0, 0.25, 0.0225, 0.63])
         rotation_slider = Slider(
             ax=axrot,
             label='Angle',
-            valmin=-20,
-            valmax=20,
+            valmin=-180,
+            valmax=180,
             orientation='vertical'
         )
 
         def update(val):
             rotated = np.array([np.matmul(stl.Rz(rotation_slider.val), vec) for vec in E_Field])
-            line1.set_ydata(rotated[:, 1])
-            line2.set_ydata(rotated[:, 0])
+            line1_r.set_ydata(rotated[:, 0])
+            line2_e.set_ydata(rotated[:, 1])
             fig.canvas.draw_idle()
 
         rotation_slider.on_changed(update)
@@ -230,10 +224,7 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
         ax[1, 1].axhline(0)
         ax[1,1].legend()
 
-        fig.savefig(r'C:\Data\ACESII\science\auroral_coordinates\low\rotation_analysis.png')
-
-
-
+        fig.savefig(r'C:\Data\ACESII\coordinates\auroral_coordinates\low\rotation_analysis.png')
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -263,7 +254,7 @@ def L2_to_auroral_coordinates(wflyer, wFile, justPrintFileNames):
 
         stl.prgMsg('Creating output file')
         fileoutName_fixed = f'ACESII_{rocketID}_auroral_coordinates_angle.cdf'
-        outputPath = fr'C:\Data\ACESII\science\auroral_coordinates\low\{fileoutName_fixed}'
+        outputPath = fr'C:\Data\ACESII\coordinates\auroral_coordinates\low\{fileoutName_fixed}'
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)
 
@@ -278,5 +269,5 @@ if len(glob(target_files)) == 0:
     print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
     for file_idx in wFiles:
-        L2_to_auroral_coordinates(wRocket-4, file_idx, justPrintFileNames)
+        auroral_coordinates_angle_determination(wRocket-4, file_idx, justPrintFileNames)
 

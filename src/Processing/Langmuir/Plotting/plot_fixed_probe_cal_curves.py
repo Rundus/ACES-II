@@ -20,7 +20,7 @@ if plotFixedCalCurve:
     plt.xlabel('ADC Value', fontsize=Label_Fontsize)
     plt.ylabel(r'Ln($I_{cal}$) [nA]', fontsize=Label_Fontsize)
     plt.suptitle(f'FIXED LP - {rocketAttrs.rocketID[wRocket - 4]}\n'
-                 'Calculated Calibration Current vs Analog Value', fontsize=Title_Fontsize)
+                 'Calculated calibration Current vs Analog Value', fontsize=Title_Fontsize)
     plt.legend(['ln(y) = mx + b\n'
                 f'm: {parameters[0]}\n'
                 f'b: {parameters[1]}'])

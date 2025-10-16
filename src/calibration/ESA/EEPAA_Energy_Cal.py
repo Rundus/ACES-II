@@ -42,7 +42,7 @@ def EEPAA_Energy_Cal(inputFile):
     df = pd.read_excel(inputFile)
     steps = np.array(df.STEP)
     Energy_Theory = np.array(df['Energy (Theoretical) [eV]'])
-    Energy_cal = np.array(df['Calibration Estimate [eV]'])
+    Energy_cal = np.array(df['calibration Estimate [eV]'])
     dataForCal = np.array([list(pair) for pair in zip(steps,Energy_cal) if not (np.isnan(pair[0]) or np.isnan(pair[1]))])
 
     xData = dataForCal[:, 0]

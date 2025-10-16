@@ -73,7 +73,7 @@ def L2_to_L3_langmuir_fixed(wRocket, justPrintFileNames):
     stl.prgMsg(f'Loading data')
     data_dict = stl.loadDictFromFile(inputFiles[0])
 
-    # load the Langmuir Probe Post-flight Calibration data
+    # load the Langmuir Probe Post-flight calibration data
     data_dict_LPpostFlight = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\calibration\LP_postFlight_calibration\\{ACESII.fliers[wRocket-4]}\\*_postFlight_cal*')[0])
     stl.Done(start_time)
     ##################################################################

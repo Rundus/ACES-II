@@ -231,7 +231,7 @@ def L1_to_L2_langmuir_swept(wflyer, justPrintFileNames):
     #
     #     # --- prepare the calibration data ---
     #     if applySweptCalCurve:
-    #         stl.prgMsg('Collecting Swept Calibration Fit Data')
+    #         stl.prgMsg('Collecting Swept calibration Fit Data')
     #         def sweptCal_Analog_to_Current(analogVal, fitParams):
     #             return np.exp(fitParams[0]*analogVal + fitParams[1])
     #

@@ -5,7 +5,7 @@
 # reduce dataset to only include data after ACS despun rocket since this is where the magPitchAngles are nominal.
 # Value is chosen based off of the attitude data variable "SpinAlignmentToB"
 
-# The ChiSquare Calibration values are chosen only AFTER the
+# The ChiSquare calibration values are chosen only AFTER the
 # ACS has despun the rocket for nominal data collection, otherwise the
 # magnetic field will be very out of line with the ESA detector
 
