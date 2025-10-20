@@ -40,11 +40,11 @@ def L2_to_L2_EFI_ENU_auroral_coordinates(wRocket):
 
     # --- prepare the output ---
     data_dict_output = {
-        'E_N' : [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_EFI['E_E'][1])],
+        'E_N': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_EFI['E_E'][1])],
         'E_T': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_EFI['E_N'][1])],
         'E_p': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), deepcopy(data_dict_EFI['E_Up'][1])],
-        '|E|':deepcopy(data_dict_EFI['|E|']),
-        'Epoch':deepcopy(data_dict_EFI['Epoch'])
+        '|E|': deepcopy(data_dict_EFI['|E|']),
+        'Epoch': deepcopy(data_dict_EFI['Epoch'])
     }
 
     ###########################################
@@ -56,7 +56,7 @@ def L2_to_L2_EFI_ENU_auroral_coordinates(wRocket):
     Epoch_auroral_tt2000 = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_transform_auroral['Epoch'][0]])
 
     # interpolate auroral_to_ECEF matrix onto EFI timebase
-    interp_keys = ['a11', 'a12', 'a13','a21','a22','a23','a31','a32','a33']
+    interp_keys = ['a11', 'a12', 'a13', 'a21', 'a22', 'a23', 'a31', 'a32', 'a33']
     for key in interp_keys:
         cs = CubicSpline(Epoch_ENU_tt2000, data_dict_transform_ENU[key][0])
         data_dict_transform_ENU[key][0] = deepcopy(cs(Epoch_EFI_tt2000))

@@ -86,14 +86,12 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
 
     # Attempt 1: Interpolate the DCM onto EFI timebase.
     stl.prgMsg('Interpolating DCM')
-    T0 = dt.datetime(2022, 11, 20, 17, 20)
-    T0_EFI = stl.EpochTo_T0_Rocket(data_dict_EFI['Epoch'][0], T0=T0)
-    T0_attitude = stl.EpochTo_T0_Rocket(data_dict_attitude['Epoch'][0], T0=T0)
+    T0_EFI = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_EFI['Epoch'][0]])
+    T0_attitude = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_attitude['Epoch'][0]])
     DCM_rkt_to_ENU = np.zeros(shape=(len(data_dict_EFI['Epoch'][0]), 3, 3))
     for i in range(1, 4):
         for j in range(1, 4):
-            cs = CubicSpline(T0_attitude, data_dict_attitude[f'a{i}{j}'][0])
-            DCM_rkt_to_ENU[:, i - 1, j - 1] = cs(T0_EFI)
+            DCM_rkt_to_ENU[:, i - 1, j - 1] = np.interp(T0_EFI, T0_attitude, data_dict_attitude[f'a{i}{j}'][0])
 
     DCM_ENU_to_rkt = np.array([mat.T for mat in DCM_rkt_to_ENU])
     stl.Done(start_time)
@@ -108,10 +106,9 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
 
     # Interpolate the trajectory Velocity (ENU) and B-Field onto EFI timebase
     stl.prgMsg('Interpolating Trajectory')
-    T0_traject = stl.EpochTo_T0_Rocket(data_dict_traj['Epoch'][0], T0=T0)
+    T0_traject = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_traj['Epoch'][0]])
     for key in ['E_VEL', 'N_VEL', 'U_VEL', 'Lat', 'Long', 'Alt']:
-        cs = CubicSpline(T0_traject, data_dict_traj[key][0])
-        data_dict_traj[key][0] = cs(T0_EFI)
+        data_dict_traj[key][0] = np.interp(T0_EFI,T0_traject, data_dict_traj[key][0])
     stl.Done(start_time)
 
     stl.prgMsg('Interpolating B')
@@ -121,7 +118,7 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
     B_ENU = (1E-9)*(np.array(temp_ENU_new).T)
 
     # RingCore rkt XYZ coordinates
-    T0_mag = stl.EpochTo_T0_Rocket(data_dict_mag['Epoch'][0], T0=T0)
+    T0_mag = np.array([pycdf.lib.datetime_to_tt2000(val) for val in data_dict_mag['Epoch'][0]])
     for key in ['Bx', 'By', 'Bz']:
         data_dict_mag[key][0] = np.interp(T0_EFI,T0_mag, data_dict_mag[key][0])
 
@@ -132,7 +129,6 @@ def cal1_L1_to_spinUp_vxB_to_rktFrm(wRocket, justPrintFileNames):
 
     # Calculate vxB in rocket Coordinates
     stl.prgMsg('Calculating vxB')
-    # B = (1E-9) * (np.array([data_dict_mag['Bx'][0], data_dict_mag['By'][0], data_dict_mag['Bz'][0]]).T)
     B_rkt = np.array([np.matmul(DCM_ENU_to_rkt[i], B_ENU[i]) for i in range(len(T0_EFI))])
     vxB_rkt = np.array([np.cross(V_rkt_rktFrm[i], B_rkt[i]) for i in range(len(T0_EFI))])
     vxB_mag_rkt = np.array([np.linalg.norm(vxB_rkt[i]) for i in range(len(T0_EFI))])

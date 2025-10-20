@@ -67,13 +67,12 @@ def EFI_rkt_to_ENU_despin(wRocket):
 
     # form the rocket-frame vectors
     EFI_rkt_vec = np.array([data_dict_EFI['E_x'][0], data_dict_EFI['E_y'][0], data_dict_EFI['E_z'][0]]).T
-    vxB_rkt_vec = np.array([data_dict_cal['vxB_X'][0], data_dict_cal['vxB_Y'][0], data_dict_cal['vxB_Z'][0]]).T
+    # EFI_rkt_vec = np.array([data_dict_cal['E_X'][0], data_dict_cal['E_Y'][0], data_dict_cal['E_Z'][0]]).T
+    # vxB_rkt_vec = np.array([data_dict_cal['vxB_X'][0], data_dict_cal['vxB_Y'][0], data_dict_cal['vxB_Z'][0]]).T
 
     # Apply the DCM (rkt-->to_ENU)
     EFI_ENU_vec = np.array([np.matmul(data_dict_cal['DCM'][0][idx],vec) for idx,vec in enumerate(EFI_rkt_vec)])
-
-    # TODO: Something is VERY wrong with the vxB below - Causing E_East to appear negative
-    vxB_ENU_vec = np.array([np.matmul(data_dict_cal['DCM'][0][idx],vec) for idx,vec in enumerate(vxB_rkt_vec)])
+    # vxB_ENU_vec = np.array([np.matmul(data_dict_cal['DCM'][0][idx],vec) for idx,vec in enumerate(vxB_rkt_vec)])
 
     # Calculate some magnitudes for diagnostics
     E_mag_rkt = np.array([np.linalg.norm(vec) for vec in EFI_rkt_vec])
@@ -88,10 +87,10 @@ def EFI_rkt_to_ENU_despin(wRocket):
                             '|E|_ENU': [E_mag_ENU, {'DEPEND_0': 'Epoch', 'UNITS':'V/m',  'LABLAXIS':'|E|'}],
                             '|E|_rkt': [E_mag_rkt, {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': '|E|'}],
                             'Epoch': deepcopy(data_dict_EFI['Epoch']),
-                            'vxB_E': [np.array(vxB_ENU_vec[:, 0]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': 'vxB_E'}],
-                            'vxB_N': [np.array(vxB_ENU_vec[:, 1]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': 'vxB_N'}],
-                            'vxB_Up': [np.array(vxB_ENU_vec[:, 2]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': 'vxB_Up'}],
-                            '|vxB|': deepcopy(data_dict_cal['|vxB|'])
+                            # 'vxB_E': [np.array(vxB_ENU_vec[:, 0]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': 'vxB_E'}],
+                            # 'vxB_N': [np.array(vxB_ENU_vec[:, 1]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': 'vxB_N'}],
+                            # 'vxB_Up': [np.array(vxB_ENU_vec[:, 2]), {'DEPEND_0': 'Epoch', 'UNITS': 'V/m', 'LABLAXIS': 'vxB_Up'}],
+                            # '|vxB|': deepcopy(data_dict_cal['|vxB|'])
                         }
                         }
     stl.Done(start_time)

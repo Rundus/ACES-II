@@ -1,7 +1,7 @@
 # --- cal2_EFI_vxB_offsets_analysis.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: determine the timing between the EFI peaks
-# as well as the magnitude offset between vxB and
+# DESCRIPTION: determine the timing between the EFI peaks and vxB. Use this to
+# determine what the time-offset between the vxB and DCM should be.
 
 # --- bookkeeping ---
 # !/usr/bin/env python
@@ -32,7 +32,7 @@ E_field_scale = 1
 wRocket = 5
 
 # --- OutputData ---
-outputData = False
+outputData = True
 filter_data = True
 plot_filtered_data = False
 plot_fits = True
@@ -178,19 +178,19 @@ def cal2_EFI_vxB_offsets_analysis(wRocket):
                 if key == 'Y': # the Y-axis starts on minimums
                     # calculate the deltaT for minimums
                     deltaT[idx].append(peak_times_vxB[idx][1][i] - peak_times_EFI[idx][1][i])
-                    deltaT_epoch[idx].append(data_dict_EFI['Epoch'][0][peaks_vxB[idx][1][i]])
+                    deltaT_epoch[idx].append(data_dict_EFI['Epoch'][0][peaks_EFI[idx][1][i]])
 
                     # calculate the deltaT for maximums
                     deltaT[idx].append(peak_times_vxB[idx][0][i] - peak_times_EFI[idx][0][i])
-                    deltaT_epoch[idx].append(data_dict_EFI['Epoch'][0][peaks_vxB[idx][0][i]])
+                    deltaT_epoch[idx].append(data_dict_EFI['Epoch'][0][peaks_EFI[idx][0][i]])
                 elif key == 'Z': # the Z-axis startson maximums
                     # calculate the deltaT for maximums
                     deltaT[idx].append(peak_times_vxB[idx][0][i] - peak_times_EFI[idx][0][i])
-                    deltaT_epoch[idx].append(data_dict_EFI['Epoch'][0][peaks_vxB[idx][0][i]])
+                    deltaT_epoch[idx].append(data_dict_EFI['Epoch'][0][peaks_EFI[idx][0][i]])
 
                     # calculate the deltaT for minimums
                     deltaT[idx].append(peak_times_vxB[idx][1][i] - peak_times_EFI[idx][1][i])
-                    deltaT_epoch[idx].append(data_dict_EFI['Epoch'][0][peaks_vxB[idx][1][i]])
+                    deltaT_epoch[idx].append(data_dict_EFI['Epoch'][0][peaks_EFI[idx][1][i]])
             else:
                 continue
 
@@ -234,10 +234,10 @@ def cal2_EFI_vxB_offsets_analysis(wRocket):
             ax[idx].legend()
 
         ax[2].plot(deltaT_epoch[1], np.array(deltaT[1])*time_scale, label='Y', color='tab:blue')
-        ax[2].plot(deltaT_epoch[1], fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[1], T0=T0), *params_1)*time_scale, label=f'Y [{round(params_1[0],6)}, {round(params_1[1],6)}]', color='tab:blue', alpha=0.5, linestyle='--')
+        ax[2].plot(deltaT_epoch[1], fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[1], T0=T0), *params_1)*time_scale, label=f'Y [slope:{round(params_1[0],6)}, b:{round(params_1[1],6)}]', color='tab:blue', alpha=0.5, linestyle='--')
 
         ax[2].plot(deltaT_epoch[2], np.array(deltaT[2])*time_scale, label='Z', color='tab:red')
-        ax[2].plot(deltaT_epoch[2], fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[2], T0=T0), *params_2)*time_scale, label=f'Z [{round(params_2[0],6)}, {round(params_2[1],6)}]', color='tab:red', alpha=0.5, linestyle='--')
+        ax[2].plot(deltaT_epoch[2], fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[2], T0=T0), *params_2)*time_scale, label=f'Z [slope:{round(params_2[0],6)}, b:{round(params_2[1],6)}]', color='tab:red', alpha=0.5, linestyle='--')
 
         ax[2].grid(which='both')
         ax[2].set_ylabel('Peaks $\Delta$T [ms]\nT_vxB - T_E')
@@ -254,16 +254,15 @@ def cal2_EFI_vxB_offsets_analysis(wRocket):
     # --- Interpolate the (Epoch_new, vxB_component) data on the OLD timebase ---
 
     # Y-Axis
-    Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_1)
-    vxB_Y_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['vxB_Y'][0])
+    Epoch_new = Epoch_T0 + fitFunc(Epoch_T0, *params_1)
+    E_Y_new = np.interp(Epoch_T0,Epoch_new,data_dict_EFI['E_Y'][0])
 
     # Z-Axis
-    Epoch_new = Epoch_T0 - fitFunc(Epoch_T0, *params_2)
-    vxB_Z_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['vxB_Z'][0])
+    Epoch_new = Epoch_T0 + fitFunc(Epoch_T0, *params_2)
+    E_Z_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['E_Z'][0])
 
     # X-Axis
     vxB_X_new = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['vxB_X'][0])
-    vxB = np.array([vxB_X_new, vxB_Y_new, vxB_Z_new]).T
 
     # Interpolate the NEW attitude DCM matrix elements into OLD timebase
     DCM_new = np.zeros(shape=(len(data_dict_EFI['DCM'][0]), 3, 3))
@@ -272,7 +271,6 @@ def cal2_EFI_vxB_offsets_analysis(wRocket):
             DCM_new[:, idx1, idx2] = np.interp(Epoch_T0, Epoch_new, data_dict_EFI['DCM'][0][:,idx1,idx2])
     stl.Done(start_time)
 
-    # --- Adjust the vxB timebase with the determine time offset ---
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -289,11 +287,10 @@ def cal2_EFI_vxB_offsets_analysis(wRocket):
                             'deltaT_Z': [deltaT_epoch[2], {}],
                             'Y_fit': [np.array(fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[1], T0=T0), *params_1)), {'DEPEND_0':'deltaT_Y'}],
                             'Z_fit': [np.array(fitFunc(stl.EpochTo_T0_Rocket(deltaT_epoch[2], T0=T0), *params_2)), {'DEPEND_0':'deltaT_Z'}],
-                            'vxB_X': deepcopy(data_dict_EFI['vxB_X']),
-                            'vxB_Y': [vxB_Y_new, deepcopy(data_dict_EFI['vxB_Y'][1])],
-                            'vxB_Z': [vxB_Z_new, deepcopy(data_dict_EFI['vxB_Z'][1])],
-                            '|vxB|': [np.array([np.linalg.norm(vxB[i]) for i in range(len(vxB))]), deepcopy(data_dict_EFI['|vxB|'][1])],
-                            'DCM': [np.array(data_dict_EFI['DCM'][0]), deepcopy(data_dict_EFI['DCM'][1])]
+                            'DCM': [np.array(data_dict_EFI['DCM'][0]), deepcopy(data_dict_EFI['DCM'][1])],
+                            'E_Y':[np.array(E_Z_new), deepcopy(data_dict_EFI['E_Y'][1])],
+                            'E_Z':[np.array(E_Z_new), deepcopy(data_dict_EFI['E_Z'][1])],
+                            'E_X':deepcopy(data_dict_EFI['E_X'])
                             }
 
         fileoutName = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_l1_EFI_vxB_rktFrm.cdf'
