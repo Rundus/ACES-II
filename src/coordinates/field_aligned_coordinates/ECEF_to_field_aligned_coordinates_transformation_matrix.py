@@ -28,7 +28,7 @@ start_time = time.time()
 # 5 -> ACES II Low Flier
 wRocket = [4, 5]
 outputData = True
-outputPath_modifier = 'coordinates' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+outputPath_modifier = 'coordinates\\transforms' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
 # --- --- --- ---
 # --- IMPORTS ---
@@ -40,7 +40,7 @@ def ECEF_to_Field_Aligned(wRocket):
     rocketID = ACESII.payload_IDs[wRocket-4]
 
     # --- ACES II Flight/Integration Data ---
-    inputFiles = glob(f'{DataPaths.ACES_data_folder}\coordinates\{ACESII.fliers[wRocket-4]}\*ECEF_to_ENU*')[0]
+    inputFiles = glob(f'{DataPaths.ACES_data_folder}\{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\*ECEF_to_ENU*')[0]
 
     # --- get the data from the attitude file ---
     stl.prgMsg(f'Loading data')
@@ -91,7 +91,6 @@ def ECEF_to_Field_Aligned(wRocket):
          Radius[i] * np.cos(coLatRad[i])] for i in range(len(data_dict_transform['Epoch'][0]))])
 
     stl.Done(start_time)
-
 
     # --- calculate Field Aligned unit vectors over the duration of the flight ---
     stl.prgMsg('Converting to Field Aligned Coordinates')

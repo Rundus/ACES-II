@@ -44,10 +44,10 @@ def L2_to_L2_EFI_FAC_to_auroral_coordinates(wRocket):
 
     # --- prepare the output ---
     data_dict_output = {
-        'E_r' : [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_E'][1]],
-        'E_e': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_N'][1]],
-        'E_p': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))),data_dict_EFI['E_Up'][1]],
-        'Epoch':data_dict_EFI['Epoch']
+        'E_r': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), data_dict_EFI['E_E'][1]],
+        'E_e': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), data_dict_EFI['E_N'][1]],
+        'E_p': [np.zeros(shape=(len(data_dict_EFI['Epoch'][0]))), data_dict_EFI['E_Up'][1]],
+        'Epoch': data_dict_EFI['Epoch']
     }
 
     ###########################################

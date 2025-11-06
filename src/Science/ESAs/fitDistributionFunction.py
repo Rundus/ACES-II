@@ -128,10 +128,9 @@ def fitDistributionFunction(wRocket, rocketFolderPath):
         # --- High T Plasma ---
         guess = [1.509, 1.3E6, 2000]
         boundVals = [[1.5000000001, 2], [1E4, 1E14], [0.001, 1E4]]  # kappa, n, T
-
-
         bounds = tuple([[boundVals[i][0] for i in range(len(boundVals))], [boundVals[i][1] for i in range(len(boundVals))]])
         params, cov = curve_fit(KappaDist, xDataFitThis, yDataFitThis, p0=guess, maxfev=int(1E9), bounds=bounds)
+
         # params, cov = curve_fit(KappaDist, xDataFitThis, yDataFitThis, maxfev=int(1E6))
         xDataFit = linspace(Energy.min(), Energy.max(), 1000)
         yDataFit = KappaDist(xDataFit, *params)

@@ -36,10 +36,10 @@ wFiles = [0]
 input_file_path = 'C:\Data\ACESII\L2\low'
 
 # --- OutputData ---
-outputData = False
+outputData = True
 
 # --- Plots ---
-plot_interactive_slider = True
+plot_interactive_slider = False
 plot_best_fit_rotation = True
 
 
@@ -84,10 +84,10 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
     ####################################
     # --- [1] Savgol Filter the Data ---
     ####################################
-    for key in ['E_e', 'E_r', 'E_p']:
-        data_dict_EFI[key][0] = savgol_filter(x=data_dict_EFI[key][0],
-                                            window_length=500,
-                                            polyorder=3)
+    # for key in ['E_e', 'E_r', 'E_p']:
+    #     data_dict_EFI[key][0] = savgol_filter(x=data_dict_EFI[key][0],
+    #                                         window_length=500,
+    #                                         polyorder=3)
 
 
     #######################################
@@ -95,7 +95,9 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
     #######################################
 
     # Define the range of L-Shells to denote the "Auroral Region"
-    L_Shell_range = [8.4, 9.75]
+    # L_Shell_range = [8.4, 9.75] # old
+    # L_Shell_range = [8.6, 9.4] # new good
+    L_Shell_range = [8, 9.7] # testing
 
     # interpolate L-Shell onto EFI timebase
     stl.prgMsg('Interpolating LShell')
@@ -122,8 +124,8 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 
     # define set of rotations and calculate deviation from fitted line
     stl.prgMsg('Rotating Fields')
-    N = 5
-    angles = np.linspace(-20, 20, N)
+    N =3
+    angles = np.linspace(3, 3.5, N)
 
     # fit a linear line to the E_e compoennt
     def fitFunc(x, a, b):
@@ -151,8 +153,8 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
     best_intercept = rotation_statistics[:, 2][best_fit_idx]
 
     choice_idx = np.abs(rotation_statistics[:, 0]-(-9)).argmin()
-    print(rotation_statistics[:, 1][choice_idx],rotation_statistics[:, 2][choice_idx])
-    print(best_slope,best_intercept)
+    # print(rotation_statistics[:, 1][choice_idx],rotation_statistics[:, 2][choice_idx])
+    # print(best_slope, best_intercept)
     yData_rotated = np.array([np.matmul(stl.Rz(best_angle), vec) for vec in np.array([data_dict_EFI['E_r'][0], data_dict_EFI['E_e'][0], data_dict_EFI['E_p'][0]]).T])
 
     if plot_interactive_slider:

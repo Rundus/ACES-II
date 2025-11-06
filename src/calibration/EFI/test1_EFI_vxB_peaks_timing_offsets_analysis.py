@@ -1,4 +1,4 @@
-# --- cal2_EFI_vxB_offsets_analysis.py ---
+# --- test1_EFI_vxB_peaks_timing_offsets_analysis.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: determine the timing between the EFI peaks and vxB. Use this to
 # determine what the time-offset between the vxB and DCM should be.

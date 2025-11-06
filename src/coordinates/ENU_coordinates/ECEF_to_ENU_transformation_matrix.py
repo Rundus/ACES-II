@@ -21,9 +21,9 @@ start_time = time.time()
 # --- TOGGLES ---
 # --- --- --- ---
 justPrintFileNames = False
-wRocket = 5
+wRocket = 4
 inputPath_modifier = 'trajectories' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
-outputPath_modifier = 'coordinates' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+outputPath_modifier = 'coordinates\\transforms' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
 # ---------------------------
 outputData = True
@@ -56,7 +56,7 @@ def ENU_coordinates_transformation_matrix(wflyer, file_idx, justPrintFileNames):
     # --- get the data from the file ---
     stl.prgMsg(f'Loading data from {inputPath_modifier} Files')
     data_dict_traj, globalAttrsMod = stl.loadDictFromFile(inputFiles[file_idx], getGlobalAttrs=True)
-    data_dict_attitude = stl.loadDictFromFile(rf'C:\Data\ACESII\attitude\{ACESII.fliers[wflyer]}\ACESII_{rocketID}_Attitude_Solution.cdf')
+    data_dict_attitude = stl.loadDictFromFile(rf'C:\Data\ACESII\attitude\{ACESII.fliers[wflyer]}\ACESII_{rocketID}_Attitude_Solution_fullCal.cdf')
     stl.Done(start_time)
 
     # --- prepare the output ---
