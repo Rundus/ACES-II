@@ -20,7 +20,7 @@ from scipy.interpolate import CubicSpline
 # --- Select the Rocket ---
 # 4 -> ACES-II High Flier
 # 5 -> ACES-II Low Flier
-wRocket = 4
+wRocket = 5
 wFiles = [0]
 outputData = True
 Plot_correction_term = False
@@ -44,7 +44,10 @@ def L2_to_L2_RingCore_ECEF_to_auroal_coordinates(wRocket):
         'B_N': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_X'][1]],
         'B_T': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_Y'][1]],
         'B_p': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_Z'][1]],
-        'B_mag': data_dict_mag['Bmag'],
+        'B_model_N': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_model_X'][1]],
+        'B_model_T': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_model_Y'][1]],
+        'B_model_p': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_model_Z'][1]],
+        'Bmag': data_dict_mag['Bmag'],
         'Epoch': data_dict_mag['Epoch']
     }
 
@@ -74,16 +77,25 @@ def L2_to_L2_RingCore_ECEF_to_auroal_coordinates(wRocket):
 
     # form the mag vector
     mag_vec = np.array([data_dict_mag['B_X'][0], data_dict_mag['B_Y'][0], data_dict_mag['B_Z'][0]]).T
+    mag_model_vec = np.array([data_dict_mag['B_model_X'][0], data_dict_mag['B_model_Y'][0], data_dict_mag['B_model_Z'][0]]).T
+
     mag_transformed = np.array([np.matmul(transform_matrix_interp[i], vec) for i, vec in enumerate(mag_vec)])
+    mag_model_transformed = np.array([np.matmul(transform_matrix_interp[i], vec) for i, vec in enumerate(mag_model_vec)])
 
     data_dict_output['B_N'][0] = mag_transformed[:, 0]
     data_dict_output['B_N'][1]['LABLAXIS'] = 'Arc-Normal Component'
+    data_dict_output['B_model_N'][0] = mag_model_transformed[:, 0]
+    data_dict_output['B_model_N'][1]['LABLAXIS'] = 'Arc-Normal Model Component'
 
     data_dict_output['B_T'][0] = mag_transformed[:, 1]
     data_dict_output['B_T'][1]['LABLAXIS'] = 'Arc-Tangent Component'
+    data_dict_output['B_model_T'][0] = mag_model_transformed[:, 1]
+    data_dict_output['B_model_T'][1]['LABLAXIS'] = 'Arc-Tangent Model Component'
 
     data_dict_output['B_p'][0] = mag_transformed[:, 2]
     data_dict_output['B_p'][1]['LABLAXIS'] = 'Field-Aligned Component'
+    data_dict_output['B_model_p'][0] = mag_model_transformed[:, 2]
+    data_dict_output['B_model_p'][1]['LABLAXIS'] = 'Field-Aligned Model Component'
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---

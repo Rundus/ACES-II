@@ -19,10 +19,9 @@ start_time = time.time()
 # --- --- --- ---
 justPrintFileNames = False
 wRocket = 5
-wFiles = [[0], [0]]
+wFiles = [[0], [1]]
 modifier = ''
 inputPath_modifier = 'L2' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
-outputPath_modifier = 'L3\Energy_Flux' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
 # ---------------------------
 outputData = True
@@ -62,6 +61,7 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
     # --- get the data from the file ---
     stl.prgMsg(f'Loading data from ESA Files')
     data_dict_eepaa, globalAttrs = stl.loadDictFromFile(inputFilePath=input_files[wfile], getGlobalAttrs=True)
+    data_dict_Lshell = stl.loadDictFromFile(glob(f'C:\Data\ACESII\coordinates\Lshell\{ACESII.fliers[wRocket-4]}\\*.cdf*')[0])
     stl.Done(start_time)
 
     # --- --- --- --- -
@@ -194,6 +194,7 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
                             'Energy': data_dict_eepaa['Energy'],
                             'Epoch': data_dict_eepaa['Epoch'],
                             'Alt': data_dict_eepaa['Alt'],
+                            'L-Shell':data_dict_Lshell['L-Shell'],
 
                             'Energy_avg': [Energy_avg_Robinson, data_dict_eepaa['Energy'][1]],
                             }
@@ -244,7 +245,7 @@ def diffFlux_to_Energy_Flux(wRocket, rocketFolderPath, justPrintFileNames, wflye
 
         # write out the data
         fileoutName = f'ACESII_{rocketID}_l3_eepaa_flux.cdf'
-        outputPath = f'{rocketFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
+        outputPath = f'{rocketFolderPath}\\L3\Energy_Flux\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output, globalAttrsMod=globalAttrs)
         stl.Done(start_time)
 

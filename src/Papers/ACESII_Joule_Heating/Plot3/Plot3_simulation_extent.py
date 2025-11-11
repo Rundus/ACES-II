@@ -7,6 +7,9 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
+
+import numpy as np
+
 from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
@@ -16,7 +19,8 @@ start_time = time.time()
 # --- --- --- ---
 import spaceToolsLib as stl
 import matplotlib.pyplot as plt
-plt.style.use(r'C:\Users\cfelt\PycharmProjects\ACESII\src\Papers\ACESII_Joule_Heating\Plot3\mpl_style_sheet.mplstyle')
+from spacepy import coordinates as coord
+from spacepy.time import Ticktock
 
 # --- --- --- ---
 # --- TOGGLES ---
@@ -29,7 +33,6 @@ timeTargetsUTC = [dt.datetime(2022,11,20,17,23,20,100000),
                       dt.datetime(2022,11,20,17,26,40,100000),
                       dt.datetime(2022,11,20,17,27,20,100000)] # find the UTC dates times of the specifically sampled labels
 trajColors = ['tab:red', 'tab:orange']
-PlotPlot = False
 
 # --- --- --- --- --- --- -
 # --- LOAD ALL THE DATA ---
@@ -62,45 +65,48 @@ stl.Done(start_time)
 # --- --- --- --- ---
 # --- Plot plot ---
 # --- --- --- --- ---
-# ax = fig.add_subplot(gs_Plot_BigAllSky[0])
+plt.style.use(r'C:\Users\cfelt\PycharmProjects\ACESII\src\Papers\ACESII_Joule_Heating\Plot3\Plot3_mpl_style_sheet.mplstyle')
 fig, ax = plt.subplots()
-
 ax.set_ylabel('Altitude [km]')
 ax.set_xlabel('Distance from Launch (+N/-S) [km]')
 ax.set_ylim(0, 430)
 ax.set_xlim(-20, 600)
+ax.minorticks_on()
 
 # plot the pseudo geomagnetic field line
-# slope = -1 * (111 / np.sin(np.radians(90 - 78.13)))  # corresponds to line with -78.13deg inclination
-N = 500
-B = stl.CHAOS(lat=data_dicts_attitude[1]['Lat'][0][::N],
-              long=data_dicts_attitude[1]['Long'][0][::N],
-              alt=data_dicts_attitude[1]['Alt'][0][::N],
-              times=data_dicts_attitude[1]['Epoch'][0][::N])
-# slope = -1/np.tan(np.radians(90 - 78))
-# slope = B[:, 2]/B[:, 1]
-# for i in range(len(slope)):
-#     lats = data_dicts_attitude[0]['Lat'][0][::N]
-#     lats_km =(lats[i] - data_dicts_attitude[0]['Lat'][0][0])*111
-#     ax.axline(xy1=(lats_km, 0), slope=slope[i], color='tab:blue', linewidth=Plot_lineThickness, linestyle='-.', alpha=0.3, label='B$_{Geo}$')
+N = 20 # number of L-Shell lines to plot
+LShellRange = np.linspace(6.5,11.5,N)
+alt_range = np.linspace(0,430,N)*1000 # in meters
+LongGeomRange = np.linspace(111.83,116.82,N)
+for idx, Lval in tqdm(enumerate(LShellRange)):
 
-# set the facecolor of the ax plot
-Plot_vertical_Alignments = ['bottom' for tme in timeTargetsUTC]
-Plot_horizontal_Alignments = ['right', 'right', 'right', 'center', 'left', 'left', 'left']
-vertical_text_label_adjustments = [-0.09, -0.06, -0.005, 0.04, -0.01, -0.06, -0.09]
-horizontal_text_label_adjustments = [-0.002, -0.0015, -0.001, 0.0, 0.001, 0.0015, 0.002]
+    # get the geomagnetic coordinate of the P.O.I. based on L-Shell
+    geomagAlts = [((alt + stl.Re * stl.m_to_km) / (stl.Re * stl.m_to_km)) for alt in alt_range]
+    geomagLats = np.array([np.degrees(np.arccos(np.sqrt(radi / Lval))) for radi in geomagAlts])
+    geomagLongs = np.array([LongGeomRange[idx] for i in range(len(alt_range))])
+    times = [dt.datetime(2022,11,20,17,20) for i in range(len(alt_range))]
 
+    # Convert to geographic coordinates
+    Pos = np.array([geomagAlts, geomagLats, geomagLongs]).transpose()
+    ISOtime = [times[i].isoformat() for i in range(len(times))]
+    cvals_MAG = coord.Coords(Pos, 'MAG', 'sph')
+    cvals_MAG.ticks = Ticktock(ISOtime, 'ISO')
+    cvals_GDZ = cvals_MAG.convert('GEO', 'sph')
 
-# adjust the tick label size
-ax.minorticks_on()
+    # store the data for a particular B-Field line
+    B_line_lat = (np.array(cvals_GDZ.lati) - geoLat[0][0]) * 111
+    B_line_alt = alt_range / stl.m_to_km
+
+    if idx == len(LShellRange)-1:
+        ax.plot(B_line_lat, B_line_alt, color='tab:blue', linestyle='-.', alpha=0.2, label='B$_{Geo}$')
+    else:
+        ax.plot(B_line_lat, B_line_alt, color='tab:blue', linestyle='-.', alpha=0.2)
+
 
 # plot the trajectory over everything
 geoLat_km = [(geoLat[0]-geoLat[0][0])*111,(geoLat[1]-geoLat[1][0])*111]
-
 ax.plot(geoLat_km[0], geoAlt[0]/1000, color=trajColors[0], label='ACES-II 36.359')  # High
 ax.plot(geoLat_km[1], geoAlt[1]/1000, color=trajColors[1], label='ACES-II 36.364')  # Low
-
-
 
 # --- Plot the EISCAT RADAR LINES ---
 tromso_S0 = [(69.586297-geoLat[0][0])*111, 19.224617] # lat/long
@@ -120,8 +126,6 @@ for i in range(len(azmuths)):
 circle1 = plt.Circle((tromso_S0[0], 0),5,color='black')
 ax.add_patch(circle1)
 ax.text(tromso_S0[0]+10, 0+10,s='EISCAT')
-
-
 
 # --- Plot the Simulation Grid ---
 # Left Simulation Boundary
@@ -145,8 +149,7 @@ T_alt = data_dict_simulation['grid_alt'][0][:,0]/stl.m_to_km
 ax.scatter(T_lat, T_alt,marker='>', color='tab:cyan')
 
 ax.legend()
-
 fig.tight_layout()
-plt.savefig(r'C:\Users\cfelt\OneDrive - University of Iowa\Research\ACESII\Feltman2025_ACESII_JouleHeating\PLOTS\Plot3\\Plot3_simulation_extent_TEST.png')
+plt.savefig(r'C:\Users\cfelt\OneDrive - University of Iowa\Research\ACESII\Feltman2025_ACESII_JouleHeating\PLOTS\Plot3\\Plot3_simulation_extent.png')
 
 

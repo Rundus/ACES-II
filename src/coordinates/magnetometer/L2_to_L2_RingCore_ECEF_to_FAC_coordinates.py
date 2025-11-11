@@ -44,7 +44,10 @@ def L2_to_L2_RingCore_ECEF_to_FAC_coordinates(wRocket):
         'B_r' : [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_X'][1]],
         'B_e': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_Y'][1]],
         'B_p': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_Z'][1]],
-        'B_mag':data_dict_mag['Bmag'],
+        'B_model_r': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_model_X'][1]],
+        'B_model_e': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_model_Y'][1]],
+        'B_model_p': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_model_Z'][1]],
+        'Bmag':data_dict_mag['Bmag'],
         'Epoch':data_dict_mag['Epoch']
     }
 
@@ -74,16 +77,28 @@ def L2_to_L2_RingCore_ECEF_to_FAC_coordinates(wRocket):
 
     # form the EFI ENU vector
     mag_vec = np.array([data_dict_mag['B_X'][0],data_dict_mag['B_Y'][0],data_dict_mag['B_Z'][0]]).T
+    mag_model_vec = np.array([data_dict_mag['B_model_X'][0], data_dict_mag['B_model_Y'][0], data_dict_mag['B_model_Z'][0]]).T
+
     mag_transformed = np.array([np.matmul(transform_matrix_interp[i], vec) for i, vec in enumerate(mag_vec)])
+    mag_model_transformed = np.array([np.matmul(transform_matrix_interp[i], vec) for i, vec in enumerate(mag_model_vec)])
 
     data_dict_output['B_r'][0] = mag_transformed[:, 0]
     data_dict_output['B_r'][1]['LABLAXIS'] = 'North-like Component'
 
+    data_dict_output['B_model_r'][0] = mag_model_transformed[:, 0]
+    data_dict_output['B_model_r'][1]['LABLAXIS'] = 'North-like Model Component'
+
     data_dict_output['B_e'][0] = mag_transformed[:, 1]
     data_dict_output['B_e'][1]['LABLAXIS'] = 'East-like Component'
 
+    data_dict_output['B_model_e'][0] = mag_model_transformed[:, 1]
+    data_dict_output['B_model_e'][1]['LABLAXIS'] = 'East-like Model Component'
+
     data_dict_output['B_p'][0] = mag_transformed[:, 2]
     data_dict_output['B_p'][1]['LABLAXIS'] = 'Field-Aligned Component'
+
+    data_dict_output['B_model_p'][0] = mag_model_transformed[:, 2]
+    data_dict_output['B_model_p'][1]['LABLAXIS'] = 'Field-Aligned Model Component'
 
 
     # --- --- --- --- --- --- ---
@@ -106,4 +121,4 @@ def L2_to_L2_RingCore_ECEF_to_FAC_coordinates(wRocket):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-L2_to_L2_RingCore_ENU_to_FAC_coordinates(wRocket)
+L2_to_L2_RingCore_ECEF_to_FAC_coordinates(wRocket)

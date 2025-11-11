@@ -105,7 +105,7 @@ def cal4_apply_EFI_despin(wRocket):
     # --- --- --- --- --- --- ---
     if outputData:
         stl.prgMsg('Creating output file')
-        fileoutName = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_EFI_ENU_fullCal.cdf'
+        fileoutName = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_L2_EFI_ENU_fullCal.cdf'
         outputPath = f'C:\Data\ACESII\L2\\{ACESII.fliers[wRocket-4]}\\'+ fileoutName
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)

@@ -71,7 +71,7 @@ data_dict_BField_high = stl.loadDictFromFile(r'C:\Data\ACESII\L2\high\ACESII_363
 data_dict_BField_low = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_RingCore_auroral_median_filter.cdf')
 
 # E-Field Data
-data_dict_Efield_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_EFI_auroral.cdf')
+data_dict_Efield_low = stl.loadDictFromFile('C:\Data\ACESII\L2\low\ACESII_36364_l2_EFI_auroral_fullCal.cdf')
 
 # EEPAA Particle Data
 data_dict_flux_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Energy_Flux\low\ACESII_36364_l3_eepaa_flux.cdf')[0])
@@ -86,8 +86,8 @@ data_dict_LP_low = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\low\ACE
 data_dict_LP_high = stl.loadDictFromFile(glob('C:\Data\ACESII\L3\Langmuir\high\ACESII_36359_l3_langmuir_fixed_fullCal.cdf')[0])
 
 # EISCAT calibration data
-data_dict_EISCAT_cal_high = stl.loadDictFromFile('C:\Data\ACESII\calibration\LP_postFlight_calibration\high\ACESII_36359_postFlight_cal.cdf')
-data_dict_EISCAT_cal_low = stl.loadDictFromFile('C:\Data\ACESII\calibration\LP_postFlight_calibration\low\ACESII_36364_postFlight_cal.cdf')
+# data_dict_EISCAT_cal_high = stl.loadDictFromFile('C:\Data\ACESII\calibration\LP_postFlight_calibration\high\ACESII_36359_postFlight_cal.cdf')
+# data_dict_EISCAT_cal_low = stl.loadDictFromFile('C:\Data\ACESII\calibration\LP_postFlight_calibration\low\ACESII_36364_postFlight_cal.cdf')
 stl.Done(start_time)
 
 
@@ -256,7 +256,7 @@ filtered = stl.butterFilter().butter_filter(data= data_dict_LP_high['ni'][0]/LP_
                                                               order=4
                                                               )
 
-ax[axNo].plot(data_dict_EISCAT_cal_high['L-Shell'][0], data_dict_EISCAT_cal_high['ne'][0]/(np.power(stl.cm_to_m,3)),color='tab:purple', linewidth=Plot_LineWidth+1, label='EISCAT Background n$_{e}$')
+# ax[axNo].plot(data_dict_EISCAT_cal_high['L-Shell'][0], data_dict_EISCAT_cal_high['ne'][0]/(np.power(stl.cm_to_m,3)),color='tab:purple', linewidth=Plot_LineWidth+1, label='EISCAT Background n$_{e}$')
 ax[axNo].plot(data_dict_LP_high['L-Shell'][0], filtered/(np.power(stl.cm_to_m,3)),color=colorChoice, linewidth=Plot_LineWidth+1)
 ax[axNo].set_ylabel('LP\n[cm$^{-3}$]', fontsize=Label_FontSize-2, color=colorChoice, labelpad=Label_Padding)
 ax[axNo].tick_params(axis='y', which='major', colors='black', labelsize=Tick_FontSize-3, length=Tick_Length, width=Tick_Width)
@@ -321,7 +321,7 @@ filtered= stl.butterFilter().butter_filter(data= data_dict_LP_low['ni'][0]/LP_sc
                                                               filtertype='lowpass',
                                                               order=4
                                                               )
-ax[axNo].plot(data_dict_EISCAT_cal_low['L-Shell'][0], data_dict_EISCAT_cal_low['ne'][0]/(np.power(stl.cm_to_m,3)),color='tab:purple', linewidth=Plot_LineWidth+1, label='EISCAT Background n$_{e}$')
+# ax[axNo].plot(data_dict_EISCAT_cal_low['L-Shell'][0], data_dict_EISCAT_cal_low['ne'][0]/(np.power(stl.cm_to_m,3)),color='tab:purple', linewidth=Plot_LineWidth+1, label='EISCAT Background n$_{e}$')
 ax[axNo].plot(data_dict_LP_low['L-Shell'][0],filtered/(np.power(stl.cm_to_m,3)), color=colorChoice, linewidth=Plot_LineWidth+1)
 # ax[axNo].set_ylabel('[10$^{5}$ cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
 ax[axNo].set_ylabel('LP\n[cm$^{-3}$]', fontsize=Label_FontSize-2, color='black', labelpad=Label_Padding )
@@ -337,8 +337,10 @@ ax[axNo].minorticks_on()
 ax[axNo].legend()
 
 # # --- get L-Shell labels and Alt Labels together ---
+import re
 xTickLabels = ax[axNo].axes.get_xticklabels()
-xTick_Locations = [float(tickVal.get_text()) for tickVal in xTickLabels]
+xTick_Locations = [float(re.sub(u"\u2212", "-", i.get_text())) for i in xTickLabels] # negative signs in xTickLabel locations cause issues. Fix them
+# xTick_Locations = [float(tickVal.get_text()) for tickVal in xTickLabels]
 xTick_newLabels_high = [f'{LshellVal}\n{round(data_dict_Lshell_high["Alt"][0][np.abs(data_dict_Lshell_high["L-Shell"][0] - LshellVal).argmin()]/stl.m_to_km)}' for LshellVal in xTick_Locations]
 xTick_newLabels_low = [f'{LshellVal}\n{round(data_dict_Lshell_low["Alt"][0][np.abs(data_dict_Lshell_low["L-Shell"][0] - LshellVal).argmin()]/stl.m_to_km)}' for LshellVal in xTick_Locations]
 ax[2].set_xticks(xTick_Locations,labels=xTick_newLabels_high)

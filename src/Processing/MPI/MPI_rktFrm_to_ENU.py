@@ -92,6 +92,26 @@ def MPI_rktFrm_to_ENU():
             }
         }
 
+        # Time adjust the data to better align
+        spin_rate = 0.5474
+        if idx == 0: # MPI1
+            delta = (1/spin_rate)*(0.75)
+        elif idx == 1: # MPI2
+            delta = (1/spin_rate)*(0.5)
+        elif idx == 2: # MPI3
+            delta = (1/spin_rate)*(0.25)
+        elif idx == 3: #MPI4
+            delta = -(1/spin_rate)*(1)
+
+        data_dict_output[f'time{idx+1}'][0]= data_dict_output[f'time{idx+1}'][0] - delta
+
+        # threshold low flow speed values
+        # threshold = 10
+        # for key in ['_E','_N','_U']:
+        #     bad_data_idxs = np.where(np.abs(deepcopy(data_dict_output[f'MPI{idx+1}{key}'][0]))<threshold)[0]
+        #     data_dict_output[f'MPI{idx+1}{key}'][0] = np.delete(deepcopy(data_dict_output[f'MPI{idx+1}{key}'][0]),bad_data_idxs)
+        #     data_dict_output[f'MPI{idx + 1}{key}'][0] = np.delete(deepcopy(data_dict_output[f'MPI{idx + 1}{key}'][0]), bad_data_idxs)
+
     # --- 8. Output new CDF ---
     file_out_path = r'C:\Data\ACESII\L2\low\ACESII_35364_L2_MPI_ENU.cdf'
     stl.outputCDFdata(outputPath=file_out_path, data_dict=data_dict_output)

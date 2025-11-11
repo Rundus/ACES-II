@@ -34,16 +34,19 @@ def L2_to_L2_RingCore_ENU_to_FAC_coordinates(wRocket):
 
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
-    data_dict_mag = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*RingCore_ENU.cdf*')[0])
+    data_dict_mag = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*RingCore_ENU_fullCal.cdf*')[0])
     data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_ENU.cdf*')[0])
     data_dict_transform = deepcopy(data_dict_transform_ENU)
     stl.Done(start_time)
 
     # --- prepare the output ---
     data_dict_output = {
-        'B_X' : [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))),data_dict_mag['B_East'][1]],
-        'B_Y': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))),data_dict_mag['B_North'][1]],
-        'B_Z': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))),data_dict_mag['B_Up'][1]],
+        'B_X' : [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))),data_dict_mag['B_E'][1]],
+        'B_Y': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))),data_dict_mag['B_N'][1]],
+        'B_Z': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))),data_dict_mag['B_U'][1]],
+        'B_model_X': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_E'][1]],
+        'B_model_Y': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_N'][1]],
+        'B_model_Z': [np.zeros(shape=(len(data_dict_mag['Epoch'][0]))), data_dict_mag['B_U'][1]],
         'Bmag':data_dict_mag['Bmag'],
         'Epoch':data_dict_mag['Epoch']
     }
@@ -73,17 +76,37 @@ def L2_to_L2_RingCore_ENU_to_FAC_coordinates(wRocket):
     ###################################
 
     # form the EFI ENU vector
-    mag_vec = np.array([data_dict_mag['B_East'][0],data_dict_mag['B_North'][0],data_dict_mag['B_Up'][0]]).T
+    mag_vec = np.array([
+                        data_dict_mag['B_E'][0],
+                        data_dict_mag['B_N'][0],
+                        data_dict_mag['B_U'][0]
+                        ]).T
+    mag_model_vec = np.array([
+        data_dict_mag['B_model_E'][0],
+        data_dict_mag['B_model_N'][0],
+        data_dict_mag['B_model_U'][0]
+    ]).T
+
     mag_transformed = np.array([np.matmul(transform_matrix_interp[i].T, vec) for i, vec in enumerate(mag_vec)])
+    mag_model_transformed = np.array([np.matmul(transform_matrix_interp[i].T, vec) for i, vec in enumerate(mag_model_vec)])
 
     data_dict_output['B_X'][0] = mag_transformed[:, 0]
     data_dict_output['B_X'][1]['LABLAXIS'] = 'X Component'
 
+    data_dict_output['B_model_X'][0] = mag_model_transformed[:, 0]
+    data_dict_output['B_model_X'][1]['LABLAXIS'] = 'X Component'
+
     data_dict_output['B_Y'][0] = mag_transformed[:, 1]
     data_dict_output['B_Y'][1]['LABLAXIS'] = 'Y Component'
 
+    data_dict_output['B_model_Y'][0] = mag_model_transformed[:, 1]
+    data_dict_output['B_model_Y'][1]['LABLAXIS'] = 'Y Component'
+
     data_dict_output['B_Z'][0] = mag_transformed[:, 2]
     data_dict_output['B_Z'][1]['LABLAXIS'] = 'Z Component'
+
+    data_dict_output['B_model_Z'][0] = mag_model_transformed[:, 2]
+    data_dict_output['B_model_Z'][1]['LABLAXIS'] = 'Z Component'
 
 
     # --- --- --- --- --- --- ---

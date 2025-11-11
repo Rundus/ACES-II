@@ -1,5 +1,5 @@
-# --- RingCore_l2_median_filter ---
-# Description: Median Filter the RingCore data that DOESN'T have the B-Field model in it
+# --- RingCore_l2_to_l3_median_filter ---
+# Description: Median Filter the RingCore data that
 # in order to get the deltaB corresponding to currents. Include the L-Shell data
 
 
@@ -110,7 +110,7 @@ def RingCore_l2_median_filter(wRocket):
     if outputData:
         stl.prgMsg('Creating output file')
         file_out_name = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_RingCore_auroral_median_filter.cdf'
-        outputPath = f'{DataPaths.ACES_data_folder}\\l2\\{ACESII.fliers[wRocket - 4]}\{file_out_name}'
+        outputPath = f'{DataPaths.ACES_data_folder}\\l3\\RingCore\\{ACESII.fliers[wRocket - 4]}\{file_out_name}'
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)
 

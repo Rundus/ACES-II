@@ -11,9 +11,6 @@ __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
-import matplotlib.pyplot as plt
-import numpy as np
-
 from src.my_imports import *
 start_time = time.time()
 # --- --- --- --- ---
@@ -30,6 +27,7 @@ wRocket = 4
 wFiles = [0]
 
 TimeOffset = [0.12756724137931032, 0.12078947368421052] # apply this to the CHAOS data before interpolating onto RKT timebase
+# TimeOffset = [0, 0] # apply this to the CHAOS data before interpolating onto RKT timebase
 offsetDC = np.array([[0.10010010010010717,-1.2901290129012892,4.590459045904595], [0,0,0]])
 find_DC_offset = False
 replaceNANS = True
@@ -39,7 +37,7 @@ outputData = True # plots RKT XYZ and CHAOS model Spun-up XYZ
 # --- IMPORTS ---
 # --- --- --- ---
 from scipy.interpolate import CubicSpline
-from src.Processing.Magnetometer.RingCore_despin_toggles import DespinToggles
+
 
 def RingCore_L1_to_L2_Despin(wRocket, justPrintFileNames):
 
@@ -61,13 +59,11 @@ def RingCore_L1_to_L2_Despin(wRocket, justPrintFileNames):
     data_dict_mag = stl.loadDictFromFile(inputFiles[0])
     data_dict_attitude = stl.loadDictFromFile(inputFiles_attitude[0])
 
-
     # --- Define some useful variables ---
     T0 = dt.datetime(2022,11,20,17,20)
     B_rkt = np.array([data_dict_mag['Bx'][0], data_dict_mag['By'][0], data_dict_mag['Bz'][0]]).T
     T0_attitude = stl.EpochTo_T0_Rocket(data_dict_attitude['Epoch'][0], T0=T0)
     T0_ringCore = stl.EpochTo_T0_Rocket(data_dict_mag['Epoch'][0], T0=T0)
-
 
     #####################################################
     # --- [1] Calculate CHAOS model on Attitude Epoch ---
@@ -175,28 +171,35 @@ def RingCore_L1_to_L2_Despin(wRocket, justPrintFileNames):
     #                                                               data_dict_output['Epoch'][0]),
     #                                                           wKeys=[])
     #         data_dict_output = deepcopy(data_dict_output_interp)
-    #         stl.Done(start_time)
+    stl.Done(start_time)
 
 
     if outputData:
 
+        stl.prgMsg('Writing out Data')
+
         data_dict_output = {**{},
                             **{
-                                'B_East' : [B_ringCore_ENU[:, 0], deepcopy(data_dict_mag['Bx'][1])],
-                                'B_North': [B_ringCore_ENU[:, 1], deepcopy(data_dict_mag['Bx'][1])],
-                                'B_Up': [B_ringCore_ENU[:, 2], deepcopy(data_dict_mag['Bx'][1])],
-                                'B_model_East': [B_CHAOS_ENU[:, 0], deepcopy(data_dict_mag['Bx'][1])],
-                                'B_model_North': [B_CHAOS_ENU[:, 1], deepcopy(data_dict_mag['Bx'][1])],
-                                'B_model_Up': [B_CHAOS_ENU[:, 2], deepcopy(data_dict_mag['Bx'][1])],
+                                'B_E' : [B_ringCore_ENU[:, 0], deepcopy(data_dict_mag['Bx'][1])],
+                                'B_N': [B_ringCore_ENU[:, 1], deepcopy(data_dict_mag['Bx'][1])],
+                                'B_U': [B_ringCore_ENU[:, 2], deepcopy(data_dict_mag['Bx'][1])],
+                                'B_model_E': [B_CHAOS_ENU[:, 0], deepcopy(data_dict_mag['Bx'][1])],
+                                'B_model_N': [B_CHAOS_ENU[:, 1], deepcopy(data_dict_mag['Bx'][1])],
+                                'B_model_U': [B_CHAOS_ENU[:, 2], deepcopy(data_dict_mag['Bx'][1])],
                                 'Bmag': [B_mag,deepcopy(data_dict_mag['Bmag'][1])],
                                 'Epoch':deepcopy(data_dict_mag['Epoch'])
                             }}
 
+        for key in ['B_E','B_N','B_U','B_model_E','B_model_N','B_model_U']:
+            data_dict_output[f'{key}'][1]['LABLAXIS'] = key
+
+
 
         # Write out the File
-        fileoutName_despin = f'ACESII_{rocketID}_l2_RingCore_ENU'
+        fileoutName_despin = f'ACESII_{rocketID}_l2_RingCore_ENU_fullCal'
         outputPath = f'{rocketFolderPath}\L2\{ACESII.fliers[wRocket-4]}\\{fileoutName_despin}.cdf'
         stl.outputCDFdata(outputPath, data_dict_output, instrNam='RingCore')
+        stl.Done(start_time)
 
 
 

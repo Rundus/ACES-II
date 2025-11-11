@@ -1,0 +1,56 @@
+##############
+# --- MISC ---
+##############
+font.family: Times New Roman
+font.size: 35 # For ANY text on the plot
+
+################
+# --- FIGURE ---
+################
+figure.figsize: 20,11.5 # Width, Height
+
+##############
+# --- AXES ---
+##############
+axes.titlesize : 24
+axes.labelsize : 45
+axes.labelpad: 20
+axes.labelweight: bold
+axes.facecolor: 0.611,0.611,0.611,0.5
+
+###############
+# --- TICKS ---
+###############
+
+# Major
+xtick.major.size: 20 # tick length
+xtick.major.width: 3
+xtick.labelsize : 35
+
+ytick.major.size:20 # tick length
+ytick.major.width:3
+ytick.labelsize : 35
+
+# Minor
+xtick.minor.size: 10 # tick length
+xtick.minor.width: 2
+
+ytick.minor.size: 10 # tick length
+ytick.minor.width: 2
+
+################
+# --- LEGEND ---
+################
+legend.fontsize: 32
+legend.facecolor: 1,1,1,1
+legend.loc: upper right
+
+#########################
+# --- PLOT TYPE: PLOT ---
+#########################
+lines.linewidth : 6
+
+############################
+# --- PLOT TYPE: SCATTER ---
+############################
+lines.markersize : 7 # For scatter plotsX
