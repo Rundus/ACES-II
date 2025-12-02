@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 from src.my_imports import *
 
 # Picking High vs. Low
-var = 0 # pick which rocket to select
+var = 1 # pick which rocket to select
 rocket = ['high', 'low']
 Id = ['36359', '36364']
 
