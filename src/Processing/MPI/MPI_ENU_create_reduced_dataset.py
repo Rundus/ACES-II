@@ -9,6 +9,7 @@ import spaceToolsLib as stl
 from scipy.interpolate import CubicSpline
 from src.data_paths import DataPaths
 
+
 def MPI_ENU_create_reduced_dataset():
 
     # 1. Load MPI ENU data
@@ -17,6 +18,16 @@ def MPI_ENU_create_reduced_dataset():
 
     # prepare the output
     data_dict_output = {}
+
+    # 2. define some ideal time points as seconds from launch
+    # Note: ONLY pick times where there's good correlation between MPI_East AND MPI_North
+    target_times = [
+        187.721,
+        187.95,
+        193.2,
+        .... # and so on
+    ]
+
 
     # --- 9. Output new CDF ---
     file_out_path = rf'{DataPaths.ACES_data_folder}/L3/MPI/low/ACESII_35364_L3_MPI_ENU_reduced.cdf'
