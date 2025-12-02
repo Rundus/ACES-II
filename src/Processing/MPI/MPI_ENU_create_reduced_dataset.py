@@ -28,6 +28,14 @@ def MPI_ENU_create_reduced_dataset():
         .... # and so on
     ]
 
+    # 3. define a window of time where all points from the MPIs must fall within
+    # # Idea: find the point in each MPI dataset which is nearest to the target_times
+    # Then use your window to decide if that point (for each MPI) is within the time window you've chosen
+    time_window = 0.05
+
+    # 4. collect all the points into a new dataset and write them out in a data_dict_output.
+    # note: write each MPI data individually, not as a single dataset.
+
 
     # --- 9. Output new CDF ---
     file_out_path = rf'{DataPaths.ACES_data_folder}/L3/MPI/low/ACESII_35364_L3_MPI_ENU_reduced.cdf'
