@@ -159,7 +159,7 @@ def traj_to_auroral_coordinates(wRocket):
 
         fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_GPS_trajectory_auroral.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}\\trajectories\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
-        stl.outputCDFdata(outputPath, data_dict_output)
+        stl.outputDataDict(outputPath, data_dict_output)
         stl.Done(start_time)
         print('\n')
 

@@ -25,7 +25,7 @@ justPrintFileNames = False  # Just print the names of files
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 5
+wRocket = 4
 
 # --- OutputData ---
 outputData = True
@@ -47,7 +47,7 @@ def LP_postFlight_calibration(wRocket):
     stl.prgMsg('Loading Data')
 
     # Load the calibration data
-    data_path = glob(rf'C:\Data\ACESII\calibration\LP_postFlight_calibration\\{ACESII.fliers[wRocket - 4]}\\*_postFlight_cal*')[0]
+    data_path = glob(rf'C:\Data\ACESII\calibration\LP\postFlight_calibration\\{ACESII.fliers[wRocket - 4]}\\*_postFlight_cal*')[0]
     data_dict_calData = stl.loadDictFromFile(data_path)
 
     # load the rocket ion saturation current data
@@ -61,6 +61,36 @@ def LP_postFlight_calibration(wRocket):
     data_dict_DERPA2 = stl.loadDictFromFile(data_path)
     stl.Done(start_time)
 
+    ################################################
+    # --- INTERPOLATE L-SHELL INTO LP/DERPA DATA ---
+    ################################################
+    T0 = dt.datetime(2022,11,20,17,20)
+    T0_LP = np.array(stl.EpochTo_T0_Rocket(data_dict_LP_current['Epoch'][0], T0=T0),dtype='float64')
+    T0_LShell = stl.EpochTo_T0_Rocket(data_dict_LShell['Epoch'][0], T0=T0)
+    T0_DERPA1 = stl.EpochTo_T0_Rocket(data_dict_DERPA1['Epoch'][0], T0=T0)
+    T0_DERPA2 = stl.EpochTo_T0_Rocket(data_dict_DERPA2['Epoch'][0], T0=T0)
+
+
+    data_dict_LP_current = {**data_dict_LP_current,
+                            **{
+                                'L-Shell':[np.interp(T0_LP,T0_LShell,data_dict_LShell['L-Shell'][0]),deepcopy(data_dict_LShell['L-Shell'][1])]
+                               }
+                            }
+
+    data_dict_DERPA1 = {**data_dict_DERPA1,
+                            **{
+                                'L-Shell': [np.interp(T0_DERPA1, T0_LShell, data_dict_LShell['L-Shell'][0]),
+                                            deepcopy(data_dict_LShell['L-Shell'][1])]
+                            }
+                            }
+
+    data_dict_DERPA2 = {**data_dict_DERPA2,
+                        **{
+                            'L-Shell': [np.interp(T0_DERPA2, T0_LShell, data_dict_LShell['L-Shell'][0]),
+                                        deepcopy(data_dict_LShell['L-Shell'][1])]
+                        }
+                        }
+
     #############################################
     # --- DETERMINE THE CALIBRATION FUNCTIONS ---
     #############################################
@@ -71,7 +101,6 @@ def LP_postFlight_calibration(wRocket):
         return a*x
 
     # --- ni density ---
-
     # reduce data to background
     target_times_bg = [
         [dt.datetime(2022,11,20,17,21,8),dt.datetime(2022,11,20,17,24,0)], # High Flyer

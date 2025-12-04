@@ -26,7 +26,7 @@ start_time = time.time()
 # 5 -> ACES II Low Flier
 wRocket = [4, 5]
 outputData = True
-outputPath_modifier = 'coordinates' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+outputPath_modifier = 'coordinates/transforms' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
 # --- --- --- ---
 # --- IMPORTS ---
@@ -40,8 +40,8 @@ def FAC_to_auroral_coordiantes(wRocket):
 
     # --- get the data from the attitude file ---
     stl.prgMsg(f'Loading data')
-    data_dict_transform = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\coordinates\{ACESII.fliers[wRocket-4]}\*ECEF_to_FAC*')[0])
-    data_dict_auroral_angle = stl.loadDictFromFile(r'C:\Data\ACESII\science\auroral_coordinates\low\ACESII_36364_auroral_coordinates_angle.cdf')
+    data_dict_transform = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}/coordinates/transforms/{ACESII.fliers[wRocket-4]}/*ECEF_to_FAC*')[0])
+    data_dict_auroral_angle = stl.loadDictFromFile(glob(r'C:\Data\ACESII\coordinates\auroral_coordinates\low/*.cdf*')[0])
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -105,7 +105,7 @@ def FAC_to_auroral_coordiantes(wRocket):
 
         fileoutName = f'ACESII_{rocketID}_ECEF_to_auroral.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
-        stl.outputCDFdata(outputPath, data_dict_output)
+        stl.outputDataDict(outputPath, data_dict_output)
         stl.Done(start_time)
 
 
