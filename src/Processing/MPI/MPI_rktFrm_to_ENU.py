@@ -9,12 +9,14 @@ import numpy as np
 from copy import deepcopy
 import spaceToolsLib as stl
 from scipy.interpolate import CubicSpline
-from spacepy import pycdf
+from src.data_paths import DataPaths
+
+
 
 def MPI_rktFrm_to_ENU():
     # 1. Load attitude solution (DCM)
-    path_to_attitude = r'C:\Data\ACESII\attitude\low\ACESII_36364_Attitude_Solution.cdf'
-    path_to_MPI = r'C:\Data\ACESII\L1\low\ACESII_36364_l1_MPI_rktFrm.cdf'
+    path_to_attitude = rf'{DataPaths.ACES_data_folder}/attitude/low/ACESII_36364_Attitude_Solution.cdf'
+    path_to_MPI = rf'{DataPaths.ACES_data_folder}/L1/low/ACESII_36364_l1_MPI_rktFrm.cdf'
     data_dict_attitude = stl.loadDictFromFile(path_to_attitude)
     data_dict_MPI = stl.loadDictFromFile(path_to_MPI)
 
@@ -92,24 +94,19 @@ def MPI_rktFrm_to_ENU():
             }
         }
 
-        # Time adjust the data to better align
+        # 8. Time adjust the data to better align
         spin_rate = 0.5474
         if idx == 0: # MPI1
-            delta = (1/spin_rate)*(0.75)
+            delta = (1/spin_rate)*(1+0.75)
         elif idx == 1: # MPI2
-            delta = (1/spin_rate)*(0.5)
+            delta = (1/spin_rate)*(1+0.5)
         elif idx == 2: # MPI3
-            delta = (1/spin_rate)*(0.25)
+            delta = (1/spin_rate)*(1+0.25)
         elif idx == 3: #MPI4
-            delta = -(1/spin_rate)*(1)
+            # delta = -(1/spin_rate)*(1)
+            delta = 0
 
         data_dict_output[f'time{idx+1}'][0]= data_dict_output[f'time{idx+1}'][0] - delta
-
-        # convert time to Epoch
-        import datetime as dt
-        data_dict_output[f'time{idx + 1}'][0] = np.array([time_epoch_attitude[0] + dt.timedelta(seconds=val) for val in data_dict_output[f'time{idx+1}'][0]])
-
-
 
         # threshold low flow speed values
         # threshold = 10
@@ -118,9 +115,9 @@ def MPI_rktFrm_to_ENU():
         #     data_dict_output[f'MPI{idx+1}{key}'][0] = np.delete(deepcopy(data_dict_output[f'MPI{idx+1}{key}'][0]),bad_data_idxs)
         #     data_dict_output[f'MPI{idx + 1}{key}'][0] = np.delete(deepcopy(data_dict_output[f'MPI{idx + 1}{key}'][0]), bad_data_idxs)
 
-    # --- 8. Output new CDF ---
-    file_out_path = r'C:\Data\ACESII\L2\low\ACESII_35364_L2_MPI_ENU.cdf'
-    stl.outputCDFdata(outputPath=file_out_path, data_dict=data_dict_output)
+    # --- 9. Output new CDF ---
+    file_out_path = rf'{DataPaths.ACES_data_folder}/L2/low/ACESII_35364_L2_MPI_ENU.cdf'
+    stl.outputDataDict(outputPath=file_out_path, data_dict=data_dict_output)
 
 
 ###EXECUTE###
