@@ -4,7 +4,6 @@
 # --- bookkeeping ---
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
-
 from src.ACESII.my_imports import *
 import time
 start_time = time.time()
@@ -29,11 +28,12 @@ import spaceToolsLib as stl
 
 
 FilePaths = [
-    'C:\Data\ACESII\L3\Langmuir',
-    'C:\Data\ACESII\L3\Energy_Flux',
-    'C:\Data\ACESII\L2',
-    'C:\Data\ACESII\L3\DERPA',
-    'C:\Data\ACESII\L3\RingCore'
+    f'{DataPaths.ACES_data_folder}/L3/Langmuir',
+    f'{DataPaths.ACES_data_folder}/L3/Energy_Flux',
+    f'{DataPaths.ACES_data_folder}/L2',
+    f'{DataPaths.ACES_data_folder}/L3/DERPA',
+    f'{DataPaths.ACES_data_folder}/L3/RingCore',
+    f'{DataPaths.ACES_data_folder}/L3/B_median',
 ]
 
 interp_keys = ['L-Shell','Alt','Lat','Long']
@@ -44,14 +44,14 @@ def Interpolate_ephemeris_data_to_file():
     # For each Rocket
     for i in range(2):
         # Load the L-Shell data
-        data_path = glob(rf'C:\Data\ACESII\coordinates\Lshell\{ACESII.fliers[i]}\*.cdf*')[0]
+        data_path = glob(rf'{DataPaths.ACES_data_folder}/coordinates/Lshell/{ACESII.fliers[i]}/*.cdf*')[0]
         data_dict_LShell = stl.loadDictFromFile(data_path)
         T0_LShell = np.array(stl.EpochTo_T0_Rocket(data_dict_LShell['Epoch'][0],T0=T0_ref),dtype='float64')
 
         # Loop through each path
         for path in FilePaths:
 
-            input_files = glob(path+f'\\{ACESII.fliers[i]}\*.cdf*')
+            input_files = glob(path+f'/{ACESII.fliers[i]}/*.cdf*')
 
             # Loop through each file in the path
             for file in tqdm(input_files):
