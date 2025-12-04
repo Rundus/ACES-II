@@ -33,8 +33,6 @@ wRocket = 5
 # [#0,#1,#2,...etc] --> only specific files. Follows python indexing. use justPrintFileNames = True to see which files you need.
 wFiles = [0]
 
-input_file_path = 'C:\Data\ACESII\L2\low'
-
 # --- OutputData ---
 outputData = True
 
@@ -63,7 +61,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
     globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'LangmuirData'
 
     # Set the paths for the file names
-    data_repository = f'{input_file_path}\\'
+    data_repository = f'{rocket_folder_path}/'
     input_files = glob(data_repository+'*EFI_FAC_fullCal.cdf*')
     input_names = [ifile.replace(data_repository, '') for ifile in input_files]
 
@@ -75,7 +73,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
     # --- get the data from the L2 file ---
     stl.prgMsg(f'Loading data')
     data_dict_EFI = stl.loadDictFromFile(input_files[wFile])
-    data_dict_LShell = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\low\ACESII_36364_Lshell.cdf')
+    data_dict_LShell = stl.loadDictFromFile(f'{rocket_folder_path}/coordinates/Lshell/low/ACESII_36364_Lshell.cdf')
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -226,7 +224,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         ax[1, 1].axhline(0)
         ax[1,1].legend()
 
-        fig.savefig(r'C:\Data\ACESII\coordinates\auroral_coordinates\low\rotation_analysis.png')
+        fig.savefig(r'C:/Data/ACESII/coordinates/auroral_coordinates/low/rotation_analysis.png')
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -256,7 +254,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 
         stl.prgMsg('Creating output file')
         fileoutName_fixed = f'ACESII_{rocketID}_auroral_coordinates_angle.cdf'
-        outputPath = fr'C:\Data\ACESII\coordinates\auroral_coordinates\low\{fileoutName_fixed}'
+        outputPath = fr'{rocket_folder_path}/coordinates/auroral_coordinates/low/{fileoutName_fixed}'
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)
 
@@ -265,7 +263,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-target_files = f'C:\Data\ACESII\L2\low\*.cdf'
+target_files = f'{DataPaths.ACES_data_folder}/L2/low/*.cdf'
 
 if len(glob(target_files)) == 0:
     print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)

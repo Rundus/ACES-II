@@ -7,12 +7,12 @@ from scipy.optimize import curve_fit
 from src.my_imports import *
 
 # Picking High vs. Low
-var = 1 # pick which rocket to select
+var = 0 # pick which rocket to select
 rocket = ['high', 'low']
 Id = ['36359', '36364']
 
 # Setting the minimum data value to begin fitting
-x_data_min = -1
+x_data_min = -0.4
 
 # Sweep Toggles
 sweep_min = 1
@@ -75,7 +75,7 @@ for sweep_no in tqdm(range(sweep_min, sweep_max[var], sweep_step)):
         T_guess_2 = (e / k) * deepcopy(DERPA2_dict['temperature'][0][idx])
 
         # Picking Between DERPA1 and DERPA2
-        T_guess = T_guess_2
+        T_guess = np.nanmean([T_guess_1,T_guess_2])
 
         # I-V Curves for the Data
         V = V_sweeps[sweep_no] - np.abs(V_floating[sweep_no])
@@ -96,11 +96,11 @@ for sweep_no in tqdm(range(sweep_min, sweep_max[var], sweep_step)):
         I = I_reduced[idxs]
 
         # Only include data greater than or equal to the floating potential
-        idxs = np.where(V < 0)[0]
+        idxs = np.where(V < 0.4)[0]
         V = V[idxs]
         I = I[idxs]
 
-        idxs = np.where(I < 2500)[0]
+        idxs = np.where(I < 1500)[0]
         V = V[idxs]
         I = I[idxs]
 

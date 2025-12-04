@@ -35,10 +35,10 @@ def L2_EFI_to_integratedPotential():
 
     # --- get the data from the file ---
     stl.prgMsg(f'Loading data')
-    data_dict_EFI = stl.loadDictFromFile(r'C:\Data\ACESII\L2\low\ACESII_36364_l2_EFI_auroral_fullCal.cdf')
-    data_dict_traj = stl.loadDictFromFile(r'C:\Data\ACESII\trajectories\low\ACESII_36364_GPS_trajectory_auroral.cdf')
-    data_dict_LShell_low = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\low\ACESII_36364_Lshell.cdf')
-    data_dict_LShell_high = stl.loadDictFromFile('C:\Data\ACESII\coordinates\Lshell\high\ACESII_36359_Lshell.cdf')
+    data_dict_EFI = stl.loadDictFromFile(rf'{DataPaths.ACES_data_folder}/L2/low/ACESII_36364_l2_EFI_auroral_fullCal.cdf')
+    data_dict_traj = stl.loadDictFromFile(rf'{DataPaths.ACES_data_folder}/trajectories/low/ACESII_36364_GPS_trajectory_auroral.cdf')
+    data_dict_LShell_low = stl.loadDictFromFile(rf'{DataPaths.ACES_data_folder}/coordinates/Lshell/low/ACESII_36364_Lshell.cdf')
+    data_dict_LShell_high = stl.loadDictFromFile(rf'{DataPaths.ACES_data_folder}/coordinates/Lshell/high/ACESII_36359_Lshell.cdf')
 
     # --- prepare the output ---
     data_dict_output = {
@@ -113,7 +113,7 @@ def L2_EFI_to_integratedPotential():
     # --- --- --- --- --- --- --- --- --- --- --- --- ---
     # --- Line Integrate the E-Field to get potential ---
     # --- --- --- --- --- --- --- --- --- --- --- --- ---
-    stl.prgMsg('Calculating Line Integral\n')
+    stl.prgMsg('Calculating Line Integral/n')
 
     # form the E-Field vector - set the z-component to zero since we dont actually know what this was
     E_Field = np.array([data_dict_EFI['E_N'][0],data_dict_EFI['E_T'][0], np.zeros(shape=(len(data_dict_EFI['Epoch'][0])))]).T
@@ -181,8 +181,8 @@ def L2_EFI_to_integratedPotential():
     if outputData:
         stl.prgMsg('Creating output file')
         fileoutName = f'ACESII_{ACESII.payload_IDs[1]}_integrated_potential.cdf'
-        outputPath = rf'C:\Data\ACESII\science\integrated_potential\low\{fileoutName}'
-        stl.outputCDFdata(outputPath, data_dict_output)
+        outputPath = rf'{DataPaths.ACES_data_folder}/science/integrated_potential/low/{fileoutName}'
+        stl.outputDataDict(outputPath, data_dict_output)
         stl.Done(start_time)
 
 # --- --- --- ---
