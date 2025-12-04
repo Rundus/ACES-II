@@ -9,7 +9,7 @@ import numpy as np
 from copy import deepcopy
 import spaceToolsLib as stl
 from scipy.interpolate import CubicSpline
-
+from spacepy import pycdf
 
 def MPI_rktFrm_to_ENU():
     # 1. Load attitude solution (DCM)
@@ -104,6 +104,12 @@ def MPI_rktFrm_to_ENU():
             delta = -(1/spin_rate)*(1)
 
         data_dict_output[f'time{idx+1}'][0]= data_dict_output[f'time{idx+1}'][0] - delta
+
+        # convert time to Epoch
+        import datetime as dt
+        data_dict_output[f'time{idx + 1}'][0] = np.array([time_epoch_attitude[0] + dt.timedelta(seconds=val) for val in data_dict_output[f'time{idx+1}'][0]])
+
+
 
         # threshold low flow speed values
         # threshold = 10

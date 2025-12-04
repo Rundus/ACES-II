@@ -36,11 +36,11 @@ wFiles = [0]
 input_file_path = 'C:\Data\ACESII\L2\low'
 
 # --- OutputData ---
-outputData = True
+outputData = False
 
 # --- Plots ---
-plot_interactive_slider = False
-plot_best_fit_rotation = True
+plot_interactive_slider = True
+plot_best_fit_rotation = False
 
 
 # --- --- --- ---
@@ -125,7 +125,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
     # define set of rotations and calculate deviation from fitted line
     stl.prgMsg('Rotating Fields')
     N =3
-    angles = np.linspace(3, 3.5, N)
+    angles = np.linspace(9, 10.5, N)
 
     # fit a linear line to the E_e compoennt
     def fitFunc(x, a, b):
@@ -152,9 +152,6 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
     best_slope = rotation_statistics[:, 1][best_fit_idx]
     best_intercept = rotation_statistics[:, 2][best_fit_idx]
 
-    choice_idx = np.abs(rotation_statistics[:, 0]-(-9)).argmin()
-    # print(rotation_statistics[:, 1][choice_idx],rotation_statistics[:, 2][choice_idx])
-    # print(best_slope, best_intercept)
     yData_rotated = np.array([np.matmul(stl.Rz(best_angle), vec) for vec in np.array([data_dict_EFI['E_r'][0], data_dict_EFI['E_e'][0], data_dict_EFI['E_p'][0]]).T])
 
     if plot_interactive_slider:
@@ -179,8 +176,8 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         rotation_slider = Slider(
             ax=axrot,
             label='Angle',
-            valmin=-180,
-            valmax=180,
+            valmin=-25,
+            valmax=25,
             orientation='vertical'
         )
 
@@ -241,9 +238,9 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         data_dict_output = {**data_dict_output,
                             **{
                                 'Epoch': deepcopy(data_dict_EFI['Epoch']),
-                                'E_tangent':[np.array(yData_rotated[:,0]) ,deepcopy(data_dict_EFI['E_e'][1])],
-                                'E_p':[np.array(yData_rotated[:,1]),deepcopy(data_dict_EFI['E_p'][1])],
-                                'E_normal':[np.array(yData_rotated[:,2]),deepcopy(data_dict_EFI['E_r'][1])],
+                                'E_tangent':[np.array(yData_rotated[:,1]) ,deepcopy(data_dict_EFI['E_e'][1])],
+                                'E_p':[np.array(yData_rotated[:,2]),deepcopy(data_dict_EFI['E_p'][1])],
+                                'E_normal':[np.array(yData_rotated[:,0]),deepcopy(data_dict_EFI['E_r'][1])],
                                 'rotation_Angle':[np.array([best_angle]), deepcopy(exampleVar)],
                                 'L-Shell' : [np.array(Lshell_EFI),deepcopy(data_dict_LShell['L-Shell'][1])]
                             }
@@ -257,7 +254,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         stl.prgMsg('Creating output file')
         fileoutName_fixed = f'ACESII_{rocketID}_auroral_coordinates_angle.cdf'
         outputPath = fr'C:\Data\ACESII\coordinates\auroral_coordinates\low\{fileoutName_fixed}'
-        stl.outputCDFdata(outputPath, data_dict_output)
+        stl.outputDataDict(outputPath, data_dict_output)
         stl.Done(start_time)
 
 

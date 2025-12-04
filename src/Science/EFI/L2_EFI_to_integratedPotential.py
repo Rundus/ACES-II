@@ -170,7 +170,6 @@ def L2_EFI_to_integratedPotential():
     slope = (max_phi-min_phi)/(max_tme-min_tme)
     linear_detrend = slope*np.array(T0_EFI) - slope*T0_EFI[0]
 
-    # data_dict_output['Potential_detrend'][0]= detrend(deepcopy(data_dict_output['Potential'][0]),type='linear')
     data_dict_output['Potential_detrend'][0] = deepcopy(data_dict_output['Potential'][0]) - linear_detrend
     data_dict_output['Potential_detrend'][1] = deepcopy(data_dict_output['Potential'][1])
 
@@ -182,7 +181,7 @@ def L2_EFI_to_integratedPotential():
         stl.prgMsg('Creating output file')
         fileoutName = f'ACESII_{ACESII.payload_IDs[1]}_integrated_potential.cdf'
         outputPath = rf'C:\Data\ACESII\science\integrated_potential\low\{fileoutName}'
-        stl.outputCDFdata(outputPath, data_dict_output)
+        stl.outputDataDict(outputPath, data_dict_output)
         stl.Done(start_time)
 
 # --- --- --- ---

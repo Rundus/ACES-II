@@ -55,6 +55,9 @@ def cal4_apply_EFI_despin(wRocket):
     # get the attitude data
     data_dict_attitude = stl.loadDictFromFile(glob(rf"C:\Data\ACESII\\attitude\\{ACESII.fliers[wRocket - 4]}\\*.cdf*")[0])
 
+    # get the L-Shell data
+    data_dict_LShell = st
+
     # --- prepare the output ---
     data_dict_output = {}
     stl.Done(start_time)

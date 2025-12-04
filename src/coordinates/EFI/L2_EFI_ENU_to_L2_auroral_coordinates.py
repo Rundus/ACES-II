@@ -115,7 +115,7 @@ def L2_to_L2_EFI_ENU_auroral_coordinates(wRocket):
 
         fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l2_EFI_auroral_fullCal.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
-        stl.outputCDFdata(outputPath, data_dict_output, instrNam='EFI')
+        stl.outputDataDict(outputPath, data_dict_output, instrNam='EFI')
         stl.Done(start_time)
 
 
