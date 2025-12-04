@@ -62,7 +62,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 
     # Set the paths for the file names
     data_repository = f'{rocket_folder_path}/'
-    input_files = glob(data_repository+'*EFI_FAC_fullCal.cdf*')
+    input_files = glob(data_repository+'L2/low/*EFI_FAC_fullCal.cdf*')
     input_names = [ifile.replace(data_repository, '') for ifile in input_files]
 
     if justPrintFileNames:
@@ -122,8 +122,8 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 
     # define set of rotations and calculate deviation from fitted line
     stl.prgMsg('Rotating Fields')
-    N =3
-    angles = np.linspace(3, 3.5, N)
+    N =20
+    angles = np.linspace(6, 8, N)
 
     # fit a linear line to the E_e compoennt
     def fitFunc(x, a, b):
@@ -145,7 +145,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         rotation_statistics[idx][2] = params[1]
     stl.Done(start_time)
 
-    best_fit_idx = np.abs(rotation_statistics[:, 1]).argmax()
+    best_fit_idx = np.abs(rotation_statistics[:, 1]).argmin()
     best_angle = rotation_statistics[:, 0][best_fit_idx]
     best_slope = rotation_statistics[:, 1][best_fit_idx]
     best_intercept = rotation_statistics[:, 2][best_fit_idx]
@@ -177,8 +177,8 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         rotation_slider = Slider(
             ax=axrot,
             label='Angle',
-            valmin=-180,
-            valmax=180,
+            valmin=-15,
+            valmax=15,
             orientation='vertical'
         )
 
@@ -209,7 +209,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         ax[0, 1].legend()
 
         ax[1,0].scatter(rotation_statistics[:, 0], np.abs(rotation_statistics[:, 1]))
-        ax[1,0].set_ylabel('Test Statistic')
+        ax[1,0].set_ylabel('Test Statistic [fitted slope]')
         ax[1,0].set_xlabel('Angle [deg]')
 
         ax[1, 1].scatter(yData_rotated[:,1], yData_rotated[:,0], color='blue', label='rotated')
@@ -224,7 +224,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         ax[1, 1].axhline(0)
         ax[1,1].legend()
 
-        fig.savefig(r'C:/Data/ACESII/coordinates/auroral_coordinates/low/rotation_analysis.png')
+        fig.savefig(rf'{rocket_folder_path}/coordinates/auroral_coordinates/low/rotation_analysis.png')
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
@@ -255,7 +255,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         stl.prgMsg('Creating output file')
         fileoutName_fixed = f'ACESII_{rocketID}_auroral_coordinates_angle.cdf'
         outputPath = fr'{rocket_folder_path}/coordinates/auroral_coordinates/low/{fileoutName_fixed}'
-        stl.outputCDFdata(outputPath, data_dict_output)
+        stl.outputDataDict(outputPath, data_dict_output)
         stl.Done(start_time)
 
 
