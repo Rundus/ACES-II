@@ -20,10 +20,9 @@ from scipy.interpolate import CubicSpline
 # --- Select the Rocket ---
 # 4 -> ACES-II High Flier
 # 5 -> ACES-II Low Flier
-wRocket = 5
+wRocket = 4
 wFiles = [0]
 outputData = True
-Plot_correction_term = False
 
 # --- --- --- ---
 # --- IMPORTS ---
@@ -34,8 +33,8 @@ def L2_to_L2_RingCore_ECEF_to_auroal_coordinates(wRocket):
 
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
-    data_dict_mag = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*RingCore_ECEF.cdf*')[0])
-    data_dict_transform_FAC = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_auroral.cdf*')[0])
+    data_dict_mag = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}/L2/{ACESII.fliers[wRocket - 4]}/*RingCore_ECEF.cdf*')[0])
+    data_dict_transform_FAC = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}/coordinates/transforms/{ACESII.fliers[wRocket - 4]}/*ECEF_to_auroral.cdf*')[0])
     data_dict_transform = deepcopy(data_dict_transform_FAC)
     stl.Done(start_time)
 
@@ -104,8 +103,8 @@ def L2_to_L2_RingCore_ECEF_to_auroal_coordinates(wRocket):
     if outputData:
         stl.prgMsg('Creating output file')
         fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l2_RingCore_auroral.cdf'
-        outputPath = f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
-        stl.outputCDFdata(outputPath, data_dict_output, instrNam='RingCore')
+        outputPath = f'{DataPaths.ACES_data_folder}/L2/{ACESII.fliers[wRocket-4]}/{fileoutName}'
+        stl.outputDataDict(outputPath, data_dict_output, instrNam='RingCore')
         stl.Done(start_time)
 
 

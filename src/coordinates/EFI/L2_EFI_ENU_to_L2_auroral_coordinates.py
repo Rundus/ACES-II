@@ -32,10 +32,10 @@ def L2_to_L2_EFI_ENU_auroral_coordinates(wRocket):
 
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
-    data_dict_EFI = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*ACESII_36364_l2_EFI_ENU_fullCal.cdf*')[0])
-    data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_ENU.cdf*')[0])
-    data_dict_transform_auroral = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_auroral.cdf*')[0])
-    data_dict_LShell = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\Lshell\\{ACESII.fliers[wRocket - 4]}\\*Lshell.cdf*')[0])
+    data_dict_EFI = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}/L2/{ACESII.fliers[wRocket - 4]}/*EFI_ENU_fullCal*')[0])
+    data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}/coordinates/transforms/{ACESII.fliers[wRocket - 4]}/*ECEF_to_ENU.cdf*')[0])
+    data_dict_transform_auroral = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}/coordinates/transforms/{ACESII.fliers[wRocket - 4]}/*ECEF_to_auroral.cdf*')[0])
+    data_dict_LShell = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}/coordinates/Lshell/{ACESII.fliers[wRocket - 4]}/*Lshell.cdf*')[0])
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -114,7 +114,7 @@ def L2_to_L2_EFI_ENU_auroral_coordinates(wRocket):
         stl.prgMsg('Creating output file')
 
         fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l2_EFI_auroral_fullCal.cdf'
-        outputPath = f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
+        outputPath = f'{DataPaths.ACES_data_folder}/L2/{ACESII.fliers[wRocket-4]}/{fileoutName}'
         stl.outputDataDict(outputPath, data_dict_output, instrNam='EFI')
         stl.Done(start_time)
 
