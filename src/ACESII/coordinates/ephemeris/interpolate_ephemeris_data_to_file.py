@@ -58,24 +58,32 @@ def Interpolate_ephemeris_data_to_file():
                 data_dict = stl.loadDictFromFile(file)
 
                 # check if Emphemeris is already in this file, if so skip this file
-                if not all(i in data_dict.keys() for i in interp_keys):
-                    try:
-                        # Try to add the ephemeris
-                        T0_data = np.array(stl.EpochTo_T0_Rocket(data_dict['Epoch'][0],T0=T0_ref),dtype='float64')
+                # if not all(i in data_dict.keys() for i in interp_keys):
+                try:
+                    # Try to add the ephemeris
+                    T0_data = np.array(stl.EpochTo_T0_Rocket(data_dict['Epoch'][0],T0=T0_ref),dtype='float64')
 
-                        for iKey in interp_keys:
+                    for iKey in interp_keys:
+                        if iKey == 'Alt':
+                            data_dict = {**data_dict,
+                                         **{iKey: [np.interp(T0_data, T0_LShell, data_dict_LShell[iKey][0]), deepcopy(data_dict_LShell[iKey][1])]}
+                                         }
+                            data_dict[iKey][0] = data_dict[iKey][0]/1000
+                            data_dict[iKey][1]['UNITS'] = 'km'
+                        else:
                             data_dict = {**data_dict,
                                          **{iKey:[np.interp(T0_data,T0_LShell,data_dict_LShell[iKey][0]), deepcopy(data_dict_LShell[iKey][1])]}
                                          }
-                        if outputData:
-                            stl.outputDataDict(
-                                outputPath=file,
-                                data_dict=data_dict
-                            )
-                    except Exception as err:
-                        print(stl.color.RED + f'\nFAILED: '+stl.color.END + f'{file}')  # check
-                        print('Reason ', err, '\n')
-                        continue
+
+                    if outputData:
+                        stl.outputDataDict(
+                            outputPath=file,
+                            data_dict=data_dict
+                        )
+                except Exception as err:
+                    print(stl.color.RED + f'\nFAILED: '+stl.color.END + f'{file}')  # check
+                    print('Reason ', err, '\n')
+                    continue
 
 
 
