@@ -119,7 +119,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
     # define set of rotations and calculate deviation from fitted line
     stl.prgMsg('Rotating Fields')
     N =20
-    angles = np.linspace(6, 8, N)
+    angles = np.linspace(-4.5, 0, N)
 
     # fit a linear line to the E_e compoennt
     def fitFunc(x, a, b):
