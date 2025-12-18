@@ -118,8 +118,8 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 
     # define set of rotations and calculate deviation from fitted line
     stl.prgMsg('Rotating Fields')
-    N =20
-    angles = np.linspace(-4.5, 0, N)
+    N =10
+    angles = np.linspace(-4, -1, N)
 
     # fit a linear line to the E_e compoennt
     def fitFunc(x, a, b):
@@ -141,14 +141,10 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
         rotation_statistics[idx][2] = params[1]
     stl.Done(start_time)
 
-    best_fit_idx = np.abs(rotation_statistics[:, 1]).argmin()
+    best_fit_idx = np.abs(rotation_statistics[:, 1]).argmax()
     best_angle = rotation_statistics[:, 0][best_fit_idx]
     best_slope = rotation_statistics[:, 1][best_fit_idx]
     best_intercept = rotation_statistics[:, 2][best_fit_idx]
-
-    choice_idx = np.abs(rotation_statistics[:, 0]-(-9)).argmin()
-    # print(rotation_statistics[:, 1][choice_idx],rotation_statistics[:, 2][choice_idx])
-    # print(best_slope, best_intercept)
     yData_rotated = np.array([np.matmul(stl.Rz(best_angle), vec) for vec in np.array([data_dict_EFI['E_r'][0], data_dict_EFI['E_e'][0], data_dict_EFI['E_p'][0]]).T])
 
     if plot_interactive_slider:

@@ -19,7 +19,7 @@ class DataPaths:
     # --- USER SPECIFIC DATA ---
     # --- --- --- --- --- --- ---
     user = 'connor'
-    PATH_TO_DATA_FOLDER = r'/home/connor/Data/'
+    PATH_TO_DATA_FOLDER = r'C:/Data/'
     HOMEDRIVE = 'C:'
     HOMEPATH = 'C:\\'
     fliers = ['high', 'low']

@@ -31,7 +31,7 @@ site_nam = ['skibotn']
 # --- Select the color ---
 # 0 -> green 5570
 # 1 -> red 6300
-wColor = 0
+wColor = 1
 wLengths = ['5577', '6300']
 color_alt = [150, 250] # in kilometers
 
@@ -63,6 +63,10 @@ def rawASI_to_cdf(wSite, wColor, rocketFolderPath):
     cal_files = readsav(glob(folder_path+f'\\{wLengths[wColor]}\\*.dat*')[0])
     photo_files = glob(folder_path + f'\\{wLengths[wColor]}\\*.png*')
 
+    # --- prepare the output ---
+    data_dict_output = {}
+    data_dict_globalAttrs = {}
+
     ############################################
     # --- COLLECT IMAGE FILES AND TIMESTAMPS ---
     ############################################
@@ -88,11 +92,18 @@ def rawASI_to_cdf(wSite, wColor, rocketFolderPath):
         # get the grayscale data
         imageData.append(plt.imread(imageStr))
 
-
     # --- store data ---
-    allGlats = np.array(deepcopy(cal_files['glats']))[::-1]
-    allGLongs = np.array(deepcopy(cal_files['glons']))[::-1]
-    allElevs = np.array(deepcopy(cal_files['elevs']))
+    for key in cal_files.keys():
+        if key in ['glats','glons','mlats','mlons','alts','gazms','mazms','elevs']:
+            data_dict_output = {**data_dict_output,
+                                **{
+                                    f'{key}':[np.array(deepcopy(cal_files[f'{key}']))[::-1],{}]
+                                }}
+        else:
+            data_dict_globalAttrs = {**data_dict_globalAttrs,
+                                **{
+                                    f'{key}': cal_files[f'{key}']
+                                }}
     allImages = imageData
     stl.Done(start_time)
 
@@ -124,9 +135,7 @@ def rawASI_to_cdf(wSite, wColor, rocketFolderPath):
     for i, j, k in product(*ranges):
         if not math.isnan(allImages[i][j][k]):
             allImages[i][j][k] = int(allImages[i][j][k]*architecture*K)
-
     stl.Done(start_time)
-
 
     ############################
     # --- WRITE OUT THE DATA ---
@@ -134,19 +143,24 @@ def rawASI_to_cdf(wSite, wColor, rocketFolderPath):
     if outputData:
 
         data_dict_output = {
-            'long' : [np.array(allGLongs), {'UNITS':'Degrees','CATDESC': 'geographic longitude'}],
-            'lat' : [np.array(allGlats), {'UNITS':'Degrees','CATDESC': 'geographic lattitude'}],
-            'alt (assumed)': [np.array([color_alt]),{'UNITS':'Kilometers'}],
-            'elev':[np.array(allElevs),{'UNITS':'Degrees','CATDESC': 'pixel elevation'}],
-            'Epoch':[np.array(Epoch_AllSky),{'DEPEND_0':'Epoch'}],
-            'images':[np.array(allImages),{'DEPEND_0':'Epoch', 'UNITS':'Rayleigh'}]
+            **data_dict_output,
+            **{
+                'Epoch': [np.array(Epoch_AllSky), {'DEPEND_0':'Epoch'}],
+                'images': [np.array(allImages), {'DEPEND_0':'Epoch', 'UNITS':'Rayleigh'}]
+            }
         }
 
+        # adjust some labels
+        data_dict_output['glons'][1] = {'UNITS': 'Degrees', 'CATDESC': 'geographic longitude'}
+        data_dict_output['glats'][1] = {'UNITS': 'Degrees', 'CATDESC': 'geographic latitude'}
+        data_dict_output['alts'][1] = {'UNITS': 'km'}
+        data_dict_output['elevs'][1] = {'UNITS': 'Degrees', 'CATDESC': 'pixel elevation'}
 
         # Create the .CDF file
         output_path = f'{folder_path}\\{wLengths[wColor]}\\ACESII_AllSky_skibotn_{wLengths[wColor]}'
-        stl.outputCDFdata(outputPath=output_path + '.cdf',
-                          data_dict=data_dict_output)
+        stl.outputDataDict(outputPath=output_path + '.cdf',
+                          data_dict=data_dict_output,
+                           globalAttrsMod=data_dict_globalAttrs)
 
         # create the .hdf5 file
         with h5py.File(rf'{output_path}.hdf5', 'w') as f:
