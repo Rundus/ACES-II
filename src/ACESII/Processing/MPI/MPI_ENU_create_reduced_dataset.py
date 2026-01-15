@@ -47,7 +47,12 @@ def MPI_ENU_create_reduced_dataset():
 
     # 4. put our data in an output
 
-    data_dict_output
+    data_dict_output = {**data_dict_output,
+                        **{'time': [np.array(target_times), {}]},
+                        **{f'MPI{j}_E_reduced': [np.array(MPI_E_reduced[j]), {'DEPEND_0':'time'}] for j in range(4)},
+                        **{f'MPI{k}_N_reduced': [np.array(MPI_N_reduced[k]), {'DEPEND_0': 'time'}] for k in range(4)},
+                        }
+
 
     # --- 9. Output new CDF ---
     file_out_path = rf'{DataPaths.ACES_data_folder}/L3/MPI/low/ACESII_35364_L3_MPI_ENU_reduced.cdf'
