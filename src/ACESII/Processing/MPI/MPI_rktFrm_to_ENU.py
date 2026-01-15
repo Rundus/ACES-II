@@ -97,13 +97,12 @@ def MPI_rktFrm_to_ENU():
         # 8. Time adjust the data to better align
         spin_rate = 0.5474
         if idx == 0: # MPI1
-            delta = (1/spin_rate)*(1+0.75)
+            delta = (1/spin_rate)*(2+0.75)
         elif idx == 1: # MPI2
             delta = (1/spin_rate)*(1+0.5)
         elif idx == 2: # MPI3
             delta = (1/spin_rate)*(1+0.25)
         elif idx == 3: #MPI4
-            # delta = -(1/spin_rate)*(1)
             delta = 0
 
         data_dict_output[f'time{idx+1}'][0]= data_dict_output[f'time{idx+1}'][0] - delta
