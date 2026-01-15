@@ -5,6 +5,7 @@
 # imports
 import spaceToolsLib as stl
 from src.ACESII.data_paths import DataPaths
+import numpy as np
 
 
 def MPI_ENU_create_reduced_dataset():
@@ -19,20 +20,34 @@ def MPI_ENU_create_reduced_dataset():
     # 2. define some ideal time points as seconds from launch
     # Note: ONLY pick times where there's good correlation between MPI_East AND MPI_North
     target_times = [
-        187.721,
-        187.95,
-        193.2,
-        .... # and so on
+        184.18,
+        207.94,
+        264.7,
     ]
 
-    # 3. define a window of time where all points from the MPIs must fall within
-    # # Idea: find the point in each MPI dataset which is nearest to the target_times
-    # Then use your window to decide if that point (for each MPI) is within the time window you've chosen
-    time_window = 0.05
 
-    # 4. collect all the points into a new dataset and write them out in a data_dict_output.
+    # 3. collect all the points into a new dataset and write them out in a data_dict_output.
     # note: write each MPI data individually, not as a single dataset.
 
+    MPI_E_reduced = [[], [], [], []]
+    MPI_N_reduced = [[], [], [], []]
+
+    for idx in range(4):
+        time = data_dict_MPI[f'time{idx + 1}'][0]
+        MPI_East = data_dict_MPI[f'MPI{idx+1}_E'][0]
+        MPI_North = data_dict_MPI[f'MPI{idx+1}_N'][0]
+
+        for tme in target_times:
+
+            target_idx = np.abs(time - tme).argmin()
+
+            MPI_E_reduced[idx].append(MPI_East[target_idx])
+            MPI_N_reduced[idx].append(MPI_North[target_idx])
+
+
+    # 4. put our data in an output
+
+    data_dict_output
 
     # --- 9. Output new CDF ---
     file_out_path = rf'{DataPaths.ACES_data_folder}/L3/MPI/low/ACESII_35364_L3_MPI_ENU_reduced.cdf'
