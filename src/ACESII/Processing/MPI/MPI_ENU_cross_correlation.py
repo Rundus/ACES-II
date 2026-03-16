@@ -2,11 +2,19 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION: isolate points of the MPI data via cross-correlation
 import matplotlib.pyplot as plt
+import scipy.signal
 # imports
 import spaceToolsLib as stl
 from src.ACESII.data_paths import DataPaths
 import numpy as np
-from scipy.signal import correlate
+from scipy.signal import correlate, correlation_lags
+
+
+def normalization(x, y):
+    corr = correlate(x,y, mode='same')
+    output1 = corr/np.max(np.abs(corr))
+    output2 = correlation_lags(len(x),len(y))
+    return output1, output2
 
 
 def MPI_ENU_cross_correlation():
@@ -21,10 +29,11 @@ def MPI_ENU_cross_correlation():
     # 2. define a regularized time grid to bin all the MPI data onto
     # Note: It MUST be finer resolution than any of the MPI points so that
     # multiple datapoints aren't in the same time bin
-    N = 1000
+    N = 129
     time_space = np.linspace(data_dict_MPI['time1'][0][0], data_dict_MPI['time1'][0][-1]+5, N)
     MPI_E_time_grided = [np.zeros_like(time_space) for i in range(4)]
     MPI_N_time_grided = [np.zeros_like(time_space) for i in range(4)]
+
 
     for idx in range(4):
 
@@ -37,16 +46,21 @@ def MPI_ENU_cross_correlation():
             MPI_E_time_grided[idx][target_idx] = MPI_East[tdx]
             MPI_N_time_grided[idx][target_idx] = MPI_North[tdx]
 
-
     fig, ax = plt.subplots(3)
     for i in range(4):
         ax[0].plot(time_space, MPI_E_time_grided[i])
         ax[1].plot(time_space, MPI_N_time_grided[i])
 
-    # just plot the multipliction fo everything
-    ax[2].plot(time_space, np.abs(MPI_E_time_grided[0]*MPI_E_time_grided[3]*MPI_E_time_grided[1]))
+    deltaT = 1/0.5474
+    time_window = np.array([deltaT*i for i in range(150)]) + time_space[0]
+
+    for val in time_window:
+        ax[0].axvline(x=val,color='black',alpha=0.5)
+        ax[1].axvline(x=val, color='black', alpha=0.5)
+
 
     plt.show()
+
 
 
 
