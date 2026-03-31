@@ -4,7 +4,7 @@
 
 # imports
 import spaceToolsLib as stl
-from src.ACESII.data_paths import DataPaths
+from src.ACESII.data_tools.data_paths import DataPaths
 import numpy as np
 
 

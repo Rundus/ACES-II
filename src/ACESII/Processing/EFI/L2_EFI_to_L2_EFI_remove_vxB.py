@@ -8,7 +8,6 @@
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
 
-from src.ACESII.my_imports import *
 import time
 start_time = time.time()
 # --- --- --- --- ---
@@ -35,7 +34,6 @@ E_scale = 1/np.sqrt(2)
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
 
 #######################
 # --- MAIN FUNCTION ---

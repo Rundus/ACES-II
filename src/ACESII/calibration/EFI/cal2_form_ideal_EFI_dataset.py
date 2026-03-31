@@ -37,7 +37,6 @@ outputData = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
 from scipy.interpolate import CubicSpline
 import spaceToolsLib as stl
 

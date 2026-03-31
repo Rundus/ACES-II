@@ -15,8 +15,8 @@ __version__ = "1.0.0"
 import matplotlib.pyplot as plt
 
 # --- --- --- --- ---
-from src.ACESII.my_imports import *
-from src.ACESII.data_paths import DataPaths
+from src.ACESII.data_tools.my_imports import *
+from src.ACESII.data_tools.data_paths import DataPaths
 import itertools
 start_time = time.time()
 # --- --- --- --- ---

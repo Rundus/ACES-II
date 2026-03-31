@@ -50,7 +50,7 @@ output_folder = r'C:\Users\cfelt\Desktop\Research\ACESII\Feltman2025_ACESII_Joul
 # --- IMPORTS ---
 # --- --- --- ---
 from src.ACESII.mission_attributes import *
-from src.ACESII.data_paths import DataPaths
+from src.ACESII.data_tools.data_paths import DataPaths
 
 
 

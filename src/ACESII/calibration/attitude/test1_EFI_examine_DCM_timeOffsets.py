@@ -10,7 +10,6 @@ __author__ = "Connor Feltman"
 
 import matplotlib.pyplot as plt
 
-from src.ACESII.my_imports import *
 import time
 start_time = time.time()
 # --- --- --- --- ---
@@ -44,7 +43,6 @@ init_slope = -7E-6
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
 from scipy.interpolate import CubicSpline
 import spaceToolsLib as stl
 from matplotlib.widgets import Slider

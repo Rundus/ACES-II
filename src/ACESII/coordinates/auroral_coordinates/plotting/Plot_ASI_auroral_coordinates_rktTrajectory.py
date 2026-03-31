@@ -50,7 +50,6 @@ BigAllSky_costLineSize = 3
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import spaceToolsLib as stl

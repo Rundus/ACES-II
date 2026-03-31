@@ -9,7 +9,6 @@ __author__ = "Connor Feltman"
 
 import matplotlib.pyplot as plt
 
-from src.ACESII.my_imports import *
 import time
 start_time = time.time()
 # --- --- --- --- ---
@@ -34,7 +33,6 @@ outputData = False
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
 import spaceToolsLib as stl
 from scipy.interpolate import CubicSpline
 

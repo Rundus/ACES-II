@@ -35,7 +35,7 @@ plot_fits = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
+from src.ACESII.data_tools.my_imports import *
 import spaceToolsLib as stl
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt

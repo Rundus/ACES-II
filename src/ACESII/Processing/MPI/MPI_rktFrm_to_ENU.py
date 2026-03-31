@@ -9,7 +9,7 @@ import numpy as np
 from copy import deepcopy
 import spaceToolsLib as stl
 from scipy.interpolate import CubicSpline
-from src.ACESII.data_paths import DataPaths
+from src.ACESII.data_tools.data_paths import DataPaths
 import datetime as dt
 
 

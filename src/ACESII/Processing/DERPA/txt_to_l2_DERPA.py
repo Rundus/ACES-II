@@ -30,7 +30,6 @@ outputData = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
 import io
 input_path_modifier = 'science\\DERPA_raw\\'
 

@@ -2,10 +2,9 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION: isolate points of the MPI data via cross-correlation
 import matplotlib.pyplot as plt
-import scipy.signal
 # imports
 import spaceToolsLib as stl
-from src.ACESII.data_paths import DataPaths
+from src.ACESII.data_tools.data_paths import DataPaths
 import numpy as np
 from scipy.signal import correlate, correlation_lags
 

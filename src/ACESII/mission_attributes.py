@@ -14,6 +14,7 @@ class ACESII:
     mission_name = 'ACESII'
     payload_IDs = ['36359', '36364']
     fliers = ['high', 'low']
+    fliers_dict = {'high':'36359', 'low':'36364'}
     instrument_names_full = ['EEPAA>Electron Energy Pitch Angle Analyzer',
                              'LEESA>Low Energy Electrostatic Analyzer',
                              'IEPAA>Ion Energy Pitch Angle Analyzer',
@@ -93,6 +94,63 @@ class ACESII:
         [-10, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190],
         [180, 150, 120, 90, 60, 30, 0]
     ]
+    ESA_pitch_bin_integration_limits = {
+        'EEPAA':
+        [[-15,-5], #-10 deg
+        [-5, 5], # 0 deg
+        [5, 15], # 10 deg
+        [15, 25], # 20 deg
+        [25, 35], # 30 deg
+        [35, 45], # 40 deg
+        [45, 55], # 50 deg
+        [55, 65], # 60 deg
+        [65, 75], # 70 deg
+        [75, 85], # 80 deg
+        [85, 95], # 90 deg
+        [95, 105], # 100 deg
+        [105, 115], # 110 deg
+        [115, 125],  # 120 deg
+        [125, 135], # 130 deg
+        [135, 145], # 140 deg
+        [145,155], # 150 deg
+        [155, 165], # 160 deg
+        [165, 175], # 170 deg
+        [175, 185], # 180 deg
+        [185, 195] # 190 deg
+        ],
+        'LEESA':
+            [[-15, -5],  # -10 deg
+             [-5, 5],  # 0 deg
+             [5, 15],  # 10 deg
+             [15, 25],  # 20 deg
+             [25, 35],  # 30 deg
+             [35, 45],  # 40 deg
+             [45, 55],  # 50 deg
+             [55, 65],  # 60 deg
+             [65, 75],  # 70 deg
+             [75, 85],  # 80 deg
+             [85, 95],  # 90 deg
+             [95, 105],  # 100 deg
+             [105, 115],  # 110 deg
+             [115, 125],  # 120 deg
+             [125, 135],  # 130 deg
+             [135, 145],  # 140 deg
+             [145, 155],  # 150 deg
+             [155, 165],  # 160 deg
+             [165, 175],  # 170 deg
+             [175, 185],  # 180 deg
+             [185, 195]  # 190 deg
+             ],
+        'IEPAA':[
+            [-5,5], # 0 deg
+            [25, 35], # 30deg
+            [55, 65], # 60deg
+            [85, 95], # 90 deg
+            [115, 125], # 120 deg
+            [145, 155], # 150 deg
+            [175, 185] # 180 deg
+        ]
+    }
 
     ESA_instr_words_per_sweep = [49, 49, 49]
     ESA_instr_Energy = [  # eepaa

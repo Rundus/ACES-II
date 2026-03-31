@@ -12,7 +12,6 @@ __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
 import matplotlib.pyplot as plt
-from src.ACESII.my_imports import *
 import time
 start_time = time.time()
 # --- --- --- --- ---

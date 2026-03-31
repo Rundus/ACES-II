@@ -37,7 +37,6 @@ outputData = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
 from scipy.signal import savgol_filter
 
 #######################

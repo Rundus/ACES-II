@@ -1,6 +1,6 @@
 # Description: Plot the old RingCore_Field_Aligned data against the new method
 
-from src.ACESII.my_imports import *
+from src.ACESII.data_tools.my_imports import *
 import spaceToolsLib as stl
 import matplotlib.pyplot as plt
 from scipy.interpolate import CubicSpline

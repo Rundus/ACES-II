@@ -49,7 +49,6 @@ BigAllSky_costLineSize = 3
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
 import matplotlib.pyplot as plt
 import spaceToolsLib as stl
 faceColorChoice = (156 / 255, 156 / 255, 156 / 255, 0.5)  # in normalize RGBA

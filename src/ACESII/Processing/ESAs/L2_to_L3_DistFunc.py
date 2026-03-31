@@ -50,7 +50,7 @@ outputData = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
+from src.ACESII.data_tools.my_imports import *
 from scipy.interpolate import CubicSpline
 
 def L2_to_DistFunc(wRocket, wFile, rocketFolderPath, justPrintFileNames):

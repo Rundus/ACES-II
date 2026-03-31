@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from src.ACESII.my_imports import *
 
 # TOGGLES
 wRocket = 5

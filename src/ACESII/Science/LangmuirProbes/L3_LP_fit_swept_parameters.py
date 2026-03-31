@@ -4,7 +4,6 @@
 # Imports
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from src.ACESII.my_imports import *
 
 # Picking High vs. Low
 var = 0 # pick which rocket to select

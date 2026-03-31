@@ -1,58 +1,39 @@
-# --- L1_&_Traject_to_Traject_ILatILong.py ---
+# --- attitude_to_invariant_coorrdinates.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: Takes in the ACESII trajectory data (in geodetic and geomagnetic) as well
-# as the ESA data (individual Instruments). Interpolates the Geomag and Alt data then produces the Ionospheric Projected Lattitude and
-# Longitude
+# DESCRIPTION: loads the ACESII attitude data and calculates the invariant coordinates
+# for a specific chosen invariant altitude
 
 
-# TODO: This file wont work if there's multple ESA datafiles with "eepaa" or "iepaa" etc in the L1 folder! Must only be one.Should fix this
 
-# --- --- --- --- ---
-import time
-from ACESII_code.class_var_func import Done, setupPYCDF,prgMsg
-start_time = time.time()
-# --- --- --- --- ---
-
-
-# --- --- --- ---
+#################
 # --- TOGGLES ---
-# --- --- --- ---
-
-modifier = '_ILatILong'
-
+#################
+just_print_file_names_bool = False
+rocket_str = 'low'
+wInstr = 'attitude'
+dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
+    f'{wInstr}':['/', [[0],[0]]]
+}
+outputData = True
 targetProjectionAltitude = 100 # altitude you want to project B (in km). Should be ~100km
-
-# select which files to convert
-wInstr = 'eepaa' # valid inputs are strings of eepaa, iepaa and leesa
-
-# For the Kilometers conversion, sets the reference point to Andoya
 useAndoya = True
 
-# --- output data? ---
-outputDataFile = True
 
 
-# --- --- --- ---
-# --- import ---
-# --- --- --- ---
-import numpy as np
-import pyIGRF
-import matplotlib.pyplot as plt
-import math
-from matplotlib.ticker import (MultipleLocator, AutoMinorLocator)
-from os import remove,path
-from glob import glob
-from ACESII_code.data_paths import fliers, ACES_data_folder, ACES_csv_trajectories, TRICE_data_folder, ACES_L0_files, TRICE_L0_files
-from ACESII_code.class_var_func import color, L1_TRICE_Quick
-from ACESII_code.missionAttributes import ACES_mission_dicts, TRICE_mission_dicts
-setupPYCDF()
+
+#################
+# --- IMPORTS ---
+#################
+from src.ACESII.data_tools.my_imports import *
+import time
+start_time = time.time()
 from spacepy import pycdf
 from spacepy import coordinates as coord
 coord.DEFAULTS.set_values(use_irbem=False, itol=5)  # maximum separation, in seconds, for which the coordinate transformations will not be recalculated. To force all transformations to use an exact transform for the time, set ``itol`` to zero.
 from spacepy.time import Ticktock #used to determine the time I'm choosing the reference geomagentic field
 
-print(color.BOLD + color.CYAN + 'L1_&_Traject_to_Traject_ILatILong.py' + color.END + color.END)
-def Trajectory_to_ESA_ILatILong(wInstr, rocketFolderPath):
+
+def attitude_to_invariant_coordinates(wInstr, rocketFolderPath):
 
     if wInstr == 'leesa':
         rangelen = 1
@@ -337,52 +318,6 @@ def Trajectory_to_ESA_ILatILong(wInstr, rocketFolderPath):
         if outputDataFile:
             prgMsg('Writing out Data')
 
-            for i in range(rangelen):
-
-                #####################
-                # --- Output Data ---
-                #####################
-
-                outputPath = f'{rocketFolderPath}Trajectories\{fliers[i]}\\{fileoutName[i]}'
-
-                # --- delete output file if it already exists ---
-                if path.exists(outputPath):
-                    remove(outputPath)
-                pycdf.lib.set_backward(False)
-
-                # --- open the output file ---
-                with pycdf.CDF(outputPath, '') as cdfFile:
-                    cdfFile.readonly(False)
-
-                    # --- write out global attributes ---
-                    globalAttrsMod = rocketAttrs.globalAttributes[i]
-                    ModelData = L1_TRICE_Quick(i)
-                    inputGlobDic = ModelData.cdfFile.globalattsget()
-
-                    for key, val in inputGlobDic.items():
-                        if key == 'Descriptor':
-                            globalAttrsMod[key] = 'None'
-                        if key in globalAttrsMod:
-                            cdfFile.attrs[key] = globalAttrsMod[key]
-                        else:
-                            cdfFile.attrs[key] = val
-
-                    # --- WRITE OUT DATA ---
-                    for varKey, varVal in data_dicts[i].items():
-                        if 'Epoch' in varKey:  # epoch data
-                            cdfFile.new(varKey, data=varVal[0], type=33)
-                        else:  # other data
-                            cdfFile.new(varKey, data=varVal[0])
-
-                        # --- Write out the attributes and variable info ---
-                        for attrKey, attrVal in data_dicts[i][varKey][1].items():
-                            if attrKey == 'VALIDMIN':
-                                cdfFile[varKey].attrs[attrKey] = varVal[0].min()
-                            elif attrKey == 'VALIDMAX':
-                                cdfFile[varKey].attrs[attrKey] = varVal[0].max()
-                            elif attrVal != None:
-                                cdfFile[varKey].attrs[attrKey] = attrVal
-
             Done(start_time)
 
 
@@ -390,17 +325,13 @@ def Trajectory_to_ESA_ILatILong(wInstr, rocketFolderPath):
 
 
 
-# --- --- --- ---
+#################
 # --- EXECUTE ---
-# --- --- --- ---
-rocketFolderPath = ACES_data_folder
+#################
+DataClasses().ACEII_file_executor(attitude_to_invariant_coordinates,
+                                  dict_file_path,
+                                  rocket_str,
+                                  just_print_file_names_bool)
 
-if len(glob(f'{rocketFolderPath}L1\{fliers[0]}\*.cdf')) == 0 :
-    print(color.RED + 'There are no .cdf files in the specified directory:' + color.END)
-    print(f'{rocketFolderPath}L1\{fliers[0]}\*.cdf')
-elif len(glob(f'{rocketFolderPath}L1\{fliers[1]}\*.cdf')) == 0:
-    print(color.RED + 'There are no .cdf files in the specified directory:' + color.END)
-    print(f'{rocketFolderPath}L1\{fliers[1]}\*.cdf')
-else:
-    Trajectory_to_ESA_ILatILong(wInstr, rocketFolderPath)
+
 

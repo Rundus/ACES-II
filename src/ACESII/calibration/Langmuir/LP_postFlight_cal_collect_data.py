@@ -11,7 +11,6 @@
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
 
-from src.ACESII.my_imports import *
 import time
 start_time = time.time()
 # --- --- --- --- ---

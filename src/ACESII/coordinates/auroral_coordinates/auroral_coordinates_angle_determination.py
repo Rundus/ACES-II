@@ -41,7 +41,6 @@ plot_best_fit_rotation = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
-from src.ACESII.my_imports import *
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
