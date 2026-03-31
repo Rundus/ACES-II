@@ -34,7 +34,7 @@ Instrs = [
     'MAG'
 ]
 
-interp_keys = ['L-Shell','Alt','Lat','Long', 'mLat','mLong']
+interp_keys = ['L-Shell','Alt','Lat','Long', 'mLat','mLong','ILat','ILong']
 T0_ref = dt.datetime(2022,11,20,17,20)
 
 def Interpolate_ephemeris_data_to_file():
@@ -42,8 +42,8 @@ def Interpolate_ephemeris_data_to_file():
     # For each Rocket
     for i in range(2):
         # Load the L-Shell data
-        data_path = glob(rf'{DataPaths.ACES_data_folder}/coordinates/Lshell/{ACESII.fliers[i]}/*.cdf*')[0]
-        data_dict_LShell = stl.loadDictFromFile(data_path)
+        data_dict_LShell = stl.loadDictFromFile(glob(rf'{DataPaths.ACES_data_folder}/coordinates/Lshell/{ACESII.fliers[i]}/*.cdf*')[0])
+        data_dict_invariant = stl.loadDictFromFile(glob(rf'{DataPaths.ACES_data_folder}/coordinates/invariant_coordinates/{ACESII.fliers[i]}/*.cdf*')[0])
         T0_LShell = np.array(stl.EpochTo_T0_Rocket(data_dict_LShell['Epoch'][0],T0=T0_ref),dtype='float64')
 
         # Loop through each path
@@ -70,6 +70,11 @@ def Interpolate_ephemeris_data_to_file():
                                                  }
                                     data_dict[iKey][0] = data_dict[iKey][0]/1000
                                     data_dict[iKey][1]['UNITS'] = 'km'
+                                elif iKey in ['ILat','ILong']:
+                                    data_dict = {**data_dict,
+                                                 **{iKey: [np.interp(T0_data, T0_LShell, data_dict_invariant[iKey][0]), deepcopy(data_dict_invariant[iKey][1])]}
+                                                 }
+
                                 else:
                                     data_dict = {**data_dict,
                                                  **{iKey:[np.interp(T0_data,T0_LShell,data_dict_LShell[iKey][0]), deepcopy(data_dict_LShell[iKey][1])]}
@@ -97,6 +102,10 @@ def Interpolate_ephemeris_data_to_file():
                                     data_dict[iKey][0] = np.interp(T0_data, T0_LShell, data_dict_LShell[iKey][0])
                                     data_dict[iKey][0] = data_dict[iKey][0] / 1000
                                     data_dict[iKey][1]['UNITS'] = 'km'
+                                elif iKey in ['ILat','ILong']:
+                                    data_dict = {**data_dict,
+                                                 **{iKey: [np.interp(T0_data, T0_LShell, data_dict_invariant[iKey][0]), deepcopy(data_dict_invariant[iKey][1])]}
+                                                 }
                                 else:
                                     data_dict[iKey][0] = np.interp(T0_data, T0_LShell, data_dict_LShell[iKey][0])
 

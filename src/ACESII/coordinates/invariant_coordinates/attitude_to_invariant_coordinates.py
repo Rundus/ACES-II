@@ -9,17 +9,13 @@
 # --- TOGGLES ---
 #################
 just_print_file_names_bool = False
-rocket_str = 'low'
-wInstr = 'attitude'
+rocket_str = 'high'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
-    f'{wInstr}':['/', [[0],[0]]]
+    f'attitude':['/', [[0],[0]]],
 }
 outputData = True
-targetProjectionAltitude = 100 # altitude you want to project B (in km). Should be ~100km
+targetProjectionAltitude = 150 # altitude you want to project B (in km). Should be ~100km
 useAndoya = True
-
-
-
 
 #################
 # --- IMPORTS ---
@@ -32,106 +28,49 @@ from spacepy import coordinates as coord
 coord.DEFAULTS.set_values(use_irbem=False, itol=5)  # maximum separation, in seconds, for which the coordinate transformations will not be recalculated. To force all transformations to use an exact transform for the time, set ``itol`` to zero.
 from spacepy.time import Ticktock #used to determine the time I'm choosing the reference geomagentic field
 
-
-def attitude_to_invariant_coordinates(wInstr, rocketFolderPath):
-
-    if wInstr == 'leesa':
-        rangelen = 1
-    else:
-        rangelen = 2
-
-    # --- ACES II Flight/Integration Data ---
-    rocketAttrs,b,c = ACES_mission_dicts()
-    globalAttrsMod = rocketAttrs.globalAttributes[0]
-    globalAttrsMod['Logical_source'] = globalAttrsMod['Logical_source'] + 'L1'
-
-    # Set the paths for the file names
-    TrajectoryFiles = []
-    L1Files = []
-    ILatILongFiles = []
-    L1_names = []
-    ILatILong_names = []
-    dataFile_name = []
-    fileoutName = []
-
-    for i in range(rangelen):
-        TrajectoryFiles.append(glob(f"{rocketFolderPath}trajectories\{fliers[i]}\*GPSData.cdf*"))
-        L1Files.append(glob(f'{rocketFolderPath}L1\{fliers[i]}\*{wInstr}*'))
-        ILatILongFiles.append(glob(f'{rocketFolderPath}trajectories\{fliers[i]}\*{wInstr}*'))
-
-        L1_names.append([ifile.replace(f'{rocketFolderPath}L1\{fliers[i]}\\', '') for ifile in L1Files[i]])
-        ILatILong_names.append([ofile.replace(f'{rocketFolderPath}trajectories\{fliers[i]}\\', '') for ofile in ILatILongFiles[i]])
-
-        dataFile_name.append(L1Files[i][0].replace(f'{rocketFolderPath}trajectories\{fliers[i]}\\', ''))
-
-        fileoutName.append(TrajectoryFiles[i][0].replace('GPSdata', 'ILat_ILong').replace(f'{rocketFolderPath}trajectories\{fliers[i]}\\',''))
-
-    if wInstr == 'lp':
-        print(color.RED + 'Cannot processes Langmuir Probe File' + color.END)
-    else:
-        print(color.UNDERLINE + f'Processing data for {wInstr.upper()} instrument' + color.END)
-
-        ######################
-        # --- LOAD IN DATA ---
-        ######################
-        prgMsg('Loading data from L1 and GPS Data')
-        data_dicts = []
-        data_dicts_traj = []
-
-        for i in range(rangelen):
-            data_dict = {}
-            with pycdf.CDF(L1Files[i][0]) as L1DataFile:
-                for key, val in L1DataFile.items():
-                    data_dict = {**data_dict, **{key: [L1DataFile[key][...] , {key:val for key, val in L1DataFile[key].attrs.items()  }  ]  }  }
-
-            data_dict['Epoch_esa'][0] = np.array([pycdf.lib.datetime_to_tt2000(data_dict['Epoch_esa'][0][i]) for i in range(len(data_dict['Epoch_esa'][0]))])
-
-            data_dicts.append(data_dict)
-
-            data_dict_traj = {}
-
-            with pycdf.CDF(TrajectoryFiles[i][0]) as TrajDataFile:
-                for key, val in TrajDataFile.items():
-                    data_dict_traj = {**data_dict_traj, **{key: [TrajDataFile[key][...], {key: val for key, val in TrajDataFile[key].attrs.items()}]}}
-
-            data_dict_traj['Epoch'][0] = np.array([pycdf.lib.datetime_to_tt2000(data_dict_traj['Epoch'][0][i]) for i in range(len(data_dict_traj['Epoch'][0]))])
-
-            data_dicts_traj.append(data_dict_traj)
-
-        Done(start_time)
+lat_to_meter = 111.319488 # 1 deg latitude to kilometers on Earth
+def long_to_meter(lat):
+    return 111.319488 * np.cos(np.radians(lat))
 
 
-        ##############################################
-        # --- DownSample GPS Alt, Lat, Long, Epoch ---
-        ##############################################
+def attitude_to_invariant_coordinates(data_dicts):
 
-        prgMsg('Downsampling GPS data')
-        # Using the Trajectory data's Epoch, downsample the traj data to align with the ESA data
-        AltDS = [[],[]]
-        LatDS = [[],[]]
-        LongDS = [[],[]]
-        EpochDS = [[],[]]
+        # --- Load the Data ---
+        data_dict_attitude = deepcopy(data_dicts[0])
 
-        for j in range(rangelen):
 
-            for i in range(len(data_dicts[j]['Epoch_esa'][0])):
-                targetIndex = np.abs(data_dicts_traj[j]['Epoch'][0] - data_dicts[j]['Epoch_esa'][0][i]).argmin()
-                AltDS[j].append(data_dicts_traj[j]['Alt'][0][targetIndex])
-                LatDS[j].append(data_dicts_traj[j]['Lat'][0][targetIndex])
-                LongDS[j].append(data_dicts_traj[j]['Long'][0][targetIndex])
-                EpochDS[j].append(data_dicts_traj[j]['Epoch'][0][targetIndex])
+        # --- prepare the output ---
+        data_dict_output = {
+            'Epoch':deepcopy(data_dict_attitude['Epoch']),
+            'Alt': deepcopy(data_dict_attitude['Alt']),
+            'Lat': deepcopy(data_dict_attitude['Lat']),
+            'Long': deepcopy(data_dict_attitude['Long']),
 
-            AltDS[j] = np.array(AltDS[j])
-            LatDS[j] = np.array(LatDS[j])
-            LongDS[j] = np.array(LongDS[j])
-            EpochDS[j] = np.array(EpochDS[j])
+            'ILong': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'invariant ionospheric longitude','UNITS':'Degrees'}],
+            'ILat': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'invariant ionospheric latitude','UNITS':'Degrees'}],
 
-        Done(start_time)
+            'mAlt': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'magnetic altitude','UNITS':'Ree'}],
+            'mLat': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'magnetic latitude','UNITS':'Degrees'}],
+            'mLong': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'magnetic longitude','UNITS':'Degrees'}],
+
+            'Lat_km': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'latitude','UNITS':'km'}],
+            'Long_km': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'longitude','UNITS':'km'}],
+
+            'mILat': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'magnetic invariant ionospheric latitude','UNITS':'Degrees'}],
+            'mILong': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'magnetic invariant ionospheric longitude','UNITS':'Degrees'}],
+
+            'ILat_km': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'magnetic invariant ionospheric latitude','UNITS':'km'}],
+            'ILong_km': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'magnetic invariant ionospheric longitude','UNITS':'km'}],
+
+            'distance_from_launch_site': [[], {'DEPEND_0':'Epoch','LABLAIXS': 'Distance from launc site','UNITS':'km'}]
+        }
+        Epoch = deepcopy(data_dict_attitude['Epoch'][0])
 
         ################################
         # --- Calculate IGRF B-Field ---
         ################################
-        prgMsg('Getting IGRF Field')
+
+        stl.prgMsg('Getting CHAOS Field')
         # -- Output order forpyIGRF.igrf_value ---
         # [0] Declination (+ E | - W)
         # [1] Inclination (+ D | - U), should be ~78deg for what we're doing
@@ -140,185 +79,104 @@ def attitude_to_invariant_coordinates(wInstr, rocketFolderPath):
         # [4] East Comp (+ E | - W)
         # [5] Vertical Comp (+ D | - U)
         # [6] Total Field
+        pos = np.array([data_dict_attitude['Lat'][0], data_dict_attitude['Long'][0], data_dict_attitude['Alt'][0]/stl.m_to_km]).T
+        Bgeo = stl.CHAOS(pos[:,0],pos[:,1], pos[:,2], Epoch)
 
-        IGRF = [[],[]]
-        date = 2022 + 323 / 365  # Corresponds to 11/20/2022
-        for i in range(rangelen):
-            for j in range(len(data_dicts[i]['Epoch_esa'][0])):
-                IGRF[i].append(pyIGRF.igrf_value(LatDS[i][j], LongDS[i][j], AltDS[i][j], date))
-
-        Done(start_time)
+        stl.Done(start_time)
 
         #################################
         # --- I-LAT I-LONG PROJECTION ---
         #################################
 
-        prgMsg('Projecting B-EFI')
-
-        lat_to_meter = 111.319488 # 1 deg latitude to kilometers on Earth
-        def long_to_meter(lat):
-            return 111.319488 * math.cos(lat*math.pi/180)
-
-        intersectionPoints = [[],[]]
-        BFieldDirNorm = [[],[]]
-        BFieldLoc = [[],[]]
+        stl.prgMsg('Projecting B-Field')
+        intersection_pos = [] # [[long,lat,alt],...]
+        bhat = []
 
         # Perform Triangulation Projection
-        for j in range(rangelen):
 
-            for i in range(len(data_dicts[j]['Epoch_esa'][0])):
-                #Coordiantes reported in (Long (x) , Lat (y), Alt (z))
-                vLoc = np.array([LongDS[j][i], LatDS[j][i],AltDS[j][i]]) # IGRF vector Location, should be rocket coordinates
-                vDir = np.array([IGRF[j][i][4], IGRF[j][i][3],-1*IGRF[j][i][5]]) # IGRF vector Direction. -1 added in third elemental due to down being positive in IGRF given
-                vDirNorm = vDir / np.linalg.norm(vDir) # Normalize IGRF to get its direction only. This will make t larger, but that's fine
-                BFieldDirNorm[j].append(vDirNorm)
-                BFieldLoc[j].append(vLoc)
+        for i in range(len(Epoch)):
+            #Coordiantes reported in (Lat (x) , Long (y), Alt (z))
+            loc = pos[i] # IGRF vector Location, should be rocket coordinates
+            bDir = Bgeo[i] # IGRF vector Direction. -1 added in third elemental due to down being positive in IGRF given
+            bDirNorm = bDir / np.linalg.norm(bDir) # Normalize IGRF to get its direction only. This will make t larger, but that's fine
+            bhat.append(bDirNorm)
 
-                # Determine the Delta-Latitude and Longitutde
-                Theta_dec = IGRF[j][i][0]
-                Theta_in = IGRF[j][i][1]
-                h = vLoc[2] - targetProjectionAltitude
-                deltaLat = (1/lat_to_meter) * h*math.tan((math.pi/180) *(90 - Theta_in))
-                deltaLong = (1/long_to_meter(LatDS[j][i])) * h*math.tan((math.pi/180) * (Theta_dec))
-                intersectionPoints[j].append([vLoc[0]+deltaLong, vLoc[1] + deltaLat, 0])
+            # Determine the Delta-Latitude and Longitutde
+            # Theta_dip = np.arctan(bDirNorm[1]/np.abs(bDirNorm[2])) # latitude declination
+            # Theta_inc = np.arctan(bDirNorm[0]/np.abs(bDirNorm[2])) # longitude declination
+            h = loc[2] - targetProjectionAltitude
 
-        Done(start_time)
+            deltaLat = (1/lat_to_meter) * h*np.tan(np.radians(90-Theta_dip))
+            deltaLong = (1/long_to_meter(loc[0])) * h*np.tan(np.radians(Theta_inc))
+
+            intersection_pos.append([loc[0] + deltaLong, loc[1] + deltaLat, 0])
+
+        intersection_pos = np.array(intersection_pos)
+        data_dict_output['ILat'][0] = np.array(intersection_pos[:,0])
+        data_dict_output['ILong'][0] = np.array(intersection_pos[:,1])
+        stl.Done(start_time)
 
         ############################################
         # --- CONVERT TO GEOMAGNETIC COORDINATES ---
         ############################################
-        prgMsg('Converting Coordinates')
+        stl.prgMsg('Converting to Geomagnetic Coordinates')
 
-        # Trajectory Data
-        geomagAlt = []
-        geomagLat = []
-        geomagLong = []
+        ISOtime = [tVal.isoformat() for tVal in Epoch]
 
+        # Convert the rocket position to geomagnetic coordinates
+        cvals_GDZ = coord.Coords(pos, 'GDZ', 'sph')
+        cvals_GDZ.ticks = Ticktock(ISOtime, 'ISO')
+        cvals_GDZ_MAG = cvals_GDZ.convert('MAG', 'sph')
+        data_dict_output['mAlt'][0] = cvals_GDZ_MAG.radi
+        data_dict_output['mLat'][0] = cvals_GDZ_MAG.lati
+        data_dict_output['mLong'][0] = cvals_GDZ_MAG.long
 
-        for i in range(rangelen):
-            geodeticPos = np.array([AltDS[i],LatDS[i],LongDS[i]]).transpose()
-            ISOtime = [pycdf.lib.tt2000_to_datetime(EpochDS[i][j]).isoformat() for j in range(len(EpochDS[i]))]
-            cvals_GDZ = coord.Coords(geodeticPos, 'GDZ', 'sph')
-            cvals_GDZ.ticks = Ticktock(ISOtime, 'ISO')
-            cvals_GDZ_MAG = cvals_GDZ.convert('MAG', 'sph')
-            geomagAlt.append(cvals_GDZ_MAG.radi)
-            geomagLat.append(cvals_GDZ_MAG.lati)
-            geomagLong.append(cvals_GDZ_MAG.long)
+        # Convert the invariant coordinates to geomagnetic coordinates
+        pos_invar = np.array([intersection_pos[:, 1], intersection_pos[:, 0], intersection_pos[:, 2]]).T # in Lat, Long, Alt format
+        cvals_GDZ = coord.Coords(pos_invar, 'GDZ', 'sph')
+        cvals_GDZ.ticks = Ticktock(ISOtime, 'ISO')
+        cvals_GDZ_MAG_intersects = cvals_GDZ.convert('MAG', 'sph')
+        data_dict_output['mILat'][0] = cvals_GDZ_MAG_intersects.lati
+        data_dict_output['mILong'][0] = cvals_GDZ_MAG_intersects.long
 
-        # Intersections
-        geodeticLongIntersects = [[],[]]
-        geodeticLatIntersects = [[],[]]
-        geodeticAltIntersects = [[],[]]
-        geoMagFootPrint_lat = [[],[]]
-        geoMagFootPrint_long = [[],[]]
+        stl.Done(start_time)
 
-        for j in range(rangelen):
-            geodeticLongIntersects[j] = np.array([intersectionPoints[j][i][0] for i in range(len(intersectionPoints[j]))]) # Long
-            geodeticLatIntersects[j] = np.array([intersectionPoints[j][i][1] for i in range(len(intersectionPoints[j]))])  # Lat
-            geodeticAltIntersects[j] = np.array([intersectionPoints[j][i][2] for i in range(len(intersectionPoints[j]))])  # Alt
-            geodetic = np.array([geodeticAltIntersects[j], geodeticLatIntersects[j], geodeticLongIntersects[j]]).transpose()
+        # #######################
+        # # --- CONVERT TO KM ---
+        # #######################
+        #
+        # # Determine the distance in km from some lat/long reference point
+        # if useAndoya:
+        #     refLat = rocketAttrs.Andoya_Space_Lat_Long[0]
+        #     refLong = rocketAttrs.Andoya_Space_Lat_Long[1]
+        # else:
+        #     refLat = 0
+        #     refLong = 0
+        #
+        # geodeticLatIntersects_km = [[], []]
+        # geodeticLongIntersects_km = [[], []]
+        # LatDS_km = [[], []]
+        # LongDS_km = [[], []]
+        #
+        #
+        # for i in range(rangelen):
+        #     # Convert lat/long data to KM
+        #     for j in range(len(geodeticLatIntersects[i])):
+        #         geodeticLatIntersects_km[i].append(lat_to_meter * (geodeticLatIntersects[i][j] - refLat))
+        #         geodeticLongIntersects_km[i].append(long_to_meter(refLat) * (geodeticLongIntersects[i][j] - refLong))
+        #         LatDS_km[i].append(lat_to_meter * (LatDS[i][j] - refLat))
+        #         LongDS_km[i].append(long_to_meter(refLat) * LongDS[i][j] - long_to_meter(refLat) * refLong)
+        #
+        # # Determine the magntitude distance from the launch point
+        # distanceFromLaunchPoint = [
+        #     [np.sqrt((LatDS_km[0][i])**2 + (LongDS_km[0][i])**2) for i in range(len(LatDS_km[0]))],
+        #     [np.sqrt((LatDS_km[1][i]) ** 2 + (LongDS_km[1][i]) ** 2) for i in range(len(LatDS_km[1]))]
+        # ]
 
-            ISOtime = [ pycdf.lib.tt2000_to_datetime(EpochDS[j][i]).isoformat() for i in range(len(EpochDS[j]))]
-            cvals_GDZ = coord.Coords(geodetic, 'GDZ', 'sph')
-            cvals_GDZ.ticks = Ticktock(ISOtime, 'ISO')
-            cvals_GDZ_MAG_intersects = cvals_GDZ.convert('MAG', 'sph')
-
-            geoMagFootPrint_lat[j] = cvals_GDZ_MAG_intersects.lati
-            geoMagFootPrint_long[j] = cvals_GDZ_MAG_intersects.long
-
-        Done(start_time)
-
-        #######################
-        # --- CONVERT TO KM ---
-        #######################
-
-        # Determine the distance in km from some lat/long reference point
-        if useAndoya:
-            refLat = rocketAttrs.Andoya_Space_Lat_Long[0]
-            refLong = rocketAttrs.Andoya_Space_Lat_Long[1]
-        else:
-            refLat = 0
-            refLong = 0
-
-        geodeticLatIntersects_km = [[], []]
-        geodeticLongIntersects_km = [[], []]
-        LatDS_km = [[], []]
-        LongDS_km = [[], []]
-
-
-        for i in range(rangelen):
-            # Convert lat/long data to KM
-            for j in range(len(geodeticLatIntersects[i])):
-                geodeticLatIntersects_km[i].append(lat_to_meter * (geodeticLatIntersects[i][j] - refLat))
-                geodeticLongIntersects_km[i].append(long_to_meter(refLat) * (geodeticLongIntersects[i][j] - refLong))
-                LatDS_km[i].append(lat_to_meter * (LatDS[i][j] - refLat))
-                LongDS_km[i].append(long_to_meter(refLat) * LongDS[i][j] - long_to_meter(refLat) * refLong)
-
-        # Determine the magntitude distance from the launch point
-        distanceFromLaunchPoint = [
-            [np.sqrt((LatDS_km[0][i])**2 + (LongDS_km[0][i])**2) for i in range(len(LatDS_km[0]))],
-            [np.sqrt((LatDS_km[1][i]) ** 2 + (LongDS_km[1][i]) ** 2) for i in range(len(LatDS_km[1]))]
-        ]
-
-
-        ###############################
-        # --- CONSTRUCT OUTPUT DATA ---
-        ###############################
-
-        # Remove the particular instrument data. This is to avoid using this ESA data which may be obsolete later...although it may not matter the more I think about it
-
-        for i in range(rangelen):
-
-            popThese = []
-            for key, val in data_dicts[i].items():
-                if key not in [wInstr,'Pitch_Angle','Energy','Epoch_esa']:
-                    popThese.append(key)
-
-            for key in popThese:
-                data_dicts[i].pop(key)
-
-
-            dataNEW = {
-                'geoAlt':[np.array(AltDS[i]),'geodetic_Altitude'],
-                'geoLat':[np.array(LatDS[i]),'geodetic_Latitude'],
-                'geomagAlt':[np.array(geomagAlt[i]),'geomagnetic_Altitude'],
-                'geomagLat':[np.array(geomagLat[i]),'geomagnetic_Latitude'],
-                'geomagLong':[np.array(geomagLong[i]),'geomagnetic_Longitude'],
-                'geoLong':[np.array(LongDS[i]),'geodetic_Longitude'],
-                'geoLat_km': [np.array(LatDS_km[i]), 'geodetic_Latitude_km'],
-                'geoLong_km': [np.array(LongDS_km[i]), 'geodetic_Longitude_km'],
-                'geomagILat': [np.array(geoMagFootPrint_lat[i]),'mapped_Ionospheric_geomagetic_latitude'],
-                'geomagILong': [np.array(geoMagFootPrint_long[i]),'mapped_Ionospheric_geomagnetic_longitude'],
-                'geoILong': [np.array(geodeticLongIntersects[i]),'mapped_Ionospheric_geodetic_longitude'],
-                'geoILat': [np.array(geodeticLatIntersects[i]),'mapped_Ionospheric_geodetic_latitude'],
-                'geoILat_km': [np.array(geodeticLatIntersects_km[i]),'mapped_Ionospheric_geodetic_latitude_km'],
-                'geoILong_km': [np.array(geodeticLatIntersects_km[i]),'mapped_Ionospheric_geodetic_longitude_km'],
-                'distanceFromLaunchPoint_km': [np.array(distanceFromLaunchPoint[i]), 'distance_From_Launch_Point_km']
-            }
-
-            # Add the new data to the data_dict
-            for key, val in dataNEW.items():
-                if '_km' in key or 'Alt' in key:
-                    if 'geomagAlt' in key:
-                        unitLabel = 'Re'
-                    else:
-                        unitLabel = 'km'
-                else:
-                    unitLabel = 'deg'
-
-                data_dicts[i] = {**data_dicts[i], **{key: [val[0], {'LABLAXIS': val[1],
-                                                                 'DEPEND_0': 'Epoch_esa', 'DEPEND_1': None,
-                                                                 'DEPEND_2': None,
-                                                                 'FILLVAL': -1e30, 'FORMAT': 'E12.2',
-                                                                 'UNITS': unitLabel,
-                                                                 'VALIDMIN': val[0].min(), 'VALIDMAX': val[0].max(),
-                                                                 'VAR_TYPE': 'data', 'SCALETYP': 'linear'}]}}
-
-
-        if outputDataFile:
-            prgMsg('Writing out Data')
-
-            Done(start_time)
+        if outputData:
+            file_name = f'ACESII_{ACESII.fliers_dict[rocket_str]}_invariant_coordinates.cdf'
+            outputPath = f'{DataPaths.ACES_data_folder}/coordinates/invariant_coordinates/{rocket_str}/' + file_name
+            stl.outputDataDict(outputPath, data_dict_output)
 
 
 

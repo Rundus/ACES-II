@@ -194,8 +194,8 @@ def Trajectory_to_ESA_ILatILong(wInstr, rocketFolderPath):
                 BFieldLoc[j].append(vLoc)
 
                 # Determine the Delta-Latitude and Longitutde
-                Theta_dec = IGRF[j][i][0]
-                Theta_in = IGRF[j][i][1]
+                Theta_dec = IGRF[j][i][0] # IGRF declination (+ve east)
+                Theta_in = IGRF[j][i][1] # IGRF inclintation (+ve down)
                 h = vLoc[2] - targetProjectionAltitude
                 deltaLat = (1/lat_to_meter) * h*math.tan((math.pi/180) *(90 - Theta_in))
                 deltaLong = (1/long_to_meter(LatDS[j][i])) * h*math.tan((math.pi/180) * (Theta_dec))
