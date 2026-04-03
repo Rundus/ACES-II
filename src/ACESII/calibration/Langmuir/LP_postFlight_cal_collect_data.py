@@ -28,10 +28,11 @@ justPrintFileNames = False  # Just print the names of files
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
 wRocket = 5
-showEISCAT_profiles = False
+showEISCAT_profiles = True
 altitude_cutoff_upleg = [100, 166]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
 altitude_cutoff_downleg = [200, 183]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
 titles = ['upleg', 'middle', 'downleg']
+
 
 # --- OutputData ---
 outputData = True
@@ -39,9 +40,12 @@ outputData = True
 # --- --- --- ---
 # --- IMPORTS ---
 # --- --- --- ---
+from copy import deepcopy
 from glob import glob
 from scipy.signal import savgol_filter
 import spaceToolsLib as stl
+import numpy as np
+from src.ACESII.mission_attributes import ACESII
 import datetime as dt
 
 
@@ -193,7 +197,6 @@ def LP_collect_postFlight_cal_data(wRocket):
 
         ne_profiles_val.append(ne_profile_smoothed)
         ne_profiles_alt.append(ne_profile_alts)
-
 
         if showEISCAT_profiles:
             import matplotlib.pyplot as plt

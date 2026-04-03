@@ -2,19 +2,18 @@
 # --- Author: C. Feltman ---
 # DESCRIPTION: loads the ACESII attitude data and calculates the invariant coordinates
 # for a specific chosen invariant altitude
-
-
+import pyIGRF
 
 #################
 # --- TOGGLES ---
 #################
 just_print_file_names_bool = False
-rocket_str = 'high'
+rocket_str = 'low'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
     f'attitude':['/', [[0],[0]]],
 }
 outputData = True
-targetProjectionAltitude = 150 # altitude you want to project B (in km). Should be ~100km
+targetProjectionAltitude = 0 # altitude you want to project B (in km). Should be ~100km
 useAndoya = True
 
 #################
@@ -24,6 +23,7 @@ from src.ACESII.data_tools.my_imports import *
 import time
 start_time = time.time()
 from spacepy import pycdf
+import aacgmv2
 from spacepy import coordinates as coord
 coord.DEFAULTS.set_values(use_irbem=False, itol=5)  # maximum separation, in seconds, for which the coordinate transformations will not be recalculated. To force all transformations to use an exact transform for the time, set ``itol`` to zero.
 from spacepy.time import Ticktock #used to determine the time I'm choosing the reference geomagentic field
@@ -37,7 +37,6 @@ def attitude_to_invariant_coordinates(data_dicts):
 
         # --- Load the Data ---
         data_dict_attitude = deepcopy(data_dicts[0])
-
 
         # --- prepare the output ---
         data_dict_output = {
@@ -81,7 +80,8 @@ def attitude_to_invariant_coordinates(data_dicts):
         # [6] Total Field
         pos = np.array([data_dict_attitude['Lat'][0], data_dict_attitude['Long'][0], data_dict_attitude['Alt'][0]/stl.m_to_km]).T
         Bgeo = stl.CHAOS(pos[:,0],pos[:,1], pos[:,2], Epoch)
-
+        date = 2022+323/365
+        IGRF_vals = [pyIGRF.igrf_value(pos[i][0],pos[i][1],pos[i][1],date) for i in range(len(Epoch))]
         stl.Done(start_time)
 
         #################################
@@ -104,12 +104,19 @@ def attitude_to_invariant_coordinates(data_dicts):
             # Determine the Delta-Latitude and Longitutde
             # Theta_dip = np.arctan(bDirNorm[1]/np.abs(bDirNorm[2])) # latitude declination
             # Theta_inc = np.arctan(bDirNorm[0]/np.abs(bDirNorm[2])) # longitude declination
+            Theta_declination = IGRF_vals[i][0] # IGRF declination (+ve east)
+            Theta_inclination = IGRF_vals[i][1] # IGRF inclination (+ve down)
+
             h = loc[2] - targetProjectionAltitude
 
-            deltaLat = (1/lat_to_meter) * h*np.tan(np.radians(90-Theta_dip))
-            deltaLong = (1/long_to_meter(loc[0])) * h*np.tan(np.radians(Theta_inc))
+            deltaLat = (1/lat_to_meter) * h*np.tan(np.radians(90-Theta_inclination))
+            deltaLong = (1/long_to_meter(loc[0])) * h*np.tan(np.radians(Theta_declination))
 
-            intersection_pos.append([loc[0] + deltaLong, loc[1] + deltaLat, 0])
+            intersection_pos.append([loc[0] + deltaLat, loc[1] + deltaLong, 0])
+
+            # try AACGMv2
+            # mlat, mlon, malt = aacgmv2.get_aacgm_coord(loc[0], loc[1], loc[1], Epoch[i])
+            # intersection_pos.append([mlat,mlon,malt])
 
         intersection_pos = np.array(intersection_pos)
         data_dict_output['ILat'][0] = np.array(intersection_pos[:,0])

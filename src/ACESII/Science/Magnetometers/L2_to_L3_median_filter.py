@@ -16,7 +16,7 @@ start_time = time.time()
 justPrintFileNames = False # Just print the names of files
 
 # --- Filter Toggles ---
-fs = 128 # sample frequency of the data
+fs = 256 # sample frequency of the data
 low_cutoff = 1/40 # 20 seconds (or 1/20 freq) butterworth cutoff
 order = 4
 filter_window = 30*fs+1 # corresponds to 30 seconds

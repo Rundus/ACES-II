@@ -25,7 +25,7 @@ justPrintFileNames = False  # Just print the names of files
 wRocket = 5
 
 # --- OutputData ---
-outputData = True
+outputData = False
 
 # --- --- --- ---
 # --- IMPORTS ---
@@ -34,6 +34,11 @@ from glob import glob
 import spaceToolsLib as stl
 from scipy.optimize import curve_fit
 import scipy
+from src.ACESII.data_tools.data_paths import DataPaths
+from src.ACESII.mission_attributes import ACESII
+import datetime as dt
+import numpy as np
+from copy import deepcopy
 
 
 
