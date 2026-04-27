@@ -243,10 +243,10 @@ class ACESII:
 
     # applies to both flyers
     ERPA_dict = {
-                 'ERPA_SN9': {'Look_direction':'forward', 'payload':'high flyer'},
-                 'ERPA_SN11': {'Look_direction':'aft', 'payload':'high flyer'},
-                'ERPA_SN10': {'Look_direction': 'forward', 'payload': 'low flyer'},
-                'ERPA_SN7': {'Look_direction': 'aft', 'payload': 'low flyer'}
+                 'ERPA_SN9': {'Look_direction':'forward', 'payload':'high flyer','Designator':'ERPA1'},
+                 'ERPA_SN11': {'Look_direction':'aft', 'payload':'high flyer','Designator':'ERPA2'},
+                'ERPA_SN10': {'Look_direction': 'forward', 'payload': 'low flyer','Designator':'ERPA1'},
+                'ERPA_SN7': {'Look_direction': 'aft', 'payload': 'low flyer','Designator':'ERPA2'}
                  }
 
     # RingCore

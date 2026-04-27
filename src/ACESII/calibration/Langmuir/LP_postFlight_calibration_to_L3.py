@@ -22,7 +22,7 @@ justPrintFileNames = False  # Just print the names of files
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 5
+wRocket = 4
 
 # --- OutputData ---
 outputData = False
@@ -55,13 +55,13 @@ def LP_postFlight_calibration(wRocket):
     data_dict_calData = stl.loadDictFromFile(data_path)
 
     # load the rocket ion saturation current data
-    data_path = glob(rf'{DataPaths.ACES_data_folder}/L3/Langmuir/{ACESII.fliers[wRocket-4]}/*l3_langmuir_fixed.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/L3/LP/{ACESII.fliers[wRocket-4]}/*l3_langmuir_fixed.cdf*')[0]
     data_dict_LP_current = stl.loadDictFromFile(data_path)
 
     # load the DERPA
-    data_path = glob(rf'{DataPaths.ACES_data_folder}/L2/{ACESII.fliers[wRocket - 4]}/*_ERPA1.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/L2/ERPA/{ACESII.fliers[wRocket - 4]}/*_ERPA1.cdf*')[0]
     data_dict_DERPA1 = stl.loadDictFromFile(data_path)
-    data_path = glob(rf'{DataPaths.ACES_data_folder}/L2/{ACESII.fliers[wRocket - 4]}/*_ERPA2.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/L2/ERPA/{ACESII.fliers[wRocket - 4]}/*_ERPA2.cdf*')[0]
     data_dict_DERPA2 = stl.loadDictFromFile(data_path)
     stl.Done(start_time)
 
