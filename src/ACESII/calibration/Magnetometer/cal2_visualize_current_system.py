@@ -1,4 +1,4 @@
-# --- cal1_determine_ACS_timeOFfsets.py ---
+# --- cal2_visualize_current_system.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: adjust the timebase of the ACS DCM to see if a cleaner MAG despin can be derived
 
@@ -18,7 +18,7 @@ import numpy as np
 # --- DATA TOGGLES ---
 ######################
 just_print_file_names_bool = False
-rocket_str = 'high'
+rocket_str = 'low'
 wInstr = 'MAG'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
     f'{wInstr}':['calibration', [[0],[0]]],
@@ -34,7 +34,6 @@ fs = 256 # sample frequency of the data
 low_cutoff = 0.05 # 20 seconds (or 1/20 freq) butterworth cutoff
 order = 4
 filter_window = 30*fs+1 # corresponds to 30 seconds
-
 plot_filtered_dB = True
 
 
@@ -48,7 +47,7 @@ from scipy.signal import savgol_filter
 from scipy.interpolate import CubicSpline
 import datetime as dt
 
-def cal2_remove_coning_effects(data_dicts):
+def cal2_visualize_current_system(data_dicts):
 
     #######################
     # --- LOAD THE DATA ---
@@ -118,21 +117,21 @@ def cal2_remove_coning_effects(data_dicts):
                 for k in range(2):
                     eData = data_dict_Jpara_EEPAA['j_para'][0]/(1E-6)
                     iData =data_dict_Jpara_IEPAA['j_para'][0]/(1E-6)
-                    print(np.where(np.isnan(iData)))
 
                     iDta_filtered = stl.butterFilter().butter_filter(data=iData,
-                                                                   lowcutoff=0.5,
-                                                                   highcutoff=0.5,
+                                                                   lowcutoff=0.15,
+                                                                   highcutoff=0.15,
                                                                    order=order,
-                                                                   fs=fs,
+                                                                   fs=20,
                                                                    filtertype='lowPass'
                                                                    )
 
                     ax[i,k].plot(data_dict_Jpara_EEPAA['Epoch'][0],eData,color='tab:blue',label=r'$J_{\parallel}^{e-}$')
-                    ax[i, k].plot(data_dict_Jpara_IEPAA['Epoch'][0], iDta_filtered, color='tab:red',label=r'$J_{\parallel}^{i+}$')
+                    ax[i, k].plot(data_dict_Jpara_IEPAA['Epoch'][0], -1*iDta_filtered, color='tab:red',label=r'$J_{\parallel}^{i+}$')
                     ax[i,k].set_ylim(-10,10)
                     ax[i,k].set_ylabel(r'Current [$\mu$A]')
                     ax[i, k].set_xlim(*xLimits)
+                    ax[i,k].legend(loc='upper right')
             else:
                 adjust = 2
                 filtData = Bdata[:,i-adjust]
@@ -223,7 +222,7 @@ def cal2_remove_coning_effects(data_dicts):
 #################
 # --- EXECUTE ---
 #################
-DataClasses().ACEII_file_executor(cal2_remove_coning_effects,
+DataClasses().ACEII_file_executor(cal2_visualize_current_system,
                                   dict_file_path,
                                   rocket_str,
                                   just_print_file_names_bool)

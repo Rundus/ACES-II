@@ -21,7 +21,7 @@ start_time = time.time()
 justPrintFileNames = False
 wRocket = 4
 inputPath_modifier = 'trajectories' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
-outputPath_modifier = 'coordinates\\transforms' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+outputPath_modifier = 'coordinates//transforms' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 
 # ---------------------------
 outputData = True
@@ -54,7 +54,7 @@ def ENU_coordinates_transformation_matrix(wflyer, file_idx, justPrintFileNames):
     # --- get the data from the file ---
     stl.prgMsg(f'Loading data from {inputPath_modifier} Files')
     data_dict_traj, globalAttrsMod = stl.loadDictFromFile(inputFiles[file_idx], getGlobalAttrs=True)
-    data_dict_attitude = stl.loadDictFromFile(rf'C:\Data\ACESII\attitude\{ACESII.fliers[wflyer]}\ACESII_{rocketID}_Attitude_Solution_fullCal.cdf')
+    data_dict_attitude = stl.loadDictFromFile(rf'C:/Data/ACESII/attitude/{ACESII.fliers[wflyer]}/ACESII_{rocketID}_Attitude_Solution_fullCal.cdf')
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -97,7 +97,8 @@ def ENU_coordinates_transformation_matrix(wflyer, file_idx, justPrintFileNames):
     #####################
 
     # --- form the rotation matrix ---
-    ECEFtoENU_transform = np.array([stl.ENUtoECEF(Lat=data_dict_output['Lat'][0][i], Long=data_dict_output['Long'][0][i]).T for i in range(len(data_dict_output['Epoch'][0]))])
+    ECEFtoENU_transform = np.array([stl.ENUtoECEF(Lat=data_dict_output['Lat'][0][i],
+                                                  Long=data_dict_output['Long'][0][i]).T for i in range(len(data_dict_output['Epoch'][0]))])
 
     # store the outputs
     data_dict_output['a11'][0] = ECEFtoENU_transform[:, 0, 0]
@@ -135,12 +136,9 @@ def ENU_coordinates_transformation_matrix(wflyer, file_idx, justPrintFileNames):
 
 
         fileoutName = f'ACESII_{rocketID}_ECEF_to_ENU.cdf'
-        outputPath = f'{rocketFolderPath}{outputPath_modifier}\{ACESII.fliers[wflyer]}\\{fileoutName}'
+        outputPath = f'{rocketFolderPath}{outputPath_modifier}/{ACESII.fliers[wflyer]}//{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output, globalAttrsMod=globalAttrsMod)
         stl.Done(start_time)
-
-
-
 
 
 
@@ -150,7 +148,7 @@ def ENU_coordinates_transformation_matrix(wflyer, file_idx, justPrintFileNames):
 
 rocketFolderPath = DataPaths.ACES_data_folder
 
-if len(glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')) == 0:
+if len(glob(f'{rocketFolderPath}{inputPath_modifier}/{ACESII.fliers[wRocket-4]}/*.cdf')) == 0:
     print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
     ENU_coordinates_transformation_matrix(wRocket-4, 0, justPrintFileNames)

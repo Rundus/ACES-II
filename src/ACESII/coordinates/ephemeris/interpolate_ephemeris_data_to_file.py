@@ -10,7 +10,7 @@ start_time = time.time()
 
 # --- OutputData ---
 outputData = True
-override_checker = True # forces a re-interpolation of the datafiles
+override_checker = False # forces a re-interpolation of the datafiles
 
 # --- --- --- ---
 # --- IMPORTS ---

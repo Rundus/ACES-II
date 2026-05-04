@@ -34,8 +34,8 @@ def L2_to_L2_RingCore_ENU_to_FAC_coordinates(wRocket):
 
     # --- get the data from the B-Field file ---
     stl.prgMsg(f'Loading data')
-    data_dict_mag = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket - 4]}\\*RingCore_ENU_fullCal.cdf*')[0])
-    data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}\\coordinates\\transforms\\{ACESII.fliers[wRocket - 4]}\\*ECEF_to_ENU.cdf*')[0])
+    data_dict_mag = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}//L2//MAG//{ACESII.fliers[wRocket - 4]}//*RingCore_ENU_fullCal.cdf*')[0])
+    data_dict_transform_ENU = stl.loadDictFromFile(glob(f'{DataPaths.ACES_data_folder}//coordinates//transforms//{ACESII.fliers[wRocket - 4]}//*ECEF_to_ENU.cdf*')[0])
     data_dict_transform = deepcopy(data_dict_transform_ENU)
     stl.Done(start_time)
 
@@ -116,8 +116,8 @@ def L2_to_L2_RingCore_ENU_to_FAC_coordinates(wRocket):
     if outputData:
         stl.prgMsg('Creating output file')
         fileoutName = rf'ACESII_{ACESII.payload_IDs[wRocket-4]}_l2_RingCore_ECEF.cdf'
-        outputPath = f'{DataPaths.ACES_data_folder}\\L2\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
-        stl.outputCDFdata(outputPath, data_dict_output, instrNam='RingCore')
+        outputPath = f'{DataPaths.ACES_data_folder}//L2//MAG//{ACESII.fliers[wRocket-4]}//{fileoutName}'
+        stl.outputDataDict(outputPath, data_dict_output, instrNam='RingCore')
         stl.Done(start_time)
 
 
