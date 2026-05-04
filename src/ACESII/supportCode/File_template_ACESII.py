@@ -1,16 +1,12 @@
-# --- L2_to_L3_energy_flux.py ---
+# --- File_Template_ACESII.py ---
 # --- Author: C. Feltman ---
-# DESCRIPTION: using the specs of the ACESII ESAs, convert from differential Energy Flux
-# to just energy flux as described in EEPAA_Flux_Conversion.pdf document in Overleaf
+# DESCRIPTION:
 
 # --- bookkeeping ---
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
 __date__ = "2026-03-30"
 __version__ = "1.0.0"
-
-import numpy as np
-
 # --- --- --- --- ---
 
 
@@ -27,9 +23,6 @@ dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path,
 outputData = True
 
 
-# Robinson Formulae
-char_energy_cutoff = 1000 # in [eV]. Should be the point where "the secondary electrons begin to dominate over the primary electrons. Robinson uses 500eV, but for our case that is clearly too low
-
 #################
 # --- IMPORTS ---
 #################
@@ -38,7 +31,7 @@ from src.ACESII.data_tools.my_imports import *
 start_time = time.time()
 
 
-def L2_to_L3_energy_flux(data_dicts):
+def file_template(data_dicts):
 
     #######################
     # --- LOAD THE DATA ---
@@ -68,7 +61,7 @@ def L2_to_L3_energy_flux(data_dicts):
 #################
 # --- EXECUTE ---
 #################
-DataClasses().ACEII_file_executor(L2_to_L3_energy_flux,
+DataClasses().ACEII_file_executor(file_template,
                                   dict_file_path,
                                   rocket_str,
                                   just_print_file_names_bool)

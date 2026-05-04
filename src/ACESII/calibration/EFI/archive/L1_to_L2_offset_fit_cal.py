@@ -1,4 +1,4 @@
-# --- L1_to_L2_offset_fit_cal.py ---
+T0_attitude# --- L1_to_L2_offset_fit_cal.py ---
 # Description: For the auroral coordinate vxB calibration values,
 # [1] determine the GAIN value (y=mx) needed to bring the Tangent component of the
 # E-Field into alignment with the vxB term.

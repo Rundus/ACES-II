@@ -17,8 +17,9 @@ __date__ = "2022-08-22"
 __version__ = "1.0.0"
 
 import numpy as np
-
-from ACESII_code.myImports import *
+import datetime as dt
+import spaceToolsLib as stl
+import time
 
 start_time = time.time()
 # --- --- --- --- ---

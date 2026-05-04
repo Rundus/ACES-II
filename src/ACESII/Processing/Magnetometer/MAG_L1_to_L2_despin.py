@@ -1,4 +1,4 @@
-# # --- RingCore_L1_to_L2_despin.py ---
+# # --- MAG_L1_to_L2_despin.py ---
 # # --- Author: C. Feltman ---
 # # DESCRIPTION: Just interpolate the attitude solution data and apply the wallops DCM
 # to the integration_tad_files data, getting it in ENU coordinates. Apply it over the entire journey of the flight
@@ -6,6 +6,7 @@
 
 
 # --- bookkeeping ---
+import time
 # !/usr/bin/env python
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
@@ -13,6 +14,18 @@ __version__ = "1.0.0"
 
 start_time = time.time()
 # --- --- --- --- ---
+
+# --- --- --- ---
+# --- IMPORTS ---
+# --- --- --- ---
+from scipy.interpolate import CubicSpline
+import spaceToolsLib as stl
+import numpy as np
+from glob import glob
+from src.ACESII.mission_attributes import ACESII
+from src.ACESII.data_tools.data_paths import DataPaths
+from copy import deepcopy
+import datetime as dt
 
 # --- --- --- ---
 # --- TOGGLES ---
@@ -32,11 +45,6 @@ find_DC_offset = False
 replaceNANS = True
 outputData = True # plots RKT XYZ and CHAOS model Spun-up XYZ
 
-# --- --- --- ---
-# --- IMPORTS ---
-# --- --- --- ---
-from scipy.interpolate import CubicSpline
-
 
 def RingCore_L1_to_L2_Despin(wRocket, justPrintFileNames):
 
@@ -52,6 +60,7 @@ def RingCore_L1_to_L2_Despin(wRocket, justPrintFileNames):
         return
 
     stl.prgMsg('Despinning RingCore Data')
+
     # --- get the data from the data files ---
     # data_dict_mag = stl.loadDictFromFile(inputFiles[wFiles[0]], targetVar=[DespinToggles.reduceTimes[wRocket - 4], 'Epoch'])
     # data_dict_attitude = stl.loadDictFromFile(inputFiles_attitude[0], targetVar=[DespinToggles.reduceTimes[wRocket - 4], 'Epoch'])
@@ -191,8 +200,6 @@ def RingCore_L1_to_L2_Despin(wRocket, justPrintFileNames):
 
         for key in ['B_E','B_N','B_U','B_model_E','B_model_N','B_model_U']:
             data_dict_output[f'{key}'][1]['LABLAXIS'] = key
-
-
 
         # Write out the File
         fileoutName_despin = f'ACESII_{rocketID}_l2_RingCore_ENU_fullCal'

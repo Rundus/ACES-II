@@ -9,10 +9,6 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
-
-# --- --- --- --- ---
-
-start_time = time.time()
 # --- --- --- --- ---
 
 # --- --- --- ---
@@ -20,7 +16,7 @@ start_time = time.time()
 # --- --- --- ---
 
 # Just print the names of files
-justPrintFileNames = False
+justPrintFileNames = True
 
 # --- Select the Rocket ---
 # 0 -> Integration High Flier
@@ -29,7 +25,7 @@ justPrintFileNames = False
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 5
+wRocket = 4
 
 # select which files to convert
 # [] --> all files
@@ -43,20 +39,22 @@ outputData = True
 # --- --- --- ---
 from scipy.integrate import simpson
 from tqdm import tqdm
+from src.ACESII.data_tools.my_imports import *
+start_time = time.time()
 
 def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames,wFile):
     # Set the paths for the file names
     rocketFolderPath = DataPaths.ACES_data_folder
-    inputFiles = [f for f in glob(f'{rocketFolderPath}\\L3\\DistFunc\\{ACESII.fliers[wRocket - 4]}\*.cdf*') if "eepaa" in f or "iepaa" in f or "leesa" in f]
+    inputFiles = [f for f in glob(f'{rocketFolderPath}//L3//DistFunc//{ACESII.fliers[wRocket - 4]}/*.cdf*') if "eepaa" in f or "iepaa" in f or "leesa" in f]
     names = ['eepaa', 'iepaa', 'leesa']
-    inputFiles_Lshell = glob(f'{rocketFolderPath}\\coordinates\\Lshell\\{ACESII.fliers[wRocket - 4]}\*.cdf*')
+    inputFiles_Lshell = glob(f'{rocketFolderPath}//coordinates//Lshell//{ACESII.fliers[wRocket - 4]}/*.cdf*')
 
     if justPrintFileNames:
         for idx,file in enumerate(inputFiles):
             print(f'[{idx}] ', file)
         return
 
-    print('\n')
+    print('/n')
     print(stl.color.UNDERLINE + f'Calculating J_parallel from {names[wFile]} data' + stl.color.END)
 
     # --- Load the Data ---
@@ -71,7 +69,7 @@ def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames,wFile):
     # --- --- --- --- --- --- --- --- --- --- -
     # --- ELECTRON - CALCULATE ESA CURRENTS ---
     # --- --- --- --- --- --- --- --- --- --- -
-    stl.prgMsg('Calculating Parallel Current\n')
+    stl.prgMsg('Calculating Parallel Current/n')
     distFunc = deepcopy(data_dict_ESA['Distribution_Function'][0])
     instr_nam = names[wFile]
 
@@ -125,6 +123,9 @@ def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames,wFile):
     # TODO: Adjust mass for IEPAA
     J_para = (4*np.pi*charge/np.power(mass,2)) * J_para
 
+    # [6] Remove significant outliers
+    J_para[np.abs(J_para)>1] = 0
+
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
     # --- --- --- --- --- --- ---
@@ -132,7 +133,7 @@ def DistFunc_to_ESAcurrents(wRocket, justPrintFileNames,wFile):
         stl.prgMsg('Creating output file')
 
         fileOutPath = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_Jpara_{names[wFile]}.cdf'
-        outputPath = f'C:\Data\ACESII\science\ESA_currents\\{ACESII.fliers[wRocket-4]}\\{fileOutPath}'
+        outputPath = f'C:/Data/ACESII/science/ESA_currents//{ACESII.fliers[wRocket-4]}//{fileOutPath}'
 
         # output the main data
         data_dict_output = {**data_dict_output, **{'j_para':
@@ -166,7 +167,7 @@ if justPrintFileNames:
     DistFunc_to_ESAcurrents(wRocket, justPrintFileNames, 0)
 else:
     if wFiles == []:
-        for fileNo in range(len(glob(f'{DataPaths.ACES_data_folder}\\L3\\DistFunc\\{ACESII.fliers[wRocket - 4]}\*.cdf*'))):
+        for fileNo in range(len(glob(f'{DataPaths.ACES_data_folder}//L3//DistFunc//{ACESII.fliers[wRocket - 4]}/*.cdf*'))):
             DistFunc_to_ESAcurrents(wRocket, justPrintFileNames, fileNo)
     else:
         for fileNo in wFiles:

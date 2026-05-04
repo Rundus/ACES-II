@@ -13,38 +13,25 @@ __version__ = "1.0.0"
 import itertools
 # --- --- --- --- ---
 import time
-
-from spaceToolsLib import Done, outputCDFdata
-
+import spaceToolsLib as stl
 start_time = time.time()
 # --- --- --- --- ---
 
 
 
-# --- --- --- ---
-# --- TOGGLES ---
-# --- --- --- ---
 
-# Just print the names of files
-justPrintFileNames = False
-
-
-# --- Select the Rocket ---
-# 0 -> Integration High Flier
-# 1 -> Integration Low Flier
-# 2 -> TRICE II High Flier
-# 3 -> TRICE II Low Flier
-# 4 -> ACES II High Flier
-# 5 -> ACES II Low Flier
-wRocket = 5
-
-# select which files to convert
-# [] --> all files
-# [#0,#1,#2,...etc] --> only specific files. Follows python indexing. use justPrintFileNames = True to see which files you need.
-# wFiles = [[0, 1, 2], [0, 1]]
-wFiles = [[0, 1, 2], [0, 1]]
-inputPath_modifier = 'L2' # e.g. 'L1' or 'L1'. It's the name of the broader input folder
-outputPath_modifier = 'L3\DistFunc' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+######################
+# --- DATA TOGGLES ---
+######################
+just_print_file_names_bool = False
+rocket_str = 'high'
+# wInstr = 'EEPAA'
+wInstr = 'IEPAA'
+# wInstr = 'LEESA'
+dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
+    f'{wInstr}':['L2', [[0],[0]]],
+    f'':['science/ion_mass_effective/',[[0],[0]]]
+}
 outputData = True
 
 # --- --- --- ---
@@ -53,41 +40,16 @@ outputData = True
 from src.ACESII.data_tools.my_imports import *
 from scipy.interpolate import CubicSpline
 
-def L2_to_DistFunc(wRocket, wFile, rocketFolderPath, justPrintFileNames):
-
-    outputFolderPath = rocketFolderPath
-
-    # --- ACES II Flight/Integration Data ---
-    # Set the paths for the file names
-    inputFiles = [f for f in glob(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf') if 'eepaa' in f or 'iepaa' in f or 'lees' in f]
-    outputFiles = glob(f'{outputFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\*.cdf')
-
-    input_names = [file.replace(f'{rocketFolderPath}{inputPath_modifier}\{ACESII.fliers[wRocket-4]}\\', '') for file in inputFiles]
-    output_names = [file.replace(f'{outputFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\\', '') for file in outputFiles]
-
-    input_names_searchable = [file.replace('ACES_', '').replace('36359_', '').replace('36364_', '').replace('l2_', '').replace('_v00','').replace('__', '_') for file in input_names]
-    output_names_searchable = [file.replace('ACES_', '').replace('36359_', '').replace('36364_', '').replace('distFunc_', '').replace('_v00', '') for file in output_names]
-
-    # determine which instrument the file corresponds to:
-    for index, instr in enumerate(['eepaa', 'leesa', 'iepaa']):
-        if instr in inputFiles[wFile]:
-            wInstr = [index, instr]
-
-    if justPrintFileNames:
-        for i, file in enumerate(inputFiles):
-            anws = ["yes" if input_names_searchable[i].replace('.cdf', "") in output_names_searchable else "no"]
-            print('[{:.0f}] {:70s}{:5.1f} MB   Made ESACurrents: {:3s} '.format(i, input_names_searchable[i],round(getsize(file) / (10 ** 6), 1), anws[0]))
-        return
-
-    print('\n')
-    print(stl.color.UNDERLINE + f'Calculating Distribution Function for {wInstr[1]}' + stl.color.END)
-    print('[' + str(wFile) + ']   ' + str(round(getsize(inputFiles[wFile]) / (10 ** 6), 1)) + 'MiB')
+def L2_to_DistFunc(data_dicts):
 
     # --- get the data ---
+    stl.prgMsg(f'Loading data')
+    data_dict_esa = deepcopy(data_dicts[0])
+    stl.Done(start_time)
+
     stl.prgMsg('Loading data from L2Files')
-    data_dict_esa = stl.loadDictFromFile(inputFilePath=inputFiles[wFile])
-    data_dict_meff_i = stl.loadDictFromFile(glob(rf'C:\Data\ACESII\science\ion_mass_effective\\{ACESII.fliers[wRocket-4]}\\*.cdf*')[0])
-    Done(start_time)
+    data_dict_meff_i = deepcopy(data_dicts[1])
+    stl.Done(start_time)
 
     # --- prepare the output ---
     data_dict_output = {}
@@ -108,7 +70,7 @@ def L2_to_DistFunc(wRocket, wFile, rocketFolderPath, justPrintFileNames):
     distFunc = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
     # distFunc_oneCount = np.zeros(shape=(sizes[0], sizes[1], sizes[2]))
 
-    print(f'\nNum. of iterations: {sizes[0]*sizes[1]*sizes[2]}\n')
+    print(f'Num. of iterations: {sizes[0]*sizes[1]*sizes[2]}',end='\n')
 
     # --- Calculate DistFunc in SI units ---
     if wInstr[1] in ['eepaa','leesa']:
@@ -132,7 +94,7 @@ def L2_to_DistFunc(wRocket, wFile, rocketFolderPath, justPrintFileNames):
 
         # distFunc_oneCount[tme][ptch][engy] = (stl.cm_to_m*stl.cm_to_m/(stl.q0*stl.q0 ))*(((mass[tme]**2)*oneCountLevel[tme][ptch][engy]) / (2 * Energies[engy]))
 
-    Done(start_time)
+    stl.Done(start_time)
 
 
     # --- --- --- --- --- --- ---
@@ -141,7 +103,7 @@ def L2_to_DistFunc(wRocket, wFile, rocketFolderPath, justPrintFileNames):
     if outputData:
 
         stl.prgMsg('Creating output file')
-        outputPath = f'{outputFolderPath}{outputPath_modifier}\{ACESII.fliers[wRocket-4]}\\ACESII_{ACESII.payload_IDs[wRocket-4]}_distFunc_{wInstr[1]},cdf'
+        outputPath = f'{DataPaths.ACES_data_folder}/L3/{wInstr}/{rocket_str}//ACESII_{ACESII.fliers_dict[rocket_str]}_distFunc_{wInstr}.cdf'
 
         data_dict_output = {**data_dict_output, **{'Distribution_Function':
                                          [distFunc, {'LABLAXIS': 'Distribution_Function',
@@ -166,25 +128,15 @@ def L2_to_DistFunc(wRocket, wFile, rocketFolderPath, justPrintFileNames):
         #                                              'VALIDMIN': distFunc.min(), 'VALIDMAX': distFunc.max(),
         #                                              'VAR_TYPE': 'support_data', 'SCALETYP': 'log'}]}}
 
-        outputCDFdata(outputPath=outputPath, data_dict=data_dict_output)
-        Done(start_time)
+        stl.outputDataDict(outputPath=outputPath, data_dict=data_dict_output)
+        stl.Done(start_time)
+
 
 
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-
-rocketFolderPath = DataPaths.ACES_data_folder
-
-
-if len(glob(f'{rocketFolderPath}L2\{ACESII.fliers[wRocket-4]}\*.cdf')) == 0:
-    print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
-else:
-    if justPrintFileNames:
-        L2_to_DistFunc(wRocket, 0, rocketFolderPath, justPrintFileNames)
-    elif not wFiles[wRocket-4]:
-        for fileNo in (range(len(glob(f'{rocketFolderPath}L2\{ACESII.fliers[wRocket-4]}\*.cdf')))):
-            L2_to_DistFunc(wRocket, fileNo, rocketFolderPath, justPrintFileNames)
-    else:
-        for filesNo in wFiles[wRocket-4]:
-            L2_to_DistFunc(wRocket, filesNo, rocketFolderPath, justPrintFileNames)
+DataClasses().ACEII_file_executor(L2_to_DistFunc,
+                                  dict_file_path,
+                                  rocket_str,
+                                  just_print_file_names_bool)
