@@ -18,7 +18,7 @@ import numpy as np
 # --- DATA TOGGLES ---
 ######################
 just_print_file_names_bool = False
-rocket_str = 'high'
+rocket_str = 'low'
 wInstr = 'MAG'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
     f'{wInstr}':['L1', [[0],[0]]],

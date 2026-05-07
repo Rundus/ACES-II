@@ -15,7 +15,7 @@ import spaceToolsLib
 # --- DATA TOGGLES ---
 ######################
 just_print_file_names_bool = False
-rocket_str = 'high'
+rocket_str = 'low'
 wInstr = 'MAG'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
     f'{wInstr}':['L2', [[0],[0]]],
@@ -27,6 +27,7 @@ outputData = True
 fs = 256 # sample frequency of the data
 low_cutoff = 0.05 # 20 seconds (or 1/20 freq) butterworth cutoff
 order = 4
+filtType = 'lowpass'
 
 #################
 # --- IMPORTS ---
@@ -52,11 +53,12 @@ def L2_MAG_to_Ampere_Current(data_dicts):
     data_dict_output = {
         'J_para':[[],{'DEPEND_0':'Epoch','UNITS':'&mu;A/m!A-2!N','LABLAXIS':'Parallel Current','VAR_TYPE':'data'}],
         'DeltaT':[[], {'DEPEND_0':'Epoch','UNITS':'A/m!A-2!N','LABLAXIS':'Parallel Current'}],
-        'DeltaBN': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; BN'}],
-        'DeltaBT': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; BT'}],
-        'DeltaBp': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; BT'}],
-        'DeltaVN': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; VN'}],
-        'DeltaVT': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; BT'}],
+        'dB_N': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; BN'}],
+        'dB_T': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; BT'}],
+        'dB_p': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; Bp'}],
+        'deltaB_N':[[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&delta; BN (Filtered)'}],
+        'deltaB_T': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&delta; BT'}],
+        'deltaB_p': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&delta; Bp'}],
         'Epoch':deepcopy(data_dict_MAG['Epoch']),
         'ILat':deepcopy(data_dict_MAG['ILat']),
         'L-Shell': deepcopy(data_dict_MAG['L-Shell']),
@@ -73,12 +75,28 @@ def L2_MAG_to_Ampere_Current(data_dicts):
         cs=CubicSpline(T0_traj, data_dict_traj[key][0])
         data_dict_traj[key][0] = cs(T0_bmed)
 
-    # Calculate the deltas
+    Bkeys = ['N', 'T', 'p']
+
+
+    # calculate the difference from model: shows the electrodynamics
+    for i, key in enumerate(Bkeys):
+        data_dict_output[f'deltaB_{key}'][0] = stl.butterFilter().butter_filter(data=data_dict_MAG[f'B_model_{key}'][0]-data_dict_MAG[f'B_{key}'][0],
+                                                    lowcutoff=low_cutoff,
+                                                    highcutoff=low_cutoff,
+                                                    order=order,
+                                                    fs=fs,
+                                                    filtertype=filtType)
+
+
+
+
+    # Calculate the difference deltas
     DeltaT = np.diff(T0_bmed,prepend=T0_bmed[0])
-    Bkeys = ['B_N','B_T','B_p']
+
     dB_filtered = [[],[],[]]
     for i,key in enumerate(Bkeys):
-        dB = (1E-9)*np.diff(data_dict_MAG[key][0], prepend=data_dict_MAG[key][0][-1])
+        keyVal = 'B_'+key
+        dB = (1E-9)*np.diff(data_dict_MAG[keyVal][0], prepend=data_dict_MAG[keyVal][0][-1])
 
         # Filter the deltas
         dB_filtered[i] = stl.butterFilter().butter_filter(data=dB,
@@ -86,17 +104,16 @@ def L2_MAG_to_Ampere_Current(data_dicts):
                                                     highcutoff=low_cutoff,
                                                     order=order,
                                                     fs=fs,
-                                                    filtertype='lowPass'
+                                                    filtertype=filtType
                                                     )
     dB_filtered = np.array(dB_filtered)
-
 
     # Calculate J_parallel and Store
     data_dict_output['J_para'][0] = (1/1E-6)*(1/(stl.u0*DeltaT)) * (dB_filtered[1]/data_dict_traj['N_VEL'][0] - dB_filtered[0]/data_dict_traj['T_VEL'][0])
     data_dict_output['DeltaT'][0] = DeltaT
-    data_dict_output['DeltaBN'][0] = dB_filtered[0]
-    data_dict_output['DeltaBT'][0] = dB_filtered[1]
-    data_dict_output['DeltaBp'][0] = dB_filtered[2]
+    data_dict_output['dB_N'][0] = dB_filtered[0]
+    data_dict_output['dB_T'][0] = dB_filtered[1]
+    data_dict_output['dB_p'][0] = dB_filtered[2]
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---
