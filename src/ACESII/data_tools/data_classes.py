@@ -13,7 +13,15 @@ class DataClasses:
         output_file_paths = []
 
         # determine which rocket it is
-        rocket_idx = 0 if rocket_str.lower() == 'high' else 1
+        if rocket_str.lower() == 'high':
+            rocket_idx = 0
+        elif rocket_str.lower() == 'low':
+            rocket_idx = 1
+        else:
+            raise Exception('Could not determine the payload. Use rocket_str=="high" or "low"')
+
+
+        # Execute the function for the chosen pair of data files
         for data_name in dict_file_path.keys():
             input_path_modifier = dict_file_path[data_name][0]
             data_folder_path = f'{rocket_folder_path}/{input_path_modifier}/{data_name}/{ACESII.fliers[rocket_idx]}/'
@@ -31,6 +39,7 @@ class DataClasses:
                     for i, file in enumerate(input_files):
                         print('[{:.0f}] {:80s}{:5.1f} MB'.format(i, input_names_searchable[i], round(os.path.getsize(file) / (10 ** 6), 1)))
                     print('\n')
+                    return
 
                 elif dict_file_path[data_name][1][rocket_idx] == []:
                     for file_path in input_files:
@@ -39,9 +48,6 @@ class DataClasses:
                     for idx in dict_file_path[data_name][1][rocket_idx]:
                         output_file_paths.append(input_files[idx])
 
-        if just_print_file_names_bool:
-            return
-        else:
-            return func([stl.loadDictFromFile(file_path) for file_path in output_file_paths])
+        return func([stl.loadDictFromFile(file_path) for file_path in output_file_paths])
 
 

@@ -1,4 +1,4 @@
-# --- L2L3_calculate_Poynting_Flux.py ---
+# --- L3_calculate_Poynting_Flux.py ---
 # --- Author: C. Feltman ---
 # DESCRIPTION: Determine the PoyntingFLux of the data using E-Field and B-Field fullcal Measurements
 # for the low flyer
@@ -9,23 +9,16 @@
 __author__ = "Connor Feltman"
 __date__ = "2022-08-22"
 __version__ = "1.0.0"
-
-import numpy as np
-import spaceToolsLib
-from scipy.interpolate import CubicSpline
-
-from src.ACESII.data_tools.my_imports import *
-start_time = time.time()
 # --- --- --- --- ---
 #
 ######################
 # --- DATA TOGGLES ---
 ######################
-just_print_file_names_bool = True
+just_print_file_names_bool = False
 rocket_str = 'low'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
-    f'EFI':['L2', [[0],[0]]],
-    'MAG':['L3',[[0],[4]]]
+    f'EFI':['L3', [[1],[3]]],
+    'MAG':['L3',[[3],[4]]]
 }
 outputData = True
 
@@ -33,13 +26,13 @@ outputData = True
 #################
 # --- IMPORTS ---
 #################
-from scipy.integrate import simpson
 from src.ACESII.data_tools.my_imports import *
 start_time = time.time()
 import datetime as dt
+from scipy.interpolate import CubicSpline
 
 
-def L2L3_calculate_Poynting_Flux(data_dicts):
+def L3_calculate_Poynting_Flux(data_dicts):
 
     #######################
     # --- LOAD THE DATA ---
@@ -78,8 +71,6 @@ def L2L3_calculate_Poynting_Flux(data_dicts):
     coord_keys, wCoords = wCoordUsed(data_dict_EFI.keys())
     B_keys = ['B_' + strV+'_residual' for strV in coord_keys]
     E_keys = ['E_' + strV for strV in coord_keys]
-    print(B_keys)
-    print(E_keys)
 
     B_residual_interp = [[],[],[]]
 
@@ -111,7 +102,7 @@ def L2L3_calculate_Poynting_Flux(data_dicts):
     if outputData:
         stl.prgMsg('Creating output file')
         # write out the data
-        fileoutName = f'ACESII_{ACESII.fliers_dict[rocket_str]}_poynting_flux_{wCoords}.cdf'
+        fileoutName = f'ACESII_{ACESII.fliers_dict[rocket_str]}_poynting_flux_{wCoords}_DC.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}/science/PoyntingFlux/{rocket_str}//{fileoutName}'
         stl.outputDataDict(outputPath, data_dict=data_dict_output)
         stl.Done(start_time)
@@ -120,7 +111,7 @@ def L2L3_calculate_Poynting_Flux(data_dicts):
 #################
 # --- EXECUTE ---
 #################
-DataClasses().ACEII_file_executor(L2L3_calculate_Poynting_Flux,
+DataClasses().ACEII_file_executor(L3_calculate_Poynting_Flux,
                                   dict_file_path,
                                   rocket_str,
                                   just_print_file_names_bool)
