@@ -14,7 +14,7 @@ import io
 import time
 import datetime as dt
 from copy import deepcopy
-
+from src.ACESII.data_tools.data_paths import DataPaths
 
 # Time your code
 start_time = time.time()
@@ -26,7 +26,7 @@ def txt_raw_MPI_Data_to_cdf():
 
     # Load in the .txt files
     stl.prgMsg('Loading the data')
-    path_to_data = 'C:\Data\ACESII\L1\low\MPI\\'
+    path_to_data = f'{DataPaths.ACES_data_folder}/L0/MPI/low/'
     data_file_names = glob(path_to_data + '*MPI*' +'*.txt')
 
     # prepare the output
@@ -67,9 +67,9 @@ def txt_raw_MPI_Data_to_cdf():
 
     # write out the data
     stl.prgMsg('Writing out the data')
-    outputPath = 'C:\Data\ACESII\L1\low\MPI\\'
-    file_out_name = 'ACESII_36364_l1_MPI_instrFrm.cdf'
-    stl.outputCDFdata(outputPath=outputPath+file_out_name, data_dict=data_dict_output)
+    outputPath = f'{DataPaths.ACES_data_folder}/L0/MPI/low/'
+    file_out_name = 'ACESII_36364_l0_MPI_instrFrm.cdf'
+    stl.outputDataDict(outputPath=outputPath+file_out_name, data_dict=data_dict_output)
     stl.Done(start_time)
 
 
