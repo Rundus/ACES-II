@@ -16,8 +16,8 @@ __version__ = "1.0.0"
 ######################
 just_print_file_names_bool = False
 rocket_str = 'low'
-# wInstr = 'EEPAA'
-wInstr = 'IEPAA'
+wInstr = 'EEPAA'
+# wInstr = 'IEPAA'
 # wInstr = 'LEESA'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
     f'{wInstr}':['L3', [[1],[0]]],
@@ -69,7 +69,7 @@ def DistFunc_to_ESAcurrents(data_dicts):
 
     # [3b] Multiply the integrand by pitch angle dependence
     for idx, ptch in enumerate(data_dict_ESA['Pitch_Angle'][0]):
-        integrand[:,idx,:] = integrand[:, idx, :]*np.cos(np.radians(ptch))*np.cos(np.radians(ptch))
+        integrand[:,idx,:] = integrand[:, idx, :]*np.sin(np.radians(ptch))*np.cos(np.radians(ptch))
 
     # [4] Integrate over energy
     elec_pitches = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]
@@ -77,7 +77,7 @@ def DistFunc_to_ESAcurrents(data_dicts):
     if rocket_str=='high':
         if wInstr in ['EEPAA','LEESA']:
             pitch_integrates = elec_pitches[1:17 + 1]
-            integrand = integrand[:, 2:2 + len(pitch_integrates), :]
+            integrand = integrand[:, 1:1 + len(pitch_integrates), :]
         else:
             pitch_integrates = ion_pitches[1:]
             integrand = integrand[:, 1:1 + len(pitch_integrates), :]

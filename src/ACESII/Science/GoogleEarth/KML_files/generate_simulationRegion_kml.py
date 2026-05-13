@@ -9,7 +9,8 @@ http://code.google.com/apis/kml/documentation/kmlfiles/altitudemode_reference.km
 # --- Load the spatial data ---
 import spaceToolsLib as stl
 import numpy as np
-data_dict = stl.loadDictFromFile(r'C:\Data\physicsModels\ionosphere\spatial_environment\spatial_environment.cdf')
+from src.ACESII.data_tools.data_paths import DataPaths
+data_dict = stl.loadDictFromFile(rf'/home/connor/Data/MODELS/ACESII_ionosphere/spatial_environment/spatial_environment.cdf')
 
 
 # Format the data into the KML scheme
@@ -27,4 +28,5 @@ ls.altitudemode = simplekml.AltitudeMode.relativetoground
 ls.style.linestyle.width = 5
 ls.style.linestyle.color= simplekml.Color.cyan
 
-kml.save(r'C:\Users\cfelt\Desktop\projects\GoogleEarth\ACESII\ACESII_simulation_region.kml')
+
+kml.save(rf'/home/connor/PycharmProjects/ACES-II/src/ACESII/Science/GoogleEarth/KML_files/kml/ACESII_simulation_region.kml')

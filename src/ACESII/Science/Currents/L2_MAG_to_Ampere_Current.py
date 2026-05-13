@@ -15,7 +15,7 @@ import spaceToolsLib
 # --- DATA TOGGLES ---
 ######################
 just_print_file_names_bool = False
-rocket_str = 'low'
+rocket_str = 'high'
 wInstr = 'MAG'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
     f'{wInstr}':['L2', [[0],[0]]],
@@ -51,7 +51,7 @@ def L2_MAG_to_Ampere_Current(data_dicts):
 
     # --- prepare the output ---
     data_dict_output = {
-        'J_para':[[],{'DEPEND_0':'Epoch','UNITS':'&mu;A/m!A-2!N','LABLAXIS':'Parallel Current','VAR_TYPE':'data'}],
+        'J_p':[[],{'DEPEND_0':'Epoch','UNITS':'&mu;A/m!A-2!N','LABLAXIS':'Field-aligned Current','VAR_TYPE':'data'}],
         'DeltaT':[[], {'DEPEND_0':'Epoch','UNITS':'A/m!A-2!N','LABLAXIS':'Parallel Current'}],
         'dB_N': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; BN'}],
         'dB_T': [[], {'DEPEND_0': 'Epoch', 'UNITS': None, 'LABLAXIS': '&Delta; BT'}],
@@ -109,7 +109,7 @@ def L2_MAG_to_Ampere_Current(data_dicts):
     dB_filtered = np.array(dB_filtered)
 
     # Calculate J_parallel and Store
-    data_dict_output['J_para'][0] = (1/1E-6)*(1/(stl.u0*DeltaT)) * (dB_filtered[1]/data_dict_traj['N_VEL'][0] - dB_filtered[0]/data_dict_traj['T_VEL'][0])
+    data_dict_output['J_p'][0] = (1/1E-6)*(1/(stl.u0*DeltaT)) * (dB_filtered[1]/data_dict_traj['N_VEL'][0] - dB_filtered[0]/data_dict_traj['T_VEL'][0])
     data_dict_output['DeltaT'][0] = DeltaT
     data_dict_output['dB_N'][0] = dB_filtered[0]
     data_dict_output['dB_T'][0] = dB_filtered[1]
@@ -122,7 +122,7 @@ def L2_MAG_to_Ampere_Current(data_dicts):
     if outputData:
         stl.prgMsg('Creating output file')
         # write out the data
-        fileoutName = f'ACESII_{ACESII.fliers_dict[rocket_str]}_jpara.cdf'
+        fileoutName = f'ACESII_{ACESII.fliers_dict[rocket_str]}_Ampere_Currents.cdf'
         outputPath = f'{DataPaths.ACES_data_folder}/science/Currents/{rocket_str}/{fileoutName}'
         stl.outputDataDict(outputPath, data_dict=data_dict_output)
         stl.Done(start_time)

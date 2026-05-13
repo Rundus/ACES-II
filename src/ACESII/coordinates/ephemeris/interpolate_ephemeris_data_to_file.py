@@ -22,6 +22,7 @@ from src.ACESII.data_tools.my_imports import *
 FilePaths = [
     f'{DataPaths.ACES_data_folder}/L3/',
     f'{DataPaths.ACES_data_folder}/L2/',
+    f'{DataPaths.ACES_data_folder}/L1/',
 ]
 
 Instrs = [
