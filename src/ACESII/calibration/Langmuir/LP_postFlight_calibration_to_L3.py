@@ -22,7 +22,7 @@ justPrintFileNames = False  # Just print the names of files
 # 3 -> TRICE II Low Flier
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
-wRocket = 4
+wRocket = 5
 
 # --- OutputData ---
 outputData = False
@@ -91,7 +91,7 @@ def LP_postFlight_calibration(wRocket):
 
     low_idx, high_idx = np.abs(data_dict_LP_current['Epoch'][0] - target_times_bg[wRocket-4][0]).argmin(), np.abs(data_dict_LP_current['Epoch'][0] - target_times_bg[wRocket-4][1]).argmin()
     ni_data = data_dict_LP_current['ni'][0][low_idx:high_idx+1]
-    ni_EISCAT_data = data_dict_calData['ne'][0][low_idx:high_idx+1]
+    ni_EISCAT_data = data_dict_calData['ne_EISCAT'][0][low_idx:high_idx+1]
     good_idxs = np.where(np.isnan(ni_data)==False)
     ni_data = ni_data[good_idxs]
     ni_EISCAT_data = ni_EISCAT_data[good_idxs]
@@ -106,13 +106,13 @@ def LP_postFlight_calibration(wRocket):
     # DERPA1
     low_idx, high_idx = np.abs(data_dict_calData['Epoch'][0] - target_times_bg[wRocket - 4][0]).argmin(), np.abs(data_dict_calData['Epoch'][0] - target_times_bg[wRocket - 4][1]).argmin()
     Te_data = data_dict_calData['Te_DERPA1'][0][low_idx:high_idx + 1]
-    Te_EISCAT_data = data_dict_calData['Te'][0][low_idx:high_idx + 1]
+    Te_EISCAT_data = data_dict_calData['Te_EISCAT'][0][low_idx:high_idx + 1]
     params_DERPA1, cov = curve_fit(fitFunc, Te_data, Te_EISCAT_data)
 
     # DERPA2
     low_idx, high_idx = np.abs(data_dict_calData['Epoch'][0] - target_times_bg[wRocket - 4][0]).argmin(), np.abs(data_dict_calData['Epoch'][0] - target_times_bg[wRocket - 4][1]).argmin()
     Te_data = data_dict_calData['Te_DERPA2'][0][low_idx:high_idx + 1]
-    Te_EISCAT_data = data_dict_calData['Te'][0][low_idx:high_idx + 1]
+    Te_EISCAT_data = data_dict_calData['Te_EISCAT'][0][low_idx:high_idx + 1]
     params_DERPA2, cov = curve_fit(fitFunc, Te_data, Te_EISCAT_data)
 
     print(params_LP)

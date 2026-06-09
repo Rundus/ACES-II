@@ -20,6 +20,7 @@ from src.ACESII.data_tools.my_imports import *
 
 
 FilePaths = [
+    f'{DataPaths.ACES_data_folder}/science/',
     f'{DataPaths.ACES_data_folder}/L3/',
     f'{DataPaths.ACES_data_folder}/L2/',
     f'{DataPaths.ACES_data_folder}/L1/',
@@ -32,7 +33,9 @@ Instrs = [
     'IEPAA',
     'LEESA',
     'LP',
-    'MAG'
+    'MAG',
+    'ExB',
+    'MPI'
 ]
 
 interp_keys = ['L-Shell','Alt','Lat','Long', 'mLat','mLong','ILat','ILong']

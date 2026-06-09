@@ -17,6 +17,8 @@ class DataClasses:
             rocket_idx = 0
         elif rocket_str.lower() == 'low':
             rocket_idx = 1
+        elif rocket_str.lower() == '':
+            rocket_idx = 1
         else:
             raise Exception('Could not determine the payload. Use rocket_str=="high" or "low"')
 
@@ -24,6 +26,7 @@ class DataClasses:
         # Execute the function for the chosen pair of data files
         for data_name in dict_file_path.keys():
             input_path_modifier = dict_file_path[data_name][0]
+
             data_folder_path = f'{rocket_folder_path}/{input_path_modifier}/{data_name}/{ACESII.fliers[rocket_idx]}/'
             input_files = glob(f'{data_folder_path}/*.cdf')
 

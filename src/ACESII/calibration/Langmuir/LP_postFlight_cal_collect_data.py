@@ -28,7 +28,7 @@ justPrintFileNames = False  # Just print the names of files
 # 4 -> ACES II High Flier
 # 5 -> ACES II Low Flier
 wRocket = 5
-showEISCAT_profiles = True
+showEISCAT_profiles = False
 altitude_cutoff_upleg = [100, 166]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
 altitude_cutoff_downleg = [200, 183]  # in [km]. Everything below this altitude uses the ul EISCAT profiles, above it uses md and below it on downleg uses dl
 titles = ['upleg', 'middle', 'downleg']
@@ -47,6 +47,7 @@ import spaceToolsLib as stl
 import numpy as np
 from src.ACESII.mission_attributes import ACESII
 import datetime as dt
+from src.ACESII.data_tools.data_paths import DataPaths
 
 
 #######################
@@ -58,40 +59,40 @@ def LP_collect_postFlight_cal_data(wRocket):
     stl.prgMsg('Loading Data')
 
     # load the rocket ion saturation current data
-    data_path = glob(rf'C:\Data\ACESII\L2\{ACESII.fliers[wRocket-4]}\\*langmuir_fixed.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/L2/LP/{ACESII.fliers[wRocket-4]}//*langmuir_fixed.cdf*')[0]
     data_dict_LP_current = stl.loadDictFromFile(data_path)
 
     # load the EISCAT data
-    data_path = r'C:\Data\ACESII\science\EISCAT\tromso\UHF\MAD6400_2022-11-20_beata_ant@uhfa.cdf'
+    data_path = rf'{DataPaths.ACES_data_folder}/science/EISCAT/tromso/UHF/MAD6400_2022-11-20_beata_ant@uhfa.cdf'
     data_dict_EISCAT_tromso = stl.loadDictFromFile(data_path)
 
-    data_path = r'C:\Data\ACESII\science\EISCAT\svalbard\UKFI_radar\MAD6400_2022-11-20_ipy_60@42m.cdf'
+    data_path = rf'{DataPaths.ACES_data_folder}/science/EISCAT/svalbard/UKFI_radar/MAD6400_2022-11-20_ipy_60@42m.cdf'
     data_dict_EISCAT_svalbard = stl.loadDictFromFile(data_path)
 
     # load the attitude data
-    data_path = glob(rf'C:\Data\ACESII\attitude\{ACESII.fliers[wRocket-4]}\\*.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/attitude/{ACESII.fliers[wRocket-4]}//*.cdf*')[0]
     data_dict_attitude = stl.loadDictFromFile(data_path)
 
     # load the trajectory data
-    data_path = glob(rf'C:\Data\ACESII\trajectories\{ACESII.fliers[wRocket - 4]}\\*_auroral.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/trajectories/{ACESII.fliers[wRocket - 4]}//*_auroral.cdf*')[0]
     data_dict_traj = stl.loadDictFromFile(data_path)
 
     # load the L-Shell data
-    data_path = glob(rf'C:\Data\ACESII\coordinates\Lshell\{ACESII.fliers[wRocket - 4]}\\*.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/coordinates/Lshell/{ACESII.fliers[wRocket - 4]}//*.cdf*')[0]
     data_dict_LShell = stl.loadDictFromFile(data_path)
 
     # load the simulation m_eff data
-    data_path = glob(rf'C:\Data\physicsModels\ionosphere\plasma_environment\\plasma_environment.cdf')[0]
+    data_path = glob(rf'/home/connor/Data/MODELS/ACESII_ionosphere/plasma_environment/plasma_environment.cdf')[0]
     data_dict_sim = stl.loadDictFromFile(data_path)
 
     # load the DERPA Te data
-    data_path = glob(rf'C:\Data\ACESII\L2\{ACESII.fliers[wRocket - 4]}\\*_ERPA1.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/L2/ERPA/{ACESII.fliers[wRocket - 4]}//*_ERPA1.cdf*')[0]
     data_dict_DERPA1 = stl.loadDictFromFile(data_path)
-    data_path = glob(rf'C:\Data\ACESII\L2\{ACESII.fliers[wRocket - 4]}\\*_ERPA2.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/L2/ERPA/{ACESII.fliers[wRocket - 4]}//*_ERPA2.cdf*')[0]
     data_dict_DERPA2 = stl.loadDictFromFile(data_path)
 
     # load the floating potential data
-    data_path = glob(rf'C:\Data\ACESII\science\payload_potential\{ACESII.fliers[wRocket - 4]}\\*.cdf*')[0]
+    data_path = glob(rf'{DataPaths.ACES_data_folder}/science/payload_potential/{ACESII.fliers[wRocket - 4]}//*.cdf*')[0]
     data_dict_payload_potential = stl.loadDictFromFile(data_path)
 
     # --- prepare the output ---
@@ -113,12 +114,21 @@ def LP_collect_postFlight_cal_data(wRocket):
     ###############################################
 
     # --- UPLEG BACKGROUND PROFILES (Tromso) ---
-    target_times_ul = [
-                    dt.datetime(2022,11,20,17,21,25),
-                    dt.datetime(2022,11,20,17,22,10),
-                    # dt.datetime(2022,11,20,17,25,25)
-                    ]
+    # target_times_ul = [
+    #     dt.datetime(2022, 11, 20, 17, 6, 25),
+    #     dt.datetime(2022, 11, 20, 17, 12, 10),
+    # ]
 
+    # target_times_ul = [
+    #     dt.datetime(2022, 11, 20, 16, 50, 25),
+    #     dt.datetime(2022, 11, 20, 17, 00, 00),
+    # ]
+
+    # OLD PROFILES
+    target_times_ul = [
+        dt.datetime(2022, 11, 20, 17, 21, 25),
+        dt.datetime(2022, 11, 20, 17, 22, 10),
+    ]
 
     # --- MIDDLE BACKGROUND PROFILES (Tromso) ---
     target_times_md = [
@@ -127,20 +137,16 @@ def LP_collect_postFlight_cal_data(wRocket):
         dt.datetime(2022, 11, 20, 17, 26, 10),
     ]
 
-    # --- DOWNLEG BACKGROUND PROFILES (Svalbard) ---
+    # --- DOWNLEG BACKGROUND PROFILES ---
+    target_times_dl = deepcopy(target_times_ul)
     # target_times_dl = [
-    #                     # dt.datetime(2022, 11, 20, 17, 24, 55),
-    #                    dt.datetime(2022, 11, 20, 17, 27, 25),
-    #                    dt.datetime(2022, 11, 20, 17, 28, 10),
-    #                    ]
+    #     dt.datetime(2022, 11, 20, 17, 21, 25),
+    #     dt.datetime(2022, 11, 20, 17, 22, 10),
+    # ]
 
-    target_times_dl = [
-        dt.datetime(2022, 11, 20, 17, 21, 25),
-        dt.datetime(2022, 11, 20, 17, 22, 10),
-    ]
+
 
     target_times_collection = [target_times_ul, target_times_md, target_times_dl]
-    # data_dict_EISCAT = [deepcopy(data_dict_EISCAT_tromso),deepcopy(data_dict_EISCAT_tromso),deepcopy(data_dict_EISCAT_svalbard)]
     data_dict_EISCAT = [deepcopy(data_dict_EISCAT_tromso), deepcopy(data_dict_EISCAT_tromso), deepcopy(data_dict_EISCAT_tromso)]
 
 
@@ -202,23 +208,23 @@ def LP_collect_postFlight_cal_data(wRocket):
             import matplotlib.pyplot as plt
             fig, ax =plt.subplots(nrows=3,ncols=1)
 
-            fig.suptitle(titles[idx])
+            fig.suptitle(titles[idx], fontsize=50)
 
-            ax[0].plot(Ti_profile_alts, Ti_profile_vals, color='tab:blue')
-            ax[0].plot(Ti_profile_alts, Ti_profile_smoothed, color='tab:red')
+            ax[0].plot(Ti_profile_alts, Ti_profile_vals, color='tab:blue', label='EISCAT')
+            ax[0].plot(Ti_profile_alts, Ti_profile_smoothed, color='tab:red', label='EISCAT (smoothed)')
             ax[0].set_xlabel('Alt [km]')
             ax[0].set_ylabel('Ti [eV]')
             ax[0].set_xlim(0,400)
 
-            ax[1].plot(ne_profile_alts, ne_profile_vals,color='tab:blue')
-            ax[1].plot(ne_profile_alts, ne_profile_smoothed, color='tab:red')
+            ax[1].plot(ne_profile_alts, ne_profile_vals,color='tab:blue',label='EISCAT')
+            ax[1].plot(ne_profile_alts, ne_profile_smoothed, color='tab:red',label='EISCAT (Smoothed)')
             ax[1].set_yscale('log')
             ax[1].set_xlabel('Alt [km]')
             ax[1].set_ylabel('n [m^-3]')
             ax[1].set_xlim(0, 400)
 
-            ax[2].plot(Tr_profile_alts, Tr_profile_vals, color='tab:blue')
-            ax[2].plot(Tr_profile_alts, Tr_profile_smoothed, color='tab:red')
+            ax[2].plot(Tr_profile_alts, Tr_profile_vals, color='tab:blue',label='EISCAT')
+            ax[2].plot(Tr_profile_alts, Tr_profile_smoothed, color='tab:red',label='EISCAT (Smoothed)')
             ax[2].set_xlabel('Alt [km]')
             ax[2].set_ylabel('Tr')
             ax[2].set_xlim(0, 400)
@@ -295,10 +301,10 @@ def LP_collect_postFlight_cal_data(wRocket):
         # Create the EISCAT Ti profile for Langmuir
         Ti_langmuir = np.interp(alt_langmuir[low_idx:high_idx], Ti_profiles_alt[idx], Ti_profiles_val[idx])
 
-        # Create the ni EISCAT profile for langmuir
+        # Create the ne EISCAT profile for langmuir
         Tr_langmuir = np.interp(alt_langmuir[low_idx:high_idx], Tr_profiles_alt[idx], Tr_profiles_val[idx])
 
-        # Create the ni EISCAT profile for langmuir
+        # Create the ne EISCAT profile for langmuir
         ne_langmuir = np.interp(alt_langmuir[low_idx:high_idx], ne_profiles_alt[idx], ne_profiles_val[idx])
 
         # Create the m_eff_i profile for langmuir
@@ -317,19 +323,16 @@ def LP_collect_postFlight_cal_data(wRocket):
     m_eff_i_interp = [val for sublist in m_eff_i_interp for val in sublist]
 
 
-
-
-
     # store everything in the output data dict
     data_dict_output = {**data_dict_output,
                         **{
                             'Epoch': deepcopy(data_dict_LP_current['Epoch']),
-                            'Ti': [np.array(Ti_interp), {'DEPEND_0': 'Epoch', 'UNITS': 'eV'}],
-                            'Te': [np.array(Ti_interp) * np.array(Tr_interp), {'DEPEND_0': 'Epoch', 'UNITS': 'eV'}],
+                            'Ti_EISCAT': [np.array(Ti_interp), {'DEPEND_0': 'Epoch', 'UNITS': 'eV'}],
+                            'Te_EISCAT': [np.array(Ti_interp) * np.array(Tr_interp), {'DEPEND_0': 'Epoch', 'UNITS': 'eV'}],
                             'Te_DERPA1': [np.array(Te_DERPA1_langmuir), {'DEPEND_0': 'Epoch', 'UNITS': 'eV'}],
                             'Te_DERPA2': [np.array(Te_DERPA2_langmuir), {'DEPEND_0': 'Epoch', 'UNITS': 'eV'}],
                             'Tr': [np.array(Tr_interp), {'DEPEND_0': 'Epoch', 'UNITS': 'Te/Ti'}],
-                            'ne': [np.array(ne_interp), {'DEPEND_0': 'Epoch', 'UNITS': 'm^-3'}],
+                            'ne_EISCAT': [np.array(ne_interp), {'DEPEND_0': 'Epoch', 'UNITS': 'm^-3'}],
                             'Alt': [alt_langmuir,{'DEPEND_0': 'Epoch', 'UNITS': 'km'}],
                             'm_eff_i': [np.array(m_eff_i_interp),{'DEPEND_0': 'Epoch', 'UNITS': 'kg'}],
                             'floating_potential' : [np.array(floatingPotential_langmuir),{'DEPEND_0': 'Epoch', 'UNITS': 'Volts'}],
@@ -346,8 +349,8 @@ def LP_collect_postFlight_cal_data(wRocket):
     if outputData:
         stl.prgMsg('Creating output file')
         fileoutName = f'ACESII_{ACESII.payload_IDs[wRocket-4]}_postFlight_cal.cdf'
-        outputPath = f'C:\Data\ACESII\calibration\LP_postFlight_calibration\\{ACESII.fliers[wRocket-4]}\\' + fileoutName
-        stl.outputCDFdata(outputPath, data_dict_output)
+        outputPath = f'{DataPaths.ACES_data_folder}/calibration/LP/postFlight_calibration//{ACESII.fliers[wRocket-4]}//' + fileoutName
+        stl.outputDataDict(outputPath, data_dict_output)
         stl.Done(start_time)
 
 

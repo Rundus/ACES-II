@@ -60,10 +60,6 @@ def MPI_ENU_cross_correlation():
 
     plt.show()
 
-
-
-
-    #
     # # # 4. put our data in an output
     # #
     # # data_dict_output = {**data_dict_output,

@@ -12,7 +12,8 @@ from scipy.interpolate import CubicSpline
 from src.ACESII.data_tools.data_paths import DataPaths
 import datetime as dt
 
-DCM_time_base_offsets = [-0.00074, -0.058] # slope, intercept
+# DCM_time_base_offsets = [-0.00074, -0.058] # slope, intercept
+DCM_time_base_offsets = [-0.00074, -0.163] # slope, intercept
 
 
 
@@ -99,17 +100,17 @@ def MPI_rktFrm_to_ENU():
         }
 
         # 8. Time adjust the data to better align
-        # spin_rate = 0.5474
-        # if idx == 0: # MPI1
-        #     delta = (1/spin_rate)*(2+0.75)
-        # elif idx == 1: # MPI2
-        #     delta = (1/spin_rate)*(1+0.5)
-        # elif idx == 2: # MPI3
-        #     delta = (1/spin_rate)*(1+0.25)
-        # elif idx == 3: #MPI4
-        #     delta = 0
+        spin_rate = 0.5474
+        if idx == 0: # MPI1
+            delta = (1/spin_rate)*(2+0.75)
+        elif idx == 1: # MPI2
+            delta = (1/spin_rate)*(1+0.5)
+        elif idx == 2: # MPI3
+            delta = (1/spin_rate)*(1+0.25)
+        elif idx == 3: #MPI4
+            delta = 0
 
-        # data_dict_output[f'time{idx+1}'][0]= data_dict_output[f'time{idx+1}'][0] - delta
+        data_dict_output[f'time{idx+1}'][0]= data_dict_output[f'time{idx+1}'][0] - delta
 
         # threshold low flow speed values
         # threshold = 10

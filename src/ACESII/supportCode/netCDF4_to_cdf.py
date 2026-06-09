@@ -19,9 +19,9 @@ start_time = time.time()
 # --- TOGGLES ---
 # --- --- --- ---
 justPrintFileNames = False
-wFiles = [0]
-inputPath_modifier = r'\science\EISCAT\tromso\UHF'
-outputPath_modifier = r'\science\EISCAT\tromso\UHF' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
+wFiles = [0,1]
+inputPath_modifier = r'/science/EISCAT/TEST/UHF/'
+outputPath_modifier = r'/science/EISCAT/TEST/UHF/' # e.g. 'L2' or 'Langmuir'. It's the name of the broader output folder
 fixEpoch = True
 # ---------------------------
 outputData = True
@@ -30,20 +30,21 @@ outputData = True
 # --- IMPORTS ---
 # --- --- --- ---
 import netCDF4
+from os.path import getsize
 
 
 def netCDF4_to_cdf(rocketFolderPath, justPrintFileNames, wFile):
 
-    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}\*.nc')
-    input_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}\\', '') for ifile in inputFiles]
-    input_names_searchable = [ifile.replace(inputPath_modifier.lower() +'_', '') for ifile in input_names]
+    inputFiles = glob(f'{rocketFolderPath}{inputPath_modifier}/*.nc')
+    input_names = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}', '') for ifile in inputFiles]
+    input_names_searchable = [ifile.replace(f'{rocketFolderPath}{inputPath_modifier}/', '') for ifile in input_names]
 
     if justPrintFileNames:
         for i, file in enumerate(inputFiles):
             print('[{:.0f}] {:80s}{:5.1f} MB '.format(i, input_names_searchable[i], round(getsize(file) / (10 ** 6), 1)))
         return
 
-    print('\n')
+    print('/n')
 
     # --- --- --- --- --- -
     # --- LOAD THE DATA ---
@@ -56,8 +57,8 @@ def netCDF4_to_cdf(rocketFolderPath, justPrintFileNames, wFile):
 
     # --- Global Attributes ---
     globalAttrs = cdf4File.__dict__
-    varAttrs =cdf4File.variables['power'].ncattrs()
-    var = cdf4File.variables['power']
+    varAttrs =cdf4File.variables['timestamps'].ncattrs()
+    var = cdf4File.variables['timestamps']
 
 
     # --- Variables ---
@@ -82,7 +83,10 @@ def netCDF4_to_cdf(rocketFolderPath, justPrintFileNames, wFile):
         varAttrs = deepcopy(ExampleVarAttrs)
         if key not in ['timestamps','range']:
             varAttrs['DEPEND_0'] = 'timestamps'
-            varAttrs['DEPEND_1'] = 'range'
+            if 'V225' in inputFiles[wFile]:
+                varAttrs['DEPEND_1'] = 'gdalt'
+            else:
+                varAttrs['DEPEND_1'] = 'range'
         varAttrs['UNITS'] = str(var.units)
         varAttrs['FIELDNAM'] = str(var.units)
         varAttrs['LABLAXIS'] = str(var.description)
@@ -108,8 +112,9 @@ def netCDF4_to_cdf(rocketFolderPath, justPrintFileNames, wFile):
     if outputData:
         stl.prgMsg('Creating output file')
 
-        outputPath = f'{rocketFolderPath}{outputPath_modifier}\{input_names_searchable[wFile].replace(".nc",".cdf")}'
-        stl.outputCDFdata(outputPath, data_dict,globalAttrsMod=globalAttrs, )
+        outputPath = f'{rocketFolderPath}{outputPath_modifier}/{input_names_searchable[wFile].replace(".nc",".cdf")}'
+        print(outputPath)
+        stl.outputDataDict(outputPath, data_dict,globalAttrsMod=globalAttrs, )
 
         stl.Done(start_time)
 
@@ -121,11 +126,11 @@ def netCDF4_to_cdf(rocketFolderPath, justPrintFileNames, wFile):
 # --- EXECUTE ---
 # --- --- --- ---
 
-if len(glob(f'{DataPaths.ACES_data_folder}{inputPath_modifier}\*.nc')) == 0:
+if len(glob(f'{DataPaths.ACES_data_folder}{inputPath_modifier}/*.nc')) == 0:
     print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)
 else:
     if wFiles == []:
-        for fileNo in  range(len(glob(f'{DataPaths.ACES_data_folder}{inputPath_modifier}\*.nc'))):
+        for fileNo in  range(len(glob(f'{DataPaths.ACES_data_folder}{inputPath_modifier}/*.nc'))):
             netCDF4_to_cdf(DataPaths.ACES_data_folder, justPrintFileNames, fileNo)
     else:
         for fileNo in wFiles:
