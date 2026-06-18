@@ -53,15 +53,16 @@ import matplotlib.pyplot as plt
 import math
 import h5py
 from itertools import product
+import datetime as dt
 
 def rawASI_to_cdf(wSite, wColor, rocketFolderPath):
 
     # --- load attributes for ACESII traj data ---
-    folder_path = f'{rocketFolderPath}\\all_sky\\{site_nam[wSite]}\\'
+    folder_path = f'{rocketFolderPath}/all_sky/{site_nam[wSite]}/'
 
     # --- get the input files ---
-    cal_files = readsav(glob(folder_path+f'\\{wLengths[wColor]}\\*.dat*')[0])
-    photo_files = glob(folder_path + f'\\{wLengths[wColor]}\\*.png*')
+    cal_files = readsav(glob(folder_path+f'/{wLengths[wColor]}/*.dat*')[0])
+    photo_files = glob(folder_path + f'/{wLengths[wColor]}/*.png*')
 
     # --- prepare the output ---
     data_dict_output = {}
@@ -79,7 +80,7 @@ def rawASI_to_cdf(wSite, wColor, rocketFolderPath):
     for imageStr in photo_files:
 
         # get the timestamp
-        strTimeStamp = imageStr.replace(f'{folder_path}\\','').replace(f'{wLengths[wColor]}\\','').replace('skn4_','').replace(f'_{wLengths[wColor]}_cal.png','')
+        strTimeStamp = imageStr.replace(f'{folder_path}/','').replace(f'{wLengths[wColor]}/','').replace('skn4_','').replace(f'_{wLengths[wColor]}_cal.png','')
         year = int(strTimeStamp[0:4])
         month = int(strTimeStamp[4:6])
         day = int(strTimeStamp[6:8])
@@ -91,6 +92,14 @@ def rawASI_to_cdf(wSite, wColor, rocketFolderPath):
 
         # get the grayscale data
         imageData.append(plt.imread(imageStr))
+
+    Epoch_AllSky = np.array(Epoch_AllSky)
+    imageData = np.array(imageData)
+
+    # Sort the data to ensure time is monotonic
+    sort_idx = np.argsort(Epoch_AllSky)
+    Epoch_AllSky = Epoch_AllSky[sort_idx]
+    imageData = imageData[sort_idx]
 
     # --- store data ---
     for key in cal_files.keys():
@@ -157,7 +166,7 @@ def rawASI_to_cdf(wSite, wColor, rocketFolderPath):
         data_dict_output['elevs'][1] = {'UNITS': 'Degrees', 'CATDESC': 'pixel elevation'}
 
         # Create the .CDF file
-        output_path = f'{folder_path}\\{wLengths[wColor]}\\ACESII_AllSky_skibotn_{wLengths[wColor]}'
+        output_path = f'{folder_path}/{wLengths[wColor]}/ACESII_AllSky_skibotn_{wLengths[wColor]}'
         stl.outputDataDict(outputPath=output_path + '.cdf',
                           data_dict=data_dict_output,
                            globalAttrsMod=data_dict_globalAttrs)
