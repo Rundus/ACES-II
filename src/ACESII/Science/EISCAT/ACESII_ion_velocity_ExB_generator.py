@@ -102,16 +102,18 @@ def ACESII_EISCAT_Compare_ion_velocity(data_dicts):
             # dt.datetime(2022, 11, 20, 17, 4, 10),
             # dt.datetime(2022, 11, 20, 17, 8, 10),
             # dt.datetime(2022, 11, 20, 17, 12, 10),
-            # dt.datetime(2022, 11, 20, 17, 16, 10),
-            # dt.datetime(2022, 11, 20, 17, 20, 10),
+            dt.datetime(2022, 11, 20, 17, 16, 10),
+            dt.datetime(2022, 11, 20, 17, 20, 10),
 
             # dt.datetime(2022, 11, 20, 17, 24, 10),
-            dt.datetime(2022, 11, 20, 17, 28, 10), # "Good" downleg
+            # dt.datetime(2022, 11, 20, 17, 28, 10), # "Good" downleg
             # dt.datetime(2022, 11, 20, 17, 32, 10),  # "good" downleg
             # dt.datetime(2022, 11, 20, 17, 36, 10),
         ], # "Good" on upleg East, poor on North
         [
-            dt.datetime(2022, 11, 20, 17, 40, 10),
+            dt.datetime(2022, 11, 20, 17, 32, 10),  # "good" downleg
+            dt.datetime(2022, 11, 20, 17, 36, 10),
+            # dt.datetime(2022, 11, 20, 17, 40, 10),
         ], # "good" downleg (Bad on upleg)
 
     ]
@@ -296,9 +298,6 @@ def ACESII_EISCAT_Compare_ion_velocity(data_dicts):
     for keyVal in data_dict_output.keys():
         data_dict_output[keyVal][1]['DEPEND_0'] = None
 
-
-
-
     if plot_ExB_MPI_compare:
         #########################
         # --- PLOT EVERYTHING ---
@@ -365,8 +364,8 @@ def ACESII_EISCAT_Compare_ion_velocity(data_dicts):
         #########################
         # --- PLOT EVERYTHING ---
         #########################
-        fig, ax = plt.subplots(nrows=2,ncols=2)
-        width = 12
+        fig, ax = plt.subplots(nrows=2,ncols=3)
+        width = 14
         height = 1.618 * width
         fig.set_figwidth(width)
         fig.set_figheight(height)
@@ -375,38 +374,42 @@ def ACESII_EISCAT_Compare_ion_velocity(data_dicts):
         # Pick the location (L shell) of the Model data to choose. Average between that range
         v_i_East = [[],[]]
         v_i_North = [[], []]
+        v_i_Up = [[], []]
         target_LShell = [[8.6, 9.2],[8.7,8.9]]
         for i in range(2):
             low_idx, high_idx = np.abs(data_dict_bulkvel['simLShell'][0] - target_LShell[i][0]).argmin(),np.abs(data_dict_bulkvel['simLShell'][0] - target_LShell[i][1]).argmin()
             v_i_East[i] = np.mean(data_dict_bulkvel['v_i_East'][0][low_idx:high_idx+1],axis=0)
             v_i_North[i] = np.mean(data_dict_bulkvel['v_i_North'][0][low_idx:high_idx+1],axis=0)
+            v_i_Up[i] = np.mean(data_dict_bulkvel['v_i_Up'][0][low_idx:high_idx + 1], axis=0)
         simAlt = data_dict_bulkvel['simAlt'][0]/stl.m_to_km
+        v_i_model = [v_i_East,v_i_North,v_i_Up]
 
         # UPLEG
-        ax[0, 0].errorbar(Vel_ions_ENU_upleg[0], alts_upleg[0], xerr=Vel_ions_ENU_errors_upleg[0],color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
-        ax[0, 0].scatter(Vel_ions_ENU_upleg[0], alts_upleg[0], s=10, color='tab:blue')
-        ax[0, 0].plot(v_i_East[0], simAlt)
-        ax[0, 0].set_title('E_East (Upleg)')
-        ax[0,0].set_ylabel('Altitude [km]')
+        for i in range(3):
+            ax[0, i].errorbar(Vel_ions_ENU_upleg[i], alts_upleg[0], xerr=Vel_ions_ENU_errors_upleg[i],color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
+            ax[0, i].scatter(Vel_ions_ENU_upleg[i], alts_upleg[0], s=10, color='tab:blue')
+            ax[0, i].plot(v_i_model[i][0], simAlt)
 
-        ax[0, 1].errorbar(Vel_ions_ENU_upleg[1], alts_upleg[1], xerr=Vel_ions_ENU_errors_upleg[1], color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
-        ax[0, 1].scatter(Vel_ions_ENU_upleg[1], alts_upleg[1], s=10, color='tab:blue')
-        ax[0, 1].plot(v_i_North[0], simAlt)
-        ax[0, 1].set_title('E_North (Upleg)')
+            if i == 0:
+                ax[0, i].set_title('E_East (Upleg)')
+                ax[0, i].set_ylabel('Altitude [km]')
+            elif i ==1:
+                ax[0, i].set_title('E_North (Upleg)')
+            elif i ==2:
+                ax[0, i].set_title('E_North (Upleg)')
 
-        # DOWNLEG
-        ax[1, 0].errorbar(Vel_ions_ENU_downleg[0], alts_downleg[0], xerr=Vel_ions_ENU_errors_downleg[0], color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
-        ax[1, 0].scatter(Vel_ions_ENU_downleg[0], alts_downleg[0], s=10, color='tab:blue')
-        ax[1, 0].set_title('E_East (Downleg)')
-        ax[1, 0].plot(v_i_East[1], simAlt)
-        ax[1, 0].set_ylabel('Altitude [km]')
+            # DOWNLEG
+            ax[1, i].errorbar(Vel_ions_ENU_downleg[i], alts_downleg[i], xerr=Vel_ions_ENU_errors_downleg[i], color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
+            ax[1, i].scatter(Vel_ions_ENU_downleg[i], alts_downleg[i], s=10, color='tab:blue')
+            ax[1, i].plot(v_i_model[i][1], simAlt)
+            if i == 0:
+                ax[0, i].set_title('E_East (Upleg)')
+                ax[0, i].set_ylabel('Altitude [km]')
+            elif i ==1:
+                ax[0, i].set_title('E_North (Upleg)')
+            elif i ==2:
+                ax[0, i].set_title('E_North (Upleg)')
 
-        ax[1, 1].errorbar(Vel_ions_ENU_downleg[1], alts_downleg[1], xerr=Vel_ions_ENU_errors_downleg[1], color='tab:blue', capsize=10, elinewidth=1,linewidth=0)
-        ax[1, 1].scatter(Vel_ions_ENU_downleg[1], alts_downleg[1], s=10, color='tab:blue')
-        ax[1, 1].set_title('E_North (Downleg)')
-        ax[1, 1].plot(v_i_North[1], simAlt)
-
-        for i in range(2):
             for j in range(2):
                 ax[i, j].set_xlim(-1000,1000)
                 ax[i, j].set_ylim(70,190)

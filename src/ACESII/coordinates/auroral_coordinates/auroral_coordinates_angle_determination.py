@@ -31,10 +31,10 @@ wRocket = 5
 wFiles = [0]
 
 # --- OutputData ---
-outputData = True
+outputData = False
 
 # --- Plots ---
-plot_interactive_slider = False
+plot_interactive_slider = True
 plot_best_fit_rotation = True
 
 
@@ -43,6 +43,8 @@ plot_best_fit_rotation = True
 # --- --- --- ---
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
+import datetime as dt
+from src.ACESII.data_tools.my_imports import *
 
 #######################
 # --- MAIN FUNCTION ---
@@ -57,7 +59,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 
     # Set the paths for the file names
     data_repository = f'{rocket_folder_path}/'
-    input_files = glob(data_repository+'L2/low/*EFI_FAC_fullCal.cdf*')
+    input_files = glob(data_repository+'L2/EFI/low/*EFI_FAC_fullCal.cdf*')
     input_names = [ifile.replace(data_repository, '') for ifile in input_files]
 
     if justPrintFileNames:
@@ -68,7 +70,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
     # --- get the data from the L2 file ---
     stl.prgMsg(f'Loading data')
     data_dict_EFI = stl.loadDictFromFile(input_files[wFile])
-    data_dict_LShell = stl.loadDictFromFile(f'{rocket_folder_path}/coordinates/Lshell/low/ACESII_36364_Lshell.cdf')
+    data_dict_LShell = stl.loadDictFromFile(glob(f'{rocket_folder_path}/coordinates/Lshell/low/*.cdf*')[0])
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -117,7 +119,8 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 
     # define set of rotations and calculate deviation from fitted line
     stl.prgMsg('Rotating Fields')
-    N =20
+    N =2
+    # N = 20
     angles = np.linspace(-7, 0, N)
 
     # fit a linear line to the E_e compoennt
@@ -254,7 +257,7 @@ def auroral_coordinates_angle_determination(wflyer, wFile, justPrintFileNames):
 # --- --- --- ---
 # --- EXECUTE ---
 # --- --- --- ---
-target_files = f'{DataPaths.ACES_data_folder}/L2/low/*.cdf'
+target_files = f'{DataPaths.ACES_data_folder}/L2/EFI/low/*.cdf'
 
 if len(glob(target_files)) == 0:
     print(stl.color.RED + 'There are no .cdf files in the specified directory' + stl.color.END)

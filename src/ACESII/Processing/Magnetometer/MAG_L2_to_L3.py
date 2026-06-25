@@ -14,15 +14,22 @@ __version__ = "1.0.0"
 # --- DATA TOGGLES ---
 ######################
 just_print_file_names_bool = False
-rocket_str = 'low'
+rocket_str = 'high'
 wInstr = 'MAG'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
-    f'{wInstr}':['L2', [[3],[3]]],
+    f'{wInstr}':['L2', [[0],[0]]],
 }
+
+
+# if you wish to detrend the data after a certain point
+detrend_data = True
+target_ILat = {'high':71.2,
+               'low': 71.2}
+
 outputData = True
 
 fs = 256 # sample frequency of the data
-low_cutoff = 0.05 # 20 seconds (or 1/20 freq) butterworth cutoff
+low_cutoff = {'high':0.05,'low':0.1} # [Best value HF/LF: 0.05/0.1] 20 seconds (or 1/20 freq) butterworth cutoff
 order = 4
 filtType = 'lowpass'
 
@@ -30,8 +37,9 @@ filtType = 'lowpass'
 #################
 # --- IMPORTS ---
 #################
-from scipy.integrate import simpson
+from scipy.signal import detrend
 from src.ACESII.data_tools.my_imports import *
+import datetime as dt
 start_time = time.time()
 
 
@@ -75,17 +83,26 @@ def MAG_L2_to_L3(data_dicts):
 
     # Calculate the residuals
 
-    # calculate the difference from model: shows the electrodynamics
+    # calculate the difference from model: shows the electrodynamics. Should be B_measured - B_model
     for i, key in enumerate(B_keys):
         data_dict_output[f'{key}_residual'][0] = stl.butterFilter().butter_filter(
-            data=data_dict_MAG[f'B_model_{coord_keys[i]}'][0] - data_dict_MAG[f'{key}'][0],
-            lowcutoff=low_cutoff,
-            highcutoff=low_cutoff,
+            # data=data_dict_MAG[f'{key}'][0] - data_dict_MAG[f'B_model_{coord_keys[i]}'][0],
+            data=data_dict_MAG[f'{key}'][0],
+            lowcutoff=low_cutoff[rocket_str],
+            highcutoff=low_cutoff[rocket_str],
             order=order,
             fs=fs,
             filtertype=filtType)
 
 
+    if detrend_data:
+
+        # find the relevant index
+        target_idx = np.abs(data_dict_MAG['ILat'][0] - target_ILat[rocket_str]).argmin()
+
+        for i, key in enumerate(B_keys):
+            data = data_dict_output[f'{key}_residual'][0][target_idx::]
+            data_dict_output[f'{key}_residual'][0][target_idx::] = detrend(data,type='linear')
 
     # --- --- --- --- --- --- ---
     # --- WRITE OUT THE DATA ---

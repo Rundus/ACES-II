@@ -18,7 +18,7 @@ import numpy as np
 # --- DATA TOGGLES ---
 ######################
 just_print_file_names_bool = False
-rocket_str = 'low'
+rocket_str = 'high'
 wInstr = 'MAG'
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
     f'{wInstr}':['L1', [[0],[0]]],
@@ -30,6 +30,12 @@ slope_cal = {'high':-0.000006,
               'low':0.000089}
 intercept_cal = {'high':0.12756724137931032,
                   'low':0.12756724137931032}
+
+# Without these "eyeballed" offsets, the data does NOT match the model. Here are some offsets to force the agreement
+offsets = {'high':[0,0,0],
+           'low':[0,0,0]}
+
+model_time_adjusts = {'high':0,'low':0}
 
 #################
 # --- IMPORTS ---
@@ -104,14 +110,23 @@ def MAG_L1_to_L2_despin(data_dicts):
         for i in range(len(data_dict_MAG['Epoch'][0]))
     ])
 
-    # apply the DCM
-    B_ENU = np.array([np.matmul(DCM[i],MAGdata[i]) for i in range(len(data_dict_MAG['Epoch'][0]))])
+    # apply the DCM and apply the offsets (derived by connor by essentially eyeballing it!)
+    B_ENU = np.array([np.matmul(DCM[i],MAGdata[i]) + np.array(offsets[rocket_str]) for i in range(len(data_dict_MAG['Epoch'][0]))])
 
     # --- [3] Calculate the CHAOS magnetic field for comparison ---
     stl.prgMsg('Calculating CHAOS')
     B_MODEL = stl.CHAOS(data_dict_temp['Lat'][0], data_dict_temp['Long'][0], data_dict_temp['Alt'][0] / stl.m_to_km, data_dict_MAG['Epoch'][0])
     stl.Done(start_time)
 
+    # ==time-adjust the CHAOS field to better fit the in situ data==
+    T0_model_adjust = np.array(T0_MAG) + model_time_adjusts[rocket_str]
+
+    # interpolate the time-shifted model onto the original timebase
+    B_MODEL = np.array([np.interp(T0_MAG, T0_model_adjust, B_MODEL[:,i] ) for i in range(3)]).T
+
+    #############
+    # OUTPUT DATA
+    #############
     if outputData:
         stl.prgMsg('Creating output file')
 

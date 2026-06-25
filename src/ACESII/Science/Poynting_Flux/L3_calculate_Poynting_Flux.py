@@ -15,11 +15,26 @@ __version__ = "1.0.0"
 # --- DATA TOGGLES ---
 ######################
 just_print_file_names_bool = False
-rocket_str = 'low'
+rocket_str = 'high'
+
+# auroral
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
-    f'EFI':['L3', [[1],[3]]],
-    'MAG':['L3',[[3],[4]]]
+    'EFI':['L3', [[2],[2]]],
+    'MAG':['L3',[[1],[2]]],
 }
+
+# FAC
+# dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
+#     f'EFI':['L3', [[1],[1]]],
+#     'MAG':['L3',[[2],[1]]]
+# }
+
+# ENU
+# dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
+#     f'EFI':['L3', [[0],[0]]],
+#     'MAG':['L3',[[0],[3]]]
+# }
+
 outputData = True
 
 
@@ -39,7 +54,9 @@ def L3_calculate_Poynting_Flux(data_dicts):
     #######################
     stl.prgMsg(f'Loading data')
     data_dict_EFI = deepcopy(data_dicts[0])
+    print(data_dict_EFI.keys())
     data_dict_MAG = deepcopy(data_dicts[1])
+    print(data_dict_MAG.keys())
     stl.Done(start_time)
 
     # --- prepare the output ---
@@ -90,7 +107,7 @@ def L3_calculate_Poynting_Flux(data_dicts):
         data_dict_output = {
             **data_dict_output,
             **{
-                f'S_{keyVals}':[S[:,i],{'DEPEND_0':'Epoch','VAR_TYPE':'data','UNITS':'W/m!A2!N','LABLAXIS':f'%delta;S_{keyVals}'}]
+                f'S_{keyVals}':[S[:,i],{'DEPEND_0':'Epoch','VAR_TYPE':'data','UNITS':'W/m!A2!N','LABLAXIS':f'&delta;S_{keyVals}'}]
             }
         }
     stl.Done(start_time)
