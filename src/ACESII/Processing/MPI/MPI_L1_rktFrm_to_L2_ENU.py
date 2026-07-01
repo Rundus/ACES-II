@@ -12,8 +12,8 @@ from scipy.interpolate import CubicSpline
 from src.ACESII.data_tools.data_paths import DataPaths
 import datetime as dt
 
-# DCM_time_base_offsets = [-0.00074, -0.058] # slope, intercept
-DCM_time_base_offsets = [-0.00074, -0.163] # slope, intercept
+DCM_time_base_offsets = [-0.00074, -0.058] # slope, intercept
+# DCM_time_base_offsets = [-0.00074, -0.163] # slope, intercept
 
 
 

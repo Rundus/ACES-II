@@ -20,7 +20,7 @@ from scipy.interpolate import CubicSpline
 # --- Select the Rocket ---
 # 4 -> ACES-II High Flier
 # 5 -> ACES-II Low Flier
-wRocket = 5
+wRocket = 4
 wFiles = [0]
 outputData = True
 

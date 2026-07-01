@@ -102,17 +102,16 @@ def ACESII_EISCAT_Compare_ion_velocity(data_dicts):
             # dt.datetime(2022, 11, 20, 17, 4, 10),
             # dt.datetime(2022, 11, 20, 17, 8, 10),
             # dt.datetime(2022, 11, 20, 17, 12, 10),
-            dt.datetime(2022, 11, 20, 17, 16, 10),
-            dt.datetime(2022, 11, 20, 17, 20, 10),
-
-            # dt.datetime(2022, 11, 20, 17, 24, 10),
+            # dt.datetime(2022, 11, 20, 17, 16, 10),
+            # dt.datetime(2022, 11, 20, 17, 20, 10),
+            dt.datetime(2022, 11, 20, 17, 24, 10),
             # dt.datetime(2022, 11, 20, 17, 28, 10), # "Good" downleg
             # dt.datetime(2022, 11, 20, 17, 32, 10),  # "good" downleg
             # dt.datetime(2022, 11, 20, 17, 36, 10),
         ], # "Good" on upleg East, poor on North
         [
             dt.datetime(2022, 11, 20, 17, 32, 10),  # "good" downleg
-            dt.datetime(2022, 11, 20, 17, 36, 10),
+            # dt.datetime(2022, 11, 20, 17, 36, 10),
             # dt.datetime(2022, 11, 20, 17, 40, 10),
         ], # "good" downleg (Bad on upleg)
 
@@ -298,67 +297,67 @@ def ACESII_EISCAT_Compare_ion_velocity(data_dicts):
     for keyVal in data_dict_output.keys():
         data_dict_output[keyVal][1]['DEPEND_0'] = None
 
+    ##################
+    ##################
+    # --- PLOTTING ---
+    ##################
+    ##################
+    Vel_ions_ENU = [Vel_ions_ENU_upleg, Vel_ions_ENU_downleg]
+    Vel_ions_ENU_errors = [Vel_ions_ENU_errors_upleg, Vel_ions_ENU_errors_downleg]
+    alts = [alts_upleg, alts_downleg]
+    titles = ['Upleg', 'Downleg']
+
     if plot_ExB_MPI_compare:
+
+        # --- collect the data into single variables ---
+
+        ExB_indexing = [slice(0,ExB_idx),slice(ExB_idx,None)]
+        MPI_indexing = [slice(0, MPI_idx), slice(MPI_idx,None)]
+
+
         #########################
         # --- PLOT EVERYTHING ---
         #########################
-        fig, ax = plt.subplots(nrows=2,ncols=2)
+        fig, ax = plt.subplots(nrows=2,ncols=3)
         width = 12
         height = 1.618 * width
         fig.set_figwidth(width)
         fig.set_figheight(height)
 
-        # UPLEG
-        ax[0, 0].plot(data_dict_ExB['ExB_E'][0][0:ExB_idx],data_dict_ExB['Alt'][0][0:ExB_idx],color='tab:gray')
-        ax[0, 0].plot(data_dict_MPI['MPI_E'][0][0:MPI_idx], data_dict_MPI['Alt'][0][0:MPI_idx], color='tab:red')
-        ax[0, 0].errorbar(Vel_ions_ENU_upleg[0], alts_upleg[0], xerr=Vel_ions_ENU_errors_upleg[0],color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
-        ax[0, 0].scatter(Vel_ions_ENU_upleg[0], alts_upleg[0], s=10, color='tab:blue')
-        ax[0, 0].plot(data_dict_HWM14['zonal_wind'][0], data_dict_HWM14['altitude'][0])
-        ax[0, 0].set_title('E_East (Upleg)')
+        for k in range(2):
+            v_i_data = Vel_ions_ENU[k]
+            ExB_idxing = ExB_indexing[k]
+            MPI_idxing = MPI_indexing[k]
 
-        # ax[0,0].plot(weighted_means[0],weighted_alts,color='black')
-        # ax[0, 0].scatter(weighted_means[0], weighted_alts, s=10, color='black')
+            # Some adjustments to the data have to be made to fit ExB
+            adjust_E = [100,100]
+            sign_E = [1,1]
+            adjust_N = [-25,-30]
+            sign_N = [-1,1]
 
-        ax[0, 1].plot(data_dict_ExB['ExB_N'][0][0:ExB_idx], data_dict_ExB['Alt'][0][0:ExB_idx], color='tab:gray')
-        ax[0, 1].plot(data_dict_MPI['MPI_N'][0][0:MPI_idx], data_dict_MPI['Alt'][0][0:MPI_idx], color='tab:red')
-        ax[0, 1].errorbar(Vel_ions_ENU_upleg[1], alts_upleg[1], xerr=Vel_ions_ENU_errors_upleg[1], color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
-        ax[0, 1].scatter(Vel_ions_ENU_upleg[1], alts_upleg[1], s=10, color='tab:blue')
-        ax[0, 1].plot(data_dict_HWM14['meridional_wind'][0], data_dict_HWM14['altitude'][0])
-        ax[0, 1].set_title('E_North (Upleg)')
+            # East
+            ax[k, 0].plot(data_dict_ExB['ExB_E'][0][ExB_idxing],data_dict_ExB['Alt'][0][ExB_idxing],color='tab:gray')
+            ax[k, 0].plot(sign_E[k]*data_dict_MPI['MPI_E'][0][MPI_idxing] + adjust_E[k], data_dict_MPI['Alt'][0][MPI_idxing], color='tab:red')
+            ax[k, 0].plot(data_dict_HWM14['zonal_wind'][0], data_dict_HWM14['altitude'][0])
+            ax[k, 0].set_title(f'E_East ({titles[k]})')
 
-        # ax[0, 1].plot(weighted_means[1], weighted_alts,  color='black')
-        # ax[0, 1].scatter(weighted_means[1], weighted_alts, s=10, color='black')
+            # north
+            ax[k, 1].plot(data_dict_ExB['ExB_N'][0][ExB_idxing], data_dict_ExB['Alt'][0][ExB_idxing], color='tab:gray')
+            ax[k, 1].plot(sign_N[k]*data_dict_MPI['MPI_N'][0][MPI_idxing]+adjust_N[k], data_dict_MPI['Alt'][0][MPI_idxing], color='tab:red')
+            ax[k, 1].plot(data_dict_HWM14['meridional_wind'][0], data_dict_HWM14['altitude'][0])
+            ax[k, 1].set_title(f'E_North ({titles[k]})')
 
-
-        # DOWNLEG
-        ax[1, 0].plot(data_dict_ExB['ExB_E'][0][ExB_idx::], data_dict_ExB['Alt'][0][ExB_idx::], color='tab:gray')
-        ax[1, 0].plot(data_dict_MPI['MPI_E'][0][MPI_idx::], data_dict_MPI['Alt'][0][MPI_idx::], color='tab:red')
-        ax[1, 0].errorbar(Vel_ions_ENU_downleg[0], alts_downleg[0], xerr=Vel_ions_ENU_errors_downleg[0], color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
-        ax[1, 0].scatter(Vel_ions_ENU_downleg[0], alts_downleg[0], s=10, color='tab:blue')
-        ax[1, 0].set_title('E_East (Downleg)')
-        ax[1, 0].plot(data_dict_HWM14['zonal_wind'][0], data_dict_HWM14['altitude'][0])
-
-        # ax[1, 0].plot(weighted_means[0], weighted_alts, color='black')
-        # ax[1, 0].scatter(weighted_means[0], weighted_alts, s=10, color='black')
-
-        ax[1, 1].plot(data_dict_ExB['ExB_N'][0][ExB_idx::], data_dict_ExB['Alt'][0][ExB_idx::], color='tab:gray')
-        ax[1, 1].plot(data_dict_MPI['MPI_N'][0][MPI_idx::], data_dict_MPI['Alt'][0][MPI_idx::], color='tab:red')
-        ax[1, 1].errorbar(Vel_ions_ENU_downleg[1], alts_downleg[1], xerr=Vel_ions_ENU_errors_downleg[1], color='tab:blue', capsize=10, elinewidth=1,linewidth=0)
-        ax[1, 1].scatter(Vel_ions_ENU_downleg[1], alts_downleg[1], s=10, color='tab:blue')
-        ax[1, 1].set_title('E_North (Downleg)')
-        ax[1, 1].plot(data_dict_HWM14['meridional_wind'][0], data_dict_HWM14['altitude'][0])
-
-        # ax[1, 1].plot(weighted_means[0], weighted_alts, color='black')
-        # ax[1, 1].scatter(weighted_means[0], weighted_alts, s=10, color='black')
+            # up
+            ax[k, 2].plot(data_dict_ExB['ExB_Up'][0][ExB_idxing], data_dict_ExB['Alt'][0][ExB_idxing], color='tab:gray')
+            ax[k, 2].plot(data_dict_MPI['MPI_U'][0][MPI_idxing], data_dict_MPI['Alt'][0][MPI_idxing], color='tab:red')
+            ax[k, 2].set_title(f'E_Up ({titles[k]})')
 
         for i in range(2):
-            for j in range(2):
+            for j in range(3):
                 ax[i, j].set_xlim(-1000,1000)
                 ax[i, j].set_ylim(70,190)
-                ax[i, j].axhline(y=120,color='red',linestyle='--',alpha=0.5)
         plt.tight_layout()
         plt.show()
-
 
     if plot_EISCAT_model_compare:
         #########################
@@ -369,7 +368,6 @@ def ACESII_EISCAT_Compare_ion_velocity(data_dicts):
         height = 1.618 * width
         fig.set_figwidth(width)
         fig.set_figheight(height)
-
 
         # Pick the location (L shell) of the Model data to choose. Average between that range
         v_i_East = [[],[]]
@@ -384,37 +382,21 @@ def ACESII_EISCAT_Compare_ion_velocity(data_dicts):
         simAlt = data_dict_bulkvel['simAlt'][0]/stl.m_to_km
         v_i_model = [v_i_East,v_i_North,v_i_Up]
 
-        # UPLEG
-        for i in range(3):
-            ax[0, i].errorbar(Vel_ions_ENU_upleg[i], alts_upleg[0], xerr=Vel_ions_ENU_errors_upleg[i],color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
-            ax[0, i].scatter(Vel_ions_ENU_upleg[i], alts_upleg[0], s=10, color='tab:blue')
-            ax[0, i].plot(v_i_model[i][0], simAlt)
+        # UPLEG/DOWNLEG data plotting
+        for k in range(2):
+            for i in range(3):
+                ax[k, i].errorbar(Vel_ions_ENU[k][i], alts[k][0], xerr=Vel_ions_ENU_errors[k][i],color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
+                ax[k, i].scatter(Vel_ions_ENU[k][i], alts[k][0], s=10, color='tab:blue')
+                ax[k, i].plot(v_i_model[i][k], simAlt)
 
-            if i == 0:
-                ax[0, i].set_title('E_East (Upleg)')
-                ax[0, i].set_ylabel('Altitude [km]')
-            elif i ==1:
-                ax[0, i].set_title('E_North (Upleg)')
-            elif i ==2:
-                ax[0, i].set_title('E_North (Upleg)')
+                if i == 0:
+                    ax[k, i].set_title(f'E_East ({titles[k]})')
+                    ax[k, i].set_ylabel('Altitude [km]')
+                elif i ==1:
+                    ax[k, i].set_title(f'E_North ({titles[k]})')
+                elif i ==2:
+                    ax[k, i].set_title(f'E_Up ({titles[k]})')
 
-            # DOWNLEG
-            ax[1, i].errorbar(Vel_ions_ENU_downleg[i], alts_downleg[i], xerr=Vel_ions_ENU_errors_downleg[i], color='tab:blue', capsize=10,elinewidth=1,linewidth=0)
-            ax[1, i].scatter(Vel_ions_ENU_downleg[i], alts_downleg[i], s=10, color='tab:blue')
-            ax[1, i].plot(v_i_model[i][1], simAlt)
-            if i == 0:
-                ax[0, i].set_title('E_East (Upleg)')
-                ax[0, i].set_ylabel('Altitude [km]')
-            elif i ==1:
-                ax[0, i].set_title('E_North (Upleg)')
-            elif i ==2:
-                ax[0, i].set_title('E_North (Upleg)')
-
-            for j in range(2):
-                ax[i, j].set_xlim(-1000,1000)
-                ax[i, j].set_ylim(70,190)
-                ax[i, j].axhline(y=120,color='red',linestyle='--',alpha=0.5)
-        plt.tight_layout()
         plt.show()
 
 

@@ -20,21 +20,21 @@ from src.ACESII.data_tools.my_imports import *
 
 
 FilePaths = [
-    f'{DataPaths.ACES_data_folder}/science/',
+    # f'{DataPaths.ACES_data_folder}/science/',
     f'{DataPaths.ACES_data_folder}/L3/',
     f'{DataPaths.ACES_data_folder}/L2/',
-    f'{DataPaths.ACES_data_folder}/L1/',
+    # f'{DataPaths.ACES_data_folder}/L1/',
 ]
 
 Instrs = [
-    'EEPAA',
-    'EFI',
-    'ERPA',
-    'IEPAA',
-    'LEESA',
-    'LP',
-    'MAG',
-    'ExB',
+    # 'EEPAA',
+    # 'EFI',
+    # 'ERPA',
+    # 'IEPAA',
+    # 'LEESA',
+    # 'LP',
+    # 'MAG',
+    # 'ExB',
     'MPI'
 ]
 

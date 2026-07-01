@@ -153,7 +153,6 @@ def traj_ECEF_to_ENU(wRocket):
         outputPath = f'{DataPaths.ACES_data_folder}\\trajectories\\{ACESII.fliers[wRocket-4]}\\{fileoutName}'
         stl.outputCDFdata(outputPath, data_dict_output)
         stl.Done(start_time)
-        print('\n')
 
 
 

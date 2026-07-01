@@ -32,16 +32,18 @@ def MPI_L1_to_L2_despin_time_adjust_slider():
         # --- PLOT1 ExB Compare ---
         ###########################
 
-        fig, ax = plt.subplots(nrows=2,ncols=1)
+        fig, ax = plt.subplots(nrows=3,ncols=1)
 
         # --- Exb ---
         T0_ExB = stl.EpochTo_T0_Rocket(data_dict_ExB['Epoch'][0],T0=dt.datetime(2022,11,20,17,20))
         ax[0].plot(T0_ExB, data_dict_ExB['ExB_E'][0], color='tab:gray', label='ExB_E',linewidth=0.25)
         ax[1].plot(T0_ExB, data_dict_ExB['ExB_N'][0], color='tab:gray', label='ExB_N',linewidth=0.25)
+        ax[2].plot(T0_ExB, data_dict_ExB['ExB_Up'][0], color='tab:gray', label='ExB_Up', linewidth=0.25)
 
         # Plot the unperturbed data
         MPI_plot_Data_E = []
         MPI_plot_Data_N = []
+        MPI_plot_Data_U = []
         for i in range(4):
 
             # 8. Time adjust the data to better align. This does NOT affect the Despin at all
@@ -58,8 +60,10 @@ def MPI_L1_to_L2_despin_time_adjust_slider():
 
             lineMPI_E, = ax[0].plot(time_sec_MPI,data_dict_MPI_ENU[f'MPI{i+1}_E'][0],label=f'MPI{i+1}_E')
             lineMPI_N, =ax[1].plot(time_sec_MPI, data_dict_MPI_ENU[f'MPI{i+1}_N'][0],label=f'MPI{i+1}_N')
+            lineMPI_U, = ax[2].plot(time_sec_MPI, data_dict_MPI_ENU[f'MPI{i + 1}_U'][0], label=f'MPI{i + 1}_U')
             MPI_plot_Data_E.append(lineMPI_E)
             MPI_plot_Data_N.append(lineMPI_N)
+            MPI_plot_Data_U.append(lineMPI_U)
 
 
 
@@ -74,7 +78,7 @@ def MPI_L1_to_L2_despin_time_adjust_slider():
         )
 
         # Make some adjustments
-        for i in range(2):
+        for i in range(3):
             ax[i].set_ylim(-500,500)
             ax[i].set_xlim(230,420)
             ax[i].legend()
@@ -124,6 +128,7 @@ def MPI_L1_to_L2_despin_time_adjust_slider():
                 # Set the new data
                 MPI_plot_Data_E[idx].set_ydata(MPI_ENU[:, 0])
                 MPI_plot_Data_N[idx].set_ydata(MPI_ENU[:, 1])
+                MPI_plot_Data_U[idx].set_ydata(MPI_ENU[:, 2])
 
         slopeSlider.on_changed(update)
         interSlider.on_changed(update)

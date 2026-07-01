@@ -15,7 +15,7 @@ __version__ = "1.0.0"
 # --- DATA TOGGLES ---
 ######################
 just_print_file_names_bool = False
-rocket_str = 'high'
+rocket_str = 'low'
 
 # auroral
 dict_file_path ={ # FORMAT: Data Name: [Str modifier to ACESII Data Folder Path, Which Datafile Indices in directory [[High flyer], [Low flyer]]]
@@ -54,9 +54,7 @@ def L3_calculate_Poynting_Flux(data_dicts):
     #######################
     stl.prgMsg(f'Loading data')
     data_dict_EFI = deepcopy(data_dicts[0])
-    print(data_dict_EFI.keys())
     data_dict_MAG = deepcopy(data_dicts[1])
-    print(data_dict_MAG.keys())
     stl.Done(start_time)
 
     # --- prepare the output ---
